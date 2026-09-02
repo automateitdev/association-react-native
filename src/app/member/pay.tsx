@@ -11,14 +11,30 @@ import {
   type Quote,
 } from '@/features/dues/queries';
 import { startAttempt, useCreatePayment } from '@/features/payments/queries';
-import { Button, Card, Checkbox, MoneyRow, Screen, Separator, StateView, Text } from '@/ui';
+import {
+  AmountBreakdown,
+  Button,
+  Checkbox,
+  Field,
+  Panel,
+  Row,
+  Screen,
+  ScreenHeader,
+  Section,
+  StateView,
+  Text,
+  space,
+  type,
+} from '@/ui';
 
 /**
  * Pay: choose instalments, transfer at the bank, upload the slip.
  *
  * With no gateway integrated this is the ONLY way a member can pay through the
  * app, so the screen has to carry the whole story: what is owed, where to send
- * it, and proof that they did.
+ * it, and proof that they did. The three steps are Sections rather than stacked
+ * cards - a numbered heading already says "step", and wrapping each one in a box
+ * as well made a single task look like three separate screens.
  *
  * THE IDEMPOTENCY KEY IS CREATED ONCE PER ATTEMPT.
  * Held in a ref for the life of this attempt so that a retry after a timeout
@@ -101,7 +117,7 @@ export default function PayScreen() {
 
   return (
     <Screen onRefresh={dues.refetch} refreshing={dues.isRefetching}>
-      <Text style={{ fontSize: 22, fontWeight: '700' }}>Make a payment</Text>
+      <ScreenHeader title="Make a payment" />
 
       <StateView
         loading={dues.isPending}
@@ -111,118 +127,122 @@ export default function PayScreen() {
         emptyMessage="You have no unpaid instalments right now."
         onRetry={dues.refetch}
       >
-        <Card>
-          <Card.Body style={{ gap: 12 }}>
-            <Text style={{ fontWeight: '700' }}>1. Choose instalments</Text>
-
-            {payable.map((due) => (
-              <SelectableDue
-                key={due.fee_assign_id}
-                due={due}
-                selected={selected.includes(due.fee_assign_id)}
-                onToggle={() => toggle(due.fee_assign_id)}
-              />
-            ))}
-          </Card.Body>
-        </Card>
+        <Section title="1 · Choose instalments" first>
+          {payable.map((due, index) => (
+            <SelectableDue
+              key={due.fee_assign_id}
+              due={due}
+              selected={selected.includes(due.fee_assign_id)}
+              onToggle={() => toggle(due.fee_assign_id)}
+              divider={index < payable.length - 1}
+            />
+          ))}
+        </Section>
 
         {chosen.length > 0 ? (
-          <Card>
-            <Card.Body style={{ gap: 12 }}>
-              <Text style={{ fontWeight: '700' }}>2. Transfer this amount</Text>
-
+          <Section title="2 · Transfer this amount">
+            <View style={{ gap: space.lg }}>
               {/* Server-computed. The app does not add money up. */}
               <SelectionTotal quote={quote.data} isLoading={quote.isPending} />
 
-              <Separator />
-
               {instructions.isPending ? (
-                <Text>Loading payment details…</Text>
+                <Text tone="muted" style={type.body}>
+                  Loading payment details…
+                </Text>
               ) : bank?.available ? (
-                <View style={{ gap: 4 }}>
-                  <BankLine label="Bank" value={bank.bank.bank_name} />
-                  <BankLine label="Account name" value={bank.bank.account_name} />
-                  <BankLine label="Account number" value={bank.bank.account_number} />
-                  {bank.bank.branch ? <BankLine label="Branch" value={bank.bank.branch} /> : null}
+                <View>
+                  <Field label="Bank" value={bank.bank.bank_name} />
+                  <Field label="Account name" value={bank.bank.account_name} />
+                  <Field label="Account number" value={bank.bank.account_number} />
+                  {bank.bank.branch ? <Field label="Branch" value={bank.bank.branch} /> : null}
                   {bank.bank.routing_number ? (
-                    <BankLine label="Routing" value={bank.bank.routing_number} />
+                    <Field label="Routing" value={bank.bank.routing_number} />
                   ) : null}
                   {bank.bank.instructions ? (
-                    <Text style={{ marginTop: 8 }}>{bank.bank.instructions}</Text>
+                    <Text style={{ ...type.body, marginTop: space.sm }}>
+                      {bank.bank.instructions}
+                    </Text>
                   ) : null}
                 </View>
               ) : (
                 // The association has not filled its bank details in. Saying so
-                // is better than rendering an empty card that reads as a bug.
-                <Text>
-                  Your association has not published its bank details yet. Please contact the
-                  office before transferring.
-                </Text>
+                // is better than rendering an empty block that reads as a bug.
+                <Panel>
+                  <Text style={type.body}>
+                    Your association has not published its bank details yet. Please contact the
+                    office before transferring.
+                  </Text>
+                </Panel>
               )}
-            </Card.Body>
-          </Card>
+            </View>
+          </Section>
         ) : null}
 
         {chosen.length > 0 ? (
-          <Card>
-            <Card.Body style={{ gap: 12 }}>
-              <Text style={{ fontWeight: '700' }}>3. Attach your slip</Text>
-              <Text style={{ opacity: 0.8 }}>
-                A photo of the deposit slip or a screenshot of the transfer. Staff approve
-                against this.
-              </Text>
+          <Section title="3 · Attach your slip">
+            <Text tone="muted" style={type.body}>
+              A photo of the deposit slip or a screenshot of the transfer. Staff approve against
+              this.
+            </Text>
 
+            <View style={{ marginTop: space.md, gap: space.sm }}>
               {slips.map((slip, index) => (
                 <View
                   key={slip.assetId ?? slip.uri}
-                  style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 8 }}
+                  style={{ flexDirection: 'row', justifyContent: 'space-between', gap: space.sm }}
                 >
-                  <Text style={{ flex: 1 }} numberOfLines={1}>
+                  <Text style={{ ...type.body, flex: 1 }} numberOfLines={1}>
                     {slip.fileName ?? `Slip ${index + 1}`}
                   </Text>
                   <Pressable onPress={() => setSlips((s) => s.filter((_, i) => i !== index))}>
-                    <Text style={{ textDecorationLine: 'underline' }}>Remove</Text>
+                    <Text tone="danger" style={type.rowMeta}>
+                      Remove
+                    </Text>
                   </Pressable>
                 </View>
               ))}
 
               {slips.length < 5 ? (
                 <Button variant="secondary" onPress={addSlip}>
-                  <Button.Label>
-                    {slips.length === 0 ? 'Add slip' : 'Add another'}
-                  </Button.Label>
+                  <Button.Label>{slips.length === 0 ? 'Add slip' : 'Add another'}</Button.Label>
                 </Button>
               ) : null}
-            </Card.Body>
-          </Card>
+            </View>
+          </Section>
         ) : null}
 
         {error ? (
-          <View style={{ gap: 4 }}>
-            <Text style={{ color: '#b3261e', fontWeight: '600' }}>{error.message}</Text>
-            {error.isRetryable ? (
-              <Text style={{ color: '#b3261e' }}>
-                Tap Submit again — your payment will not be duplicated.
+          <View style={{ marginTop: space.lg }}>
+            <Panel tone="danger">
+              {/*
+                `text-danger` rather than a hex value. The old version hard-coded
+                #b3261e - a light-theme red sitting on a dark background in dark
+                mode, and the one place on the screen that ignored the theme.
+              */}
+              <Text tone="danger" style={type.rowTitle}>
+                {error.message}
               </Text>
-            ) : null}
+              {error.isRetryable ? (
+                <Text style={type.body}>Tap Submit again — your payment will not be duplicated.</Text>
+              ) : null}
+            </Panel>
           </View>
         ) : null}
 
         {chosen.length > 0 ? (
-          <Button
-            isDisabled={slips.length === 0 || createPayment.isPending}
-            onPress={submit}
-          >
-            <Button.Label>
-              {createPayment.isPending ? 'Submitting…' : 'Submit for approval'}
-            </Button.Label>
-          </Button>
-        ) : null}
+          <View style={{ marginTop: space.xl, gap: space.sm }}>
+            <Button isDisabled={slips.length === 0 || createPayment.isPending} onPress={submit}>
+              <Button.Label>
+                {createPayment.isPending ? 'Submitting…' : 'Submit for approval'}
+              </Button.Label>
+            </Button>
 
-        {chosen.length > 0 && slips.length === 0 ? (
-          <Text style={{ fontSize: 12, opacity: 0.7, textAlign: 'center' }}>
-            Attach your bank slip to submit.
-          </Text>
+            {slips.length === 0 ? (
+              <Text tone="muted" style={{ ...type.rowMeta, textAlign: 'center' }}>
+                Attach your bank slip to submit.
+              </Text>
+            ) : null}
+          </View>
         ) : null}
       </StateView>
     </Screen>
@@ -233,28 +253,27 @@ function SelectableDue({
   due,
   selected,
   onToggle,
+  divider,
 }: {
   due: Due;
   selected: boolean;
   onToggle: () => void;
+  divider: boolean;
 }) {
   return (
-    <Pressable onPress={onToggle}>
-      <View style={{ flexDirection: 'row', gap: 12, alignItems: 'flex-start' }}>
-        <Checkbox isSelected={selected} onSelectedChange={onToggle} />
-
-        <View style={{ flex: 1, gap: 4 }}>
-          <Text style={{ fontWeight: '600' }}>
-            {due.fee_head} · {due.period}
-          </Text>
-          <MoneyRow
-            instalment={due.instalment_amount}
-            fine={due.fine_amount}
-            total={due.total_due}
-          />
-        </View>
-      </View>
-    </Pressable>
+    <Row
+      title={`${due.fee_head} · ${due.period}`}
+      leading={<Checkbox isSelected={selected} onSelectedChange={onToggle} />}
+      trailing={
+        <AmountBreakdown
+          instalment={due.instalment_amount}
+          fine={due.fine_amount}
+          total={due.total_due}
+        />
+      }
+      onPress={onToggle}
+      divider={divider}
+    />
   );
 }
 
@@ -273,26 +292,19 @@ function SelectableDue({
  */
 function SelectionTotal({ quote, isLoading }: { quote?: Quote; isLoading: boolean }) {
   if (isLoading || !quote) {
-    return <Text>Calculating…</Text>;
+    return (
+      <Text tone="muted" style={type.body}>
+        Calculating…
+      </Text>
+    );
   }
 
   return (
-    <MoneyRow
+    <AmountBreakdown
       instalment={quote.instalment_total}
       fine={quote.fine_total}
       total={quote.grand_total}
-      emphasis
+      align="left"
     />
-  );
-}
-
-function BankLine({ label, value }: { label: string; value: string }) {
-  return (
-    <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 12 }}>
-      <Text style={{ opacity: 0.7 }}>{label}</Text>
-      <Text selectable style={{ fontWeight: '600', flexShrink: 1, textAlign: 'right' }}>
-        {value}
-      </Text>
-    </View>
   );
 }

@@ -5,10 +5,12 @@ import { useSession } from '@/features/auth/session';
 /**
  * The staff surface.
  *
- * Tabs now, where a Stack was right before: there are two real areas, and the
- * R-1 inventory has been taken. Two peers is enough to know the shape -
- * approvals and members are not reached through one another - without having to
- * guess where fee setup and reports will eventually sit.
+ * Overview, Approvals, Members. The dashboard leads because it is the only
+ * screen that answers "what needs doing" - a staff surface whose landing screen
+ * is a work queue tells you about one kind of work and nothing about the rest.
+ *
+ * Still no room reserved for fee setup or reports: what those screens want will
+ * be clear when they exist, and guessing now would only have to be undone.
  *
  * The guard mirrors the member layout - a member account reaching here would
  * hit staff endpoints and be refused by `EnsureStaff` with a 403 it cannot act
@@ -40,7 +42,8 @@ export default function StaffLayout() {
 
   return (
     <Tabs screenOptions={{ headerShown: false }}>
-      <Tabs.Screen name="index" options={{ title: 'Approvals' }} />
+      <Tabs.Screen name="index" options={{ title: 'Overview' }} />
+      <Tabs.Screen name="approvals" options={{ title: 'Approvals' }} />
       <Tabs.Screen name="members/index" options={{ title: 'Members' }} />
 
       {/*

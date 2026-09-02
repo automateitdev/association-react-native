@@ -5,14 +5,18 @@ import { ApiError } from '@/api/errors';
 import { useCreateMember, type NewMemberFields } from '@/features/staff/members';
 import {
   Button,
-  Card,
   Chip,
   Description,
   Input,
   Label,
+  Panel,
   Screen,
+  ScreenHeader,
+  Section,
   Text,
   TextField,
+  space,
+  type,
 } from '@/ui';
 
 /**
@@ -68,35 +72,38 @@ export default function NewMemberScreen() {
 
   return (
     <Screen>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-        <Button variant="tertiary" onPress={() => router.back()}>
-          <Button.Label>Back</Button.Label>
-        </Button>
-        <Text style={{ fontSize: 20, fontWeight: '700', flex: 1 }}>Add member</Text>
-      </View>
+      <ScreenHeader
+        title="Add member"
+        action={
+          <Button variant="tertiary" onPress={() => router.back()}>
+            <Button.Label>Back</Button.Label>
+          </Button>
+        }
+      />
 
-      <Card>
-        <Card.Body style={{ gap: 6 }}>
-          <Text style={{ fontWeight: '600' }}>They will not be active yet</Text>
-          <Text>
+      <View style={{ marginTop: space.lg }}>
+        <Panel>
+          <Text style={type.rowTitle}>They will not be active yet</Text>
+          <Text style={type.body}>
             New members are created awaiting approval. Approve them on their page once the
             association has agreed to admit them — they cannot sign in until you do.
           </Text>
-        </Card.Body>
-      </Card>
+        </Panel>
+      </View>
 
       {create.isError && Object.keys(fieldErrors).length === 0 ? (
-        <Card>
-          <Card.Body>
-            <Text>
+        <View style={{ marginTop: space.lg }}>
+          <Panel tone="danger">
+            <Text style={type.body}>
               {create.error instanceof ApiError
                 ? create.error.message
                 : 'The member could not be created.'}
             </Text>
-          </Card.Body>
-        </Card>
+          </Panel>
+        </View>
       ) : null}
 
+      <Section title="Who they are">
       <Field
         label="Name"
         required
@@ -159,9 +166,9 @@ export default function NewMemberScreen() {
         errors={fieldErrors.birth_date}
       />
 
-      <View style={{ gap: 8 }}>
-        <Text style={{ fontWeight: '600' }}>Gender</Text>
-        <View style={{ flexDirection: 'row', gap: 8 }}>
+      <View style={{ gap: space.sm, marginTop: space.md }}>
+        <Text tone="muted" style={type.rowMeta}>Gender</Text>
+        <View style={{ flexDirection: 'row', gap: space.sm }}>
           {(['male', 'female', 'other'] as const).map((option) => (
             <Pressable key={option} onPress={() => set('gender')(option)}>
               <Chip variant={fields.gender === option ? 'primary' : 'secondary'}>
@@ -191,9 +198,13 @@ export default function NewMemberScreen() {
         errors={fieldErrors.permanent_address}
       />
 
-      <Button isDisabled={!canSubmit || create.isPending} onPress={() => void submit()}>
-        <Button.Label>{create.isPending ? 'Creating…' : 'Create member'}</Button.Label>
-      </Button>
+      </Section>
+
+      <View style={{ marginTop: space.xl }}>
+        <Button isDisabled={!canSubmit || create.isPending} onPress={() => void submit()}>
+          <Button.Label>{create.isPending ? 'Creating…' : 'Create member'}</Button.Label>
+        </Button>
+      </View>
     </Screen>
   );
 }

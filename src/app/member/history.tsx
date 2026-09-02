@@ -1,7 +1,6 @@
 import { router } from 'expo-router';
-import { Pressable, View } from 'react-native';
 import { usePayments, type Payment } from '@/features/payments/queries';
-import { Card, Chip, MoneyRow, Screen, StateView, Text } from '@/ui';
+import { AmountBreakdown, Row, Screen, ScreenHeader, Section, StateView, Text, type } from '@/ui';
 
 /**
  * Every payment the member has made or submitted.
@@ -15,7 +14,7 @@ export default function HistoryScreen() {
 
   return (
     <Screen onRefresh={payments.refetch} refreshing={payments.isRefetching}>
-      <Text style={{ fontSize: 22, fontWeight: '700' }}>Payment history</Text>
+      <ScreenHeader title="Payments" />
 
       <StateView
         loading={payments.isPending}
@@ -25,65 +24,74 @@ export default function HistoryScreen() {
         emptyMessage="Payments you make will appear here."
         onRetry={payments.refetch}
       >
-        <View style={{ gap: 12 }}>
-          {payments.data?.map((payment) => (
-            <PaymentCard key={payment.id} payment={payment} />
+        <Section first>
+          {payments.data?.map((payment, index) => (
+            <PaymentRow
+              key={payment.id}
+              payment={payment}
+              divider={index < (payments.data?.length ?? 0) - 1}
+            />
           ))}
-        </View>
+        </Section>
       </StateView>
     </Screen>
   );
 }
 
-function PaymentCard({ payment }: { payment: Payment }) {
+function PaymentRow({ payment, divider }: { payment: Payment; divider: boolean }) {
+  const attachments =
+    payment.documents.length > 0
+      ? `${payment.documents.length} document${payment.documents.length === 1 ? '' : 's'}`
+      : null;
+
   return (
-    // Card is presentational here; the tap target is the Pressable around it.
-    <Pressable onPress={() => router.push(`/member/payment/${payment.id}`)}>
-    <Card>
-      <Card.Body style={{ gap: 8 }}>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 8 }}>
-          <View style={{ flex: 1 }}>
-            <Text style={{ fontWeight: '600' }}>{payment.invoice_no}</Text>
-            <Text style={{ opacity: 0.7 }}>
-              {payment.payment_date ?? 'Submitted, awaiting approval'}
-            </Text>
-          </View>
-
-          <Chip>
-            <Chip.Label>{statusLabel(payment.status)}</Chip.Label>
-          </Chip>
-        </View>
-
-        {/* Instalment and fine stay apart on a receipt too - a member checking
-            an old payment should still see what was subscription and what was
-            penalty. */}
-        <MoneyRow
+    <Row
+      title={payment.invoice_no}
+      meta={[payment.payment_date ?? 'Submitted', attachments].filter(Boolean).join(' · ')}
+      trailing={
+        /* Instalment and fine stay apart on a receipt too - a member checking an
+           old payment should still see what was subscription and what was
+           penalty. */
+        <AmountBreakdown
           instalment={payment.payable_amount}
           fine={payment.fine_amount}
           total={payment.total_amount}
         />
-
-        {payment.documents.length > 0 ? (
-          <Text style={{ fontSize: 12, opacity: 0.7 }}>
-            {payment.documents.length} document{payment.documents.length === 1 ? '' : 's'} attached
-          </Text>
-        ) : null}
-      </Card.Body>
-    </Card>
-    </Pressable>
+      }
+      footer={<StatusLine status={payment.status} />}
+      onPress={() => router.push(`/member/payment/${payment.id}`)}
+      divider={divider}
+    />
   );
 }
 
-/** Plain words, not internal statuses. `suspended` is not a member's vocabulary. */
-function statusLabel(status: Payment['status']): string {
-  switch (status) {
-    case 'completed':
-      return 'Paid';
-    case 'pending':
-      return 'Awaiting approval';
-    case 'suspended':
-      return 'Not accepted';
-    case 'expired':
-      return 'Expired';
-  }
+/**
+ * Plain words, not internal statuses. `suspended` is not a member's vocabulary.
+ *
+ * Only the states needing attention carry colour. "Paid" is the expected
+ * outcome, and a coloured pill on every completed payment would make a settled
+ * history look like a list of alerts.
+ */
+function StatusLine({ status }: { status: Payment['status'] }) {
+  const label =
+    status === 'completed'
+      ? 'Paid'
+      : status === 'pending'
+        ? 'Awaiting approval'
+        : status === 'suspended'
+          ? 'Not accepted'
+          : 'Expired';
+
+  const tone =
+    status === 'suspended' || status === 'expired'
+      ? ('danger' as const)
+      : status === 'pending'
+        ? ('accent' as const)
+        : ('muted' as const);
+
+  return (
+    <Text tone={tone} style={type.rowMeta}>
+      {label}
+    </Text>
+  );
 }

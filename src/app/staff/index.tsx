@@ -1,330 +1,144 @@
 import { router } from 'expo-router';
-import { useCallback, useMemo, useState } from 'react';
-import { Pressable, View } from 'react-native';
+import { View } from 'react-native';
+import { formatMoney, type Money } from '@/api/money';
 import { useSession } from '@/features/auth/session';
+import { useDashboard } from '@/features/staff/dashboard';
 import {
-  useDecidePayments,
-  usePendingPayments,
-  type DecisionOutcome,
-  type PendingPayment,
-} from '@/features/staff/approvals';
-import { Button, Card, Checkbox, Chip, MoneyRow, Screen, StateView, Text, TextArea } from '@/ui';
+  Button,
+  Row,
+  Screen,
+  ScreenHeader,
+  Section,
+  StateView,
+  Stat,
+  Text,
+  space,
+  type,
+} from '@/ui';
 
 /**
- * The payment approval queue.
+ * The staff landing screen.
  *
- * This is the first staff screen, chosen deliberately: it is the one with a
- * member blocked behind it, and it is the screen that settles how staff lists
- * are built - HeroUI Native has no table and no data grid (risk R-1), so a
- * "row" here is a Card. On a phone that is the right answer anyway; a table
- * would be unreadable at 375pt.
+ * TWO FIGURES WHERE A DASHBOARD USUALLY SHOWS ONE
+ * -----------------------------------------------
+ * Collections and outstanding are each a pair - instalments and fines, apart -
+ * and there is deliberately no "total collected" anywhere on this screen. That
+ * number would have to be produced by adding two amounts in the app, which it
+ * must never do; and a single "collected" figure that silently includes fines
+ * is exactly the defect the legacy reports carry (D-1). Showing two numbers is
+ * the correct answer here, not a compromise.
  *
- * TWO THINGS THIS SCREEN WILL NOT DO
- * ----------------------------------
- * 1. It never sums money. There is no "total selected" figure, however natural
- *    that would feel on a batch screen, because producing one means adding
- *    amounts in the client - and adding instalments to fines is the exact class
- *    of bug this platform was rebuilt to eliminate. Each payment shows the
- *    total the SERVER calculated, and that is all.
- *
- * 2. It never reports a batch as wholly successful when it was not. The API
- *    answers 207 with per-payment outcomes precisely because the legacy system
- *    lost approvals silently; showing "12 approved" over a response that said
- *    10 succeeded would reintroduce the defect at the presentation layer.
+ * The pending-approvals count is the one figure that is also an instruction, so
+ * it is the only thing on the page that is pressable.
  */
-export default function PaymentApprovalsScreen() {
+export default function DashboardScreen() {
   const { session, signOut } = useSession();
-  const pending = usePendingPayments();
-  const decide = useDecidePayments();
+  const dashboard = useDashboard();
 
-  const [selected, setSelected] = useState<Set<number>>(new Set());
-  const [rejecting, setRejecting] = useState(false);
-  const [reason, setReason] = useState('');
-  const [outcome, setOutcome] = useState<DecisionOutcome | null>(null);
-
-  const payments = useMemo(
-    () => pending.data?.pages.flatMap((page) => page.data) ?? [],
-    [pending.data],
-  );
-
-  const total = pending.data?.pages[0]?.meta.total ?? 0;
-
-  const toggle = useCallback((id: number) => {
-    setSelected((current) => {
-      const next = new Set(current);
-      next.has(id) ? next.delete(id) : next.add(id);
-      return next;
-    });
-  }, []);
-
-  const submit = useCallback(
-    async (decision: 'completed' | 'suspended') => {
-      const ids = [...selected];
-      if (ids.length === 0) return;
-
-      try {
-        const result = await decide.mutateAsync({
-          paymentIds: ids,
-          decision,
-          reason: decision === 'suspended' ? reason.trim() : undefined,
-        });
-
-        setOutcome(result);
-        setRejecting(false);
-        setReason('');
-
-        /*
-         * Keep the ones that FAILED selected.
-         *
-         * Clearing everything would hide the work still outstanding behind a
-         * message the approver may well dismiss, leaving them to rediscover it
-         * on the next refresh. Keeping the failures selected means the retry is
-         * already set up.
-         */
-        setSelected(new Set(result.results.filter((r) => !r.ok).map((r) => r.payment_id)));
-      } catch {
-        // Surfaced by the mutation's own error state below.
-      }
-    },
-    [decide, reason, selected],
-  );
+  const data = dashboard.data;
 
   return (
-    <Screen>
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-        <View>
-          <Text style={{ fontSize: 22, fontWeight: '700' }}>Payment approvals</Text>
-          <Text style={{ opacity: 0.7 }}>
-            {session?.profile.name} · {session?.role}
-          </Text>
-        </View>
-
-        <Button
-          variant="tertiary"
-          onPress={async () => {
-            await signOut();
-            router.replace('/');
-          }}
-        >
-          <Button.Label>Sign out</Button.Label>
-        </Button>
-      </View>
-
-      {outcome ? <Outcome outcome={outcome} onDismiss={() => setOutcome(null)} /> : null}
-
-      {decide.isError ? (
-        <Card>
-          <Card.Body>
-            <Text style={{ fontWeight: '600' }}>The batch could not be sent</Text>
-            <Text>Nothing was decided. Check your connection and try again.</Text>
-          </Card.Body>
-        </Card>
-      ) : null}
+    <Screen onRefresh={() => void dashboard.refetch()} refreshing={dashboard.isRefetching}>
+      <ScreenHeader
+        title="Overview"
+        subtitle={`${session?.profile.name} · ${session?.role}`}
+        action={
+          <Button
+            variant="tertiary"
+            onPress={async () => {
+              await signOut();
+              router.replace('/');
+            }}
+          >
+            <Button.Label>Sign out</Button.Label>
+          </Button>
+        }
+      />
 
       <StateView
-        loading={pending.isLoading}
-        error={pending.error}
-        empty={payments.length === 0}
-        emptyTitle="Nothing waiting"
-        emptyMessage="No payments are awaiting approval right now."
-        onRetry={() => void pending.refetch()}
+        loading={dashboard.isLoading}
+        error={dashboard.error}
+        onRetry={() => void dashboard.refetch()}
       >
-        <Text style={{ opacity: 0.7 }}>
-          {total} awaiting approval
-          {selected.size > 0 ? ` · ${selected.size} selected` : ''}
-        </Text>
+        {data ? (
+          <>
+            {/*
+              Waiting on someone, so it leads. A dashboard whose first figure is
+              a lifetime total tells staff nothing about what to do next.
+            */}
+            <Section title="Needs attention" first>
+              <Row
+                title="Payments awaiting approval"
+                meta={
+                  data.payments_pending_approval === 0
+                    ? 'Nothing waiting'
+                    : 'Tap to review and decide'
+                }
+                trailing={
+                  <Text style={{ ...type.stat, fontVariant: ['tabular-nums'] }}>
+                    {String(data.payments_pending_approval)}
+                  </Text>
+                }
+                onPress={
+                  data.payments_pending_approval > 0
+                    ? () => router.push('/staff/approvals')
+                    : undefined
+                }
+                divider={false}
+              />
+            </Section>
 
-        {payments.map((payment) => (
-          <PaymentCard
-            key={payment.id}
-            payment={payment}
-            selected={selected.has(payment.id)}
-            onToggle={() => toggle(payment.id)}
-          />
-        ))}
+            <Section title="Collected">
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space.lg }}>
+                <Stat label="Instalments" value={money(data.collections.instalments)} />
+                <Stat label="Fines" value={money(data.collections.fines)} />
+              </View>
+            </Section>
 
-        {/* No pagination control exists in HeroUI Native, and on a phone this is
-            the better pattern regardless. */}
-        {pending.hasNextPage ? (
-          <Button
-            variant="secondary"
-            isDisabled={pending.isFetchingNextPage}
-            onPress={() => void pending.fetchNextPage()}
-          >
-            <Button.Label>
-              {pending.isFetchingNextPage ? 'Loading…' : 'Load more'}
-            </Button.Label>
-          </Button>
+            <Section title="Outstanding">
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space.lg }}>
+                <Stat label="Instalments" value={money(data.outstanding.instalments)} />
+                <Stat label="Fines" value={money(data.outstanding.fines)} />
+              </View>
+            </Section>
+
+            <Section title="Members">
+              <Row
+                title="Active"
+                trailing={<Count value={data.members.active} />}
+                onPress={() => router.push('/staff/members')}
+              />
+              <Row
+                title="Awaiting approval"
+                meta={data.members.inactive > 0 ? 'Not yet admitted' : undefined}
+                trailing={<Count value={data.members.inactive} />}
+                onPress={() => router.push('/staff/members')}
+              />
+              <Row
+                title="Suspended"
+                trailing={<Count value={data.members.suspended} />}
+                onPress={() => router.push('/staff/members')}
+                divider={false}
+              />
+            </Section>
+          </>
         ) : null}
       </StateView>
-
-      {selected.size > 0 ? (
-        <Card>
-          <Card.Body style={{ gap: 12 }}>
-            {rejecting ? (
-              <>
-                <Text style={{ fontWeight: '600' }}>Why is this being rejected?</Text>
-                <Text style={{ opacity: 0.7 }}>
-                  The member is told this reason, so write what they need to do next.
-                </Text>
-
-                <TextArea
-                  value={reason}
-                  onChangeText={setReason}
-                  placeholder="e.g. The slip shows ৳1,000 but ৳1,200 is due."
-                />
-
-                <View style={{ flexDirection: 'row', gap: 8 }}>
-                  <Button
-                    variant="secondary"
-                    style={{ flex: 1 }}
-                    onPress={() => {
-                      setRejecting(false);
-                      setReason('');
-                    }}
-                  >
-                    <Button.Label>Cancel</Button.Label>
-                  </Button>
-
-                  <Button
-                    style={{ flex: 1 }}
-                    // The server requires a reason when rejecting. Enforcing it
-                    // here too means the approver is told before the round trip.
-                    isDisabled={reason.trim().length === 0 || decide.isPending}
-                    onPress={() => void submit('suspended')}
-                  >
-                    <Button.Label>
-                      {decide.isPending ? 'Rejecting…' : `Reject ${selected.size}`}
-                    </Button.Label>
-                  </Button>
-                </View>
-              </>
-            ) : (
-              <View style={{ flexDirection: 'row', gap: 8 }}>
-                <Button
-                  variant="secondary"
-                  style={{ flex: 1 }}
-                  isDisabled={decide.isPending}
-                  onPress={() => setRejecting(true)}
-                >
-                  <Button.Label>Reject {selected.size}</Button.Label>
-                </Button>
-
-                <Button
-                  style={{ flex: 1 }}
-                  isDisabled={decide.isPending}
-                  onPress={() => void submit('completed')}
-                >
-                  <Button.Label>
-                    {decide.isPending ? 'Approving…' : `Approve ${selected.size}`}
-                  </Button.Label>
-                </Button>
-              </View>
-            )}
-          </Card.Body>
-        </Card>
-      ) : null}
     </Screen>
   );
 }
 
-function PaymentCard({
-  payment,
-  selected,
-  onToggle,
-}: {
-  payment: PendingPayment;
-  selected: boolean;
-  onToggle: () => void;
-}) {
-  const hasProof = payment.document_count > 0;
-
-  return (
-    <Pressable onPress={onToggle}>
-      <Card>
-        <Card.Body style={{ gap: 10 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12 }}>
-            <Checkbox isSelected={selected} onSelectedChange={onToggle} />
-
-            <View style={{ flex: 1, gap: 2 }}>
-              <Text style={{ fontWeight: '600' }}>{payment.member_name}</Text>
-              <Text style={{ opacity: 0.7, fontSize: 12 }}>
-                {payment.invoice_no} · {payment.instalment_count} instalment
-                {payment.instalment_count === 1 ? '' : 's'}
-              </Text>
-            </View>
-
-            <Chip>
-              <Chip.Label>{payment.payment_type}</Chip.Label>
-            </Chip>
-          </View>
-
-          {/*
-            Instalment and fine stay apart on the approver's screen too. Someone
-            approving a payment should be able to see what part of it is a fine
-            without doing arithmetic - the total shown is the server's.
-          */}
-          <MoneyRow
-            instalment={payment.payable_amount}
-            fine={payment.fine_amount}
-            total={payment.total_amount}
-          />
-
-          {/*
-            With no gateway involved, a manual payment with nothing attached is
-            an assertion that money moved. Staff may still approve it - they may
-            have seen the counter receipt themselves - but not without noticing.
-          */}
-          {!hasProof && payment.payment_type === 'manual' ? (
-            <Text style={{ fontWeight: '600' }}>No slip attached</Text>
-          ) : null}
-
-          {hasProof ? (
-            <Text style={{ opacity: 0.7, fontSize: 12 }}>
-              {payment.document_count} document{payment.document_count === 1 ? '' : 's'} attached
-            </Text>
-          ) : null}
-        </Card.Body>
-      </Card>
-    </Pressable>
-  );
+function Count({ value }: { value: number }) {
+  return <Text style={{ ...type.amount, fontVariant: ['tabular-nums'] }}>{String(value)}</Text>;
 }
 
 /**
- * What actually happened to the batch.
+ * Stat takes a string, so the amount is formatted here rather than rendered.
  *
- * Deliberately blunt about partial results. The legacy failure was not that
- * approvals failed - it was that they failed invisibly, and staff believed a
- * batch had gone through when half of it had been rolled back. Any failure at
- * all is named, per payment, with the server's own message.
+ * Still the app's one formatter - the dashboard and the lists must not disagree
+ * about digit grouping, and Bangladeshi grouping is not what toLocaleString
+ * gives you by default.
  */
-function Outcome({ outcome, onDismiss }: { outcome: DecisionOutcome; onDismiss: () => void }) {
-  const failures = outcome.results.filter((r) => !r.ok);
-
-  return (
-    <Card>
-      <Card.Body style={{ gap: 8 }}>
-        <Text style={{ fontWeight: '700' }}>
-          {outcome.decided} decided
-          {outcome.failed > 0 ? `, ${outcome.failed} failed` : ''}
-        </Text>
-
-        {failures.map((failure) => (
-          <Text key={failure.payment_id}>
-            Payment #{failure.payment_id}: {failure.error ?? 'Refused.'}
-          </Text>
-        ))}
-
-        {outcome.failed > 0 ? (
-          <Text style={{ opacity: 0.7 }}>
-            The failed payments are still selected, so you can try them again.
-          </Text>
-        ) : null}
-
-        <Button variant="secondary" onPress={onDismiss}>
-          <Button.Label>Dismiss</Button.Label>
-        </Button>
-      </Card.Body>
-    </Card>
-  );
+function money(value: Money): string {
+  return formatMoney(value);
 }

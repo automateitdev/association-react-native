@@ -1,7 +1,19 @@
-import { useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { View } from 'react-native';
 import { usePayment } from '@/features/payments/queries';
-import { Card, Chip, MoneyRow, Screen, Separator, StateView, Text } from '@/ui';
+import {
+  AmountBreakdown,
+  Button,
+  Panel,
+  Row,
+  Screen,
+  ScreenHeader,
+  Section,
+  StateView,
+  Text,
+  space,
+  type,
+} from '@/ui';
 
 /**
  * One payment, in detail.
@@ -16,76 +28,72 @@ export default function PaymentDetailScreen() {
 
   return (
     <Screen onRefresh={payment.refetch} refreshing={payment.isRefetching}>
+      <ScreenHeader
+        title={payment.data?.invoice_no ?? 'Payment'}
+        subtitle={payment.data ? describe(payment.data.status) : undefined}
+        action={
+          <Button variant="tertiary" onPress={() => router.back()}>
+            <Button.Label>Back</Button.Label>
+          </Button>
+        }
+      />
+
       <StateView loading={payment.isPending} error={payment.error} onRetry={payment.refetch}>
         {payment.data ? (
           <>
-            <View style={{ gap: 6 }}>
-              <Text style={{ fontSize: 22, fontWeight: '700' }}>
-                {payment.data.invoice_no}
-              </Text>
-              <View style={{ flexDirection: 'row' }}>
-                <Chip>
-                  <Chip.Label>{describe(payment.data.status)}</Chip.Label>
-                </Chip>
-              </View>
-            </View>
-
             {payment.data.status === 'pending' ? (
-              <Card>
-                <Card.Body>
+              <View style={{ marginTop: space.lg }}>
+                <Panel>
                   {/* Sets the expectation explicitly. A member who does not know
                       a human has to look at this assumes the app is stuck. */}
-                  <Text>
+                  <Text style={type.body}>
                     Your association will check this against your slip and confirm it. You do not
                     need to pay again.
                   </Text>
-                </Card.Body>
-              </Card>
+                </Panel>
+              </View>
             ) : null}
 
-            <Card>
-              <Card.Body style={{ gap: 8 }}>
-                <Text style={{ fontWeight: '700' }}>Amount</Text>
-                <MoneyRow
-                  instalment={payment.data.payable_amount}
-                  fine={payment.data.fine_amount}
-                  total={payment.data.total_amount}
-                  emphasis
-                />
-              </Card.Body>
-            </Card>
+            <Section title="Amount" first>
+              <AmountBreakdown
+                instalment={payment.data.payable_amount}
+                fine={payment.data.fine_amount}
+                total={payment.data.total_amount}
+                align="left"
+              />
+            </Section>
 
             {payment.data.items?.length ? (
-              <Card>
-                <Card.Body style={{ gap: 10 }}>
-                  <Text style={{ fontWeight: '700' }}>Instalments covered</Text>
-
-                  {payment.data.items.map((item, index) => (
-                    <View key={item.fee_assign_id} style={{ gap: 6 }}>
-                      {index > 0 ? <Separator /> : null}
-                      <Text style={{ fontWeight: '600' }}>{item.period}</Text>
-                      {/* No per-line total: the API does not send one, and
-                          inventing it would print a wrong figure whenever a
-                          fine exists. The payment total above is authoritative. */}
-                      <MoneyRow
+              <Section title="Instalments covered">
+                {payment.data.items.map((item, index) => (
+                  <Row
+                    key={item.fee_assign_id}
+                    title={item.period}
+                    trailing={
+                      /* No per-line total: the API does not send one, and
+                         inventing it would print a wrong figure whenever a fine
+                         exists. The payment total above is authoritative. */
+                      <AmountBreakdown
                         instalment={item.instalment_amount}
                         fine={item.fine_amount}
                       />
-                    </View>
-                  ))}
-                </Card.Body>
-              </Card>
+                    }
+                    divider={index < (payment.data?.items?.length ?? 0) - 1}
+                  />
+                ))}
+              </Section>
             ) : null}
 
             {payment.data.documents.length ? (
-              <Card>
-                <Card.Body style={{ gap: 6 }}>
-                  <Text style={{ fontWeight: '700' }}>Your slips</Text>
-                  {payment.data.documents.map((doc) => (
-                    <Text key={doc.index}>{doc.original_name}</Text>
-                  ))}
-                </Card.Body>
-              </Card>
+              <Section title="Your slips">
+                {payment.data.documents.map((doc, index) => (
+                  <Row
+                    key={doc.index}
+                    title={doc.original_name}
+                    divider={index < payment.data!.documents.length - 1}
+                  />
+                ))}
+              </Section>
             ) : null}
           </>
         ) : null}

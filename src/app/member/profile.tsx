@@ -1,7 +1,7 @@
 import { router } from 'expo-router';
 import { View } from 'react-native';
 import { useSession } from '@/features/auth/session';
-import { Button, Card, Screen, Separator, Text } from '@/ui';
+import { Button, Field, Screen, ScreenHeader, Section, Text, space, type } from '@/ui';
 
 /**
  * The member's own record.
@@ -17,47 +17,39 @@ export default function ProfileScreen() {
 
   return (
     <Screen>
-      <Text style={{ fontSize: 22, fontWeight: '700' }}>Your details</Text>
+      <ScreenHeader title="Your details" />
 
-      <Card>
-        <Card.Body style={{ gap: 8 }}>
-          <Row label="Name" value={profile?.name} />
-          <Row label="Membership no." value={profile?.membership_no} />
-          <Row label="Mobile" value={profile?.mobile} />
-          <Row label="Email" value={profile?.email} />
-          <Separator />
-          <Row label="Shares held" value={profile?.shares != null ? String(profile.shares) : null} />
-          <Row label="Association" value={tenantSlug} />
-        </Card.Body>
-      </Card>
+      <Section title="Membership" first>
+        <Field label="Name" value={profile?.name} />
+        <Field label="Membership no." value={profile?.membership_no} />
+        <Field
+          label="Shares held"
+          value={profile?.shares != null ? String(profile.shares) : null}
+        />
+        <Field label="Association" value={tenantSlug} />
+      </Section>
 
-      <Text style={{ fontSize: 12, opacity: 0.7 }}>
-        To change your details, contact your association office. Changes are reviewed before
-        they take effect.
-      </Text>
+      <Section title="Contact">
+        <Field label="Mobile" value={profile?.mobile} />
+        <Field label="Email" value={profile?.email} />
 
-      <Button
-        variant="secondary"
-        onPress={async () => {
-          await signOut();
-          router.replace('/');
-        }}
-      >
-        <Button.Label>Sign out</Button.Label>
-      </Button>
+        <Text tone="muted" style={{ ...type.rowMeta, marginTop: space.sm }}>
+          To change your details, contact your association office. Changes are reviewed before they
+          take effect.
+        </Text>
+      </Section>
+
+      <View style={{ marginTop: space.xl }}>
+        <Button
+          variant="secondary"
+          onPress={async () => {
+            await signOut();
+            router.replace('/');
+          }}
+        >
+          <Button.Label>Sign out</Button.Label>
+        </Button>
+      </View>
     </Screen>
-  );
-}
-
-function Row({ label, value }: { label: string; value?: string | null }) {
-  return (
-    <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 12 }}>
-      <Text style={{ opacity: 0.7 }}>{label}</Text>
-      {/* An unset field says so rather than rendering blank, which reads as a
-          loading failure. */}
-      <Text style={{ fontWeight: '600', flexShrink: 1, textAlign: 'right' }}>
-        {value || 'Not recorded'}
-      </Text>
-    </View>
   );
 }

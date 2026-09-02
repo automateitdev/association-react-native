@@ -5,23 +5,24 @@ import { useSession } from '@/features/auth/session';
 import { useMembers, type MemberStatus, type MemberSummary } from '@/features/staff/members';
 import {
   Button,
-  Card,
   Chip,
   Input,
+  Row,
   Screen,
+  ScreenHeader,
+  Section,
   StateView,
   StatusBadge,
-  Text,
   TextField,
+  space,
 } from '@/ui';
 
 /**
  * The member list.
  *
- * A card per member rather than a table - the precedent set by the approval
- * queue, and the right answer at 375pt. HeroUI Native has no table and no
- * pagination control (R-1); "load more" replaces the latter and is the better
- * phone pattern regardless.
+ * A row per member separated by a hairline, rather than the card-per-member the
+ * first version used: eight members meant eight bordered, filled boxes stacked
+ * with gaps - roughly forty edges on screen to communicate eight things.
  *
  * Search and the status filter are sent to the SERVER, not applied to a loaded
  * page. Filtering client-side would silently only search whatever happened to
@@ -35,10 +36,8 @@ export default function MembersScreen() {
   const [status, setStatus] = useState<MemberStatus | null>(null);
 
   /*
-   * Debounced, so typing does not fire a request per keystroke.
-   *
-   * 300ms is short enough to feel immediate and long enough that "Fatema" is
-   * one query rather than six.
+   * Debounced, so typing does not fire a request per keystroke. 300ms is short
+   * enough to feel immediate and long enough that "Fatema" is one query.
    */
   const query = useDebounced(search, 300);
 
@@ -54,43 +53,49 @@ export default function MembersScreen() {
   const filtered = Boolean(query) || status !== null;
 
   return (
-    <Screen>
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Text style={{ fontSize: 22, fontWeight: '700' }}>Members</Text>
+    <Screen onRefresh={() => void members.refetch()} refreshing={members.isRefetching}>
+      <ScreenHeader
+        title="Members"
+        subtitle={
+          total > 0 ? `${total}${filtered ? ' matching' : ' in this association'}` : undefined
+        }
+        action={
+          can('members.create') ? (
+            <Button onPress={() => router.push('/staff/members/new')}>
+              <Button.Label>Add</Button.Label>
+            </Button>
+          ) : undefined
+        }
+      />
 
-        {can('members.create') ? (
-          <Button onPress={() => router.push('/staff/members/new')}>
-            <Button.Label>Add</Button.Label>
-          </Button>
-        ) : null}
-      </View>
+      <View style={{ marginTop: space.lg, gap: space.md }}>
+        <TextField>
+          <Input
+            value={search}
+            onChangeText={setSearch}
+            placeholder="Search name, mobile or email"
+            autoCapitalize="none"
+          />
+        </TextField>
 
-      <TextField>
-        <Input
-          value={search}
-          onChangeText={setSearch}
-          placeholder="Search name, mobile or email"
-          autoCapitalize="none"
-        />
-      </TextField>
-
-      <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
-        <StatusChip label="All" active={status === null} onPress={() => setStatus(null)} />
-        <StatusChip
-          label="Active"
-          active={status === 'active'}
-          onPress={() => setStatus('active')}
-        />
-        <StatusChip
-          label="Awaiting approval"
-          active={status === 'inactive'}
-          onPress={() => setStatus('inactive')}
-        />
-        <StatusChip
-          label="Suspended"
-          active={status === 'suspended'}
-          onPress={() => setStatus('suspended')}
-        />
+        <View style={{ flexDirection: 'row', gap: space.sm, flexWrap: 'wrap' }}>
+          <FilterChip label="All" active={status === null} onPress={() => setStatus(null)} />
+          <FilterChip
+            label="Active"
+            active={status === 'active'}
+            onPress={() => setStatus('active')}
+          />
+          <FilterChip
+            label="Awaiting approval"
+            active={status === 'inactive'}
+            onPress={() => setStatus('inactive')}
+          />
+          <FilterChip
+            label="Suspended"
+            active={status === 'suspended'}
+            onPress={() => setStatus('suspended')}
+          />
+        </View>
       </View>
 
       <StateView
@@ -105,30 +110,29 @@ export default function MembersScreen() {
         }
         onRetry={() => void members.refetch()}
       >
-        <Text style={{ opacity: 0.7 }}>
-          {total} member{total === 1 ? '' : 's'}
-          {filtered ? ' matching' : ''}
-        </Text>
-
-        {rows.map((member) => (
-          <MemberCard key={member.id} member={member} />
-        ))}
+        <Section first>
+          {rows.map((member, index) => (
+            <MemberRow key={member.id} member={member} divider={index < rows.length - 1} />
+          ))}
+        </Section>
 
         {members.hasNextPage ? (
-          <Button
-            variant="secondary"
-            isDisabled={members.isFetchingNextPage}
-            onPress={() => void members.fetchNextPage()}
-          >
-            <Button.Label>{members.isFetchingNextPage ? 'Loading…' : 'Load more'}</Button.Label>
-          </Button>
+          <View style={{ marginTop: space.lg }}>
+            <Button
+              variant="secondary"
+              isDisabled={members.isFetchingNextPage}
+              onPress={() => void members.fetchNextPage()}
+            >
+              <Button.Label>{members.isFetchingNextPage ? 'Loading…' : 'Load more'}</Button.Label>
+            </Button>
+          </View>
         ) : null}
       </StateView>
     </Screen>
   );
 }
 
-function StatusChip({
+function FilterChip({
   label,
   active,
   onPress,
@@ -146,28 +150,21 @@ function StatusChip({
   );
 }
 
-function MemberCard({ member }: { member: MemberSummary }) {
+function MemberRow({ member, divider }: { member: MemberSummary; divider: boolean }) {
   return (
-    <Pressable onPress={() => router.push(`/staff/members/${member.id}`)}>
-      <Card>
-        <Card.Body style={{ gap: 6 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12 }}>
-            <View style={{ flex: 1, gap: 2 }}>
-              <Text style={{ fontWeight: '600' }}>{member.name}</Text>
-              <Text style={{ opacity: 0.7, fontSize: 12 }}>
-                {member.membership_no ?? 'No membership no.'} · {member.mobile}
-              </Text>
-            </View>
-
-            <StatusBadge status={member.status} />
-          </View>
-
-          <Text style={{ opacity: 0.7, fontSize: 12 }}>
-            {member.shares} share{member.shares === 1 ? '' : 's'}
-          </Text>
-        </Card.Body>
-      </Card>
-    </Pressable>
+    <Row
+      title={member.name}
+      meta={[
+        // "No number yet" rather than a blank: it is a real state the office has
+        // to act on, not missing data.
+        member.membership_no ? `No. ${member.membership_no}` : 'No number yet',
+        member.mobile,
+        `${member.shares} share${member.shares === 1 ? '' : 's'}`,
+      ].join(' · ')}
+      trailing={<StatusBadge status={member.status} />}
+      onPress={() => router.push(`/staff/members/${member.id}`)}
+      divider={divider}
+    />
   );
 }
 

@@ -1,19 +1,29 @@
 /**
- * The ONLY place this app imports HeroUI Native.
+ * The ONLY place this app imports HeroUI Native, and the app's own layout layer.
  *
  * WHY THE INDIRECTION
  * -------------------
- * HeroUI Native ships ~37 React Native components against 75+ for its web
+ * HeroUI Native ships 43 React Native components against 75+ for its web
  * library, and the gaps are concentrated in dense controls - there is no table,
- * no data grid, no pagination, no date picker. Some of those will have to be
- * built by hand for the staff screens (risk R-1).
+ * no data grid, no pagination, no date picker. Some of those have to be built by
+ * hand for the staff screens (risk R-1).
  *
  * Routing every import through here means replacing or supplementing a
  * component touches ONE directory instead of every screen that used it. It also
- * makes the dependency legible: `grep -r heroui-native src/` returning exactly
- * one file is the check that this has not eroded.
+ * makes the dependency legible: `grep -r heroui-native src/` returning only
+ * files in this directory is the check that this has not eroded.
  *
- * Adapters are deliberately thin. This is a seam, not a design system.
+ * WHAT THIS DIRECTORY IS NOW
+ * --------------------------
+ * More than a seam. The first screens used HeroUI's `Card` as the universal
+ * container - every section a filled slab, every list item a box inside a box -
+ * and the result read as blocks rather than content. `Section`, `Row`, `Amount`
+ * and the tokens they share exist so that grouping is expressed with space, a
+ * type scale and a hairline instead of with borders.
+ *
+ * `Card` is still exported, for the rare thing that genuinely is a distinct
+ * object. Prefer `Section` for grouping and `Panel` for a callout; a screen
+ * carrying three Cards has gone back to being blocky.
  */
 
 export {
@@ -33,10 +43,23 @@ export {
   Surface,
   TextArea,
   TextField,
-  Typography as Text,
 } from 'heroui-native';
 
-export { Screen } from './Screen';
-export { StateView } from './StateView';
+// Text is OURS, not HeroUI's: Typography colours itself with a component class
+// that Tailwind utilities cannot override, so tones have to be resolved from the
+// theme and applied as a style. See Text.tsx.
+export { Text } from './Text';
+
+// Layout
+export { Screen, ScreenHeader } from './Screen';
+export { Section, Divider, Panel } from './Section';
+export { Row, Field } from './Row';
+
+// Content
+export { Amount, AmountBreakdown, Stat } from './Amount';
 export { MoneyRow } from './MoneyRow';
+export { StateView } from './StateView';
 export { StatusBadge } from './StatusBadge';
+
+// Shared measurements, for the cases a screen genuinely needs one directly.
+export { space, type, maxContentWidth } from './tokens';
