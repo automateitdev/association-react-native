@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { RefreshControl, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from './Text';
-import { useContentWidth } from './breakpoint';
+import { useContentWidth, useIsDesktop } from './breakpoint';
 import { space, type } from './tokens';
 
 /**
@@ -39,18 +39,33 @@ export function Screen({
 }) {
   const insets = useSafeAreaInsets();
   const maxWidth = useContentWidth(width);
+  const isDesktop = useIsDesktop();
 
   const padding = {
-    paddingTop: insets.top + space.md,
+    // The AppBar already clears the inset; adding it again double-padded the
+    // top of every screen.
+    paddingTop: space.lg,
     // Clears the tab bar as well as the home indicator.
     paddingBottom: insets.bottom + space.xxl,
     paddingHorizontal: space.lg,
   };
 
+  /*
+   * Left-aligned beside the sidebar, not centred in what is left over.
+   *
+   * Centring a capped column inside the remaining space looks fine at 1280 and
+   * absurd at 1919: the sidebar ends at 220, the content began at 429, and the
+   * 209pt band between them was simply empty. Nothing balanced it on the right
+   * either - the page just looked broken in the middle.
+   *
+   * A sidebar is already the left edge of the layout. Content belongs against
+   * it. On a phone there is no sidebar and nothing to align to, so it stays
+   * centred there, where the cap never binds anyway.
+   */
   const measure = {
     width: '100%' as const,
     maxWidth,
-    alignSelf: 'center' as const,
+    alignSelf: (isDesktop ? 'flex-start' : 'center') as 'flex-start' | 'center',
   };
 
   if (!scroll) {

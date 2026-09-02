@@ -108,6 +108,19 @@ export default function RootLayout() {
         config={{
           // Members set large system font sizes. The cap keeps layouts intact
           // while still honouring the preference (NFR-USE-3).
+          /*
+           * NOTE: the typeface cannot be set here.
+           *
+           * `textProps` accepts only the font-scaling options - adjustsFontSizeToFit,
+           * allowFontScaling, maxFontSizeMultiplier, minimumFontScale - and no
+           * style. So HeroUI's own components (Button labels, Input, Chip) cannot
+           * be given a family through the provider; on web they inherit it from
+           * the page instead, which global.css sets.
+           *
+           * That leaves NATIVE unaddressed: there is no document to inherit from,
+           * so those components will fall back to the system font on a device.
+           * Unverifiable from here, and recorded rather than assumed fixed.
+           */
           textProps: { allowFontScaling: true, maxFontSizeMultiplier: 1.5 },
           textInputProps: { allowFontScaling: true, maxFontSizeMultiplier: 1.5 },
           isRTL: I18nManager.isRTL,

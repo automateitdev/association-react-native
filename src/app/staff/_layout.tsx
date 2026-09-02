@@ -2,7 +2,7 @@ import { Redirect, router, Tabs } from 'expo-router';
 import { ActivityIndicator, View, type ColorValue } from 'react-native';
 import { useAssociation } from '@/features/auth/association';
 import { useSession } from '@/features/auth/session';
-import { AppBar, Icon, useIsDesktop, type IconName } from '@/ui';
+import { AppBar, Icon, font, useIsDesktop, type IconName } from '@/ui';
 import { useThemeColor } from 'heroui-native';
 
 /**
@@ -107,6 +107,19 @@ export default function StaffLayout() {
         tabBarLabelPosition: isDesktop ? 'beside-icon' : 'below-icon',
 
         /*
+         * The navigator styles its own labels, and its default is 17pt
+         * system-ui - so the sidebar was the one place in the app not using
+         * Inter and not on the type scale. Next to 13.5pt Inter content it read
+         * as a different application bolted on the side, which is exactly what
+         * "no consistency in fonts" looks like.
+         */
+        tabBarLabelStyle: {
+          fontFamily: font.medium,
+          fontSize: 13,
+          fontWeight: '500' as const,
+        },
+
+        /*
          * Each tab names its own icon below. The navigator's placeholder glyph
          * was suppressed entirely for a while, because no icon set had been
          * chosen and five identical chevrons read as dropdown arrows - now
@@ -165,6 +178,6 @@ export default function StaffLayout() {
  */
 function tabIcon(name: IconName) {
   return ({ color }: { color: ColorValue }) => (
-    <Icon name={name} size={22} color={typeof color === 'string' ? color : undefined} />
+    <Icon name={name} size={18} color={typeof color === 'string' ? color : undefined} />
   );
 }

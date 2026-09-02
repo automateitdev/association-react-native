@@ -117,4 +117,40 @@ body,
 #root {
   background-color: var(--color-background);
   color: var(--color-foreground);
+
+  /*
+   * Inter on the page ground as well as through the provider.
+   *
+   * RN Web renders many controls to real DOM elements that inherit from the
+   * document rather than from a React style prop, so anything the provider
+   * misses still lands on the right typeface instead of falling back to
+   * -apple-system.
+   */
+  font-family: 'Inter_400Regular', system-ui, -apple-system, sans-serif;
+}
+
+/*
+ * React Native Web's own Text default, overridden.
+ *
+ * RN Web gives every <Text> a generated base class carrying
+ * `-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, ...`. That is applied
+ * to the ELEMENT, so setting a family on html/body does not reach it - which is
+ * why HeroUI's Button labels and Chip labels stayed on the system font while
+ * everything rendered through our own Text was Inter. Half the interface in one
+ * typeface and half in another is exactly what inconsistent typography looks
+ * like, and no amount of styling our own components would have fixed it.
+ *
+ * Matched on the class PREFIX rather than the full hash (`css-text-146c3p1`),
+ * which is generated and would change with a React Native Web upgrade.
+ *
+ * Our own Text sets fontFamily as an inline style and so still wins where it
+ * names a specific weight.
+ *
+ * WEB ONLY. On native there is no stylesheet and no document to inherit from,
+ * so HeroUI's components will still use the system font on a device. That is
+ * unresolved, and unverifiable from here.
+ */
+[class*='css-text-'],
+[class*='css-textinput-'] {
+  font-family: 'Inter_400Regular', system-ui, -apple-system, sans-serif;
 }
