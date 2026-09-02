@@ -30,6 +30,7 @@ export {
   Separator,
   Spinner,
   Surface,
+  TextArea,
   TextField,
   Typography as Text,
 } from 'heroui-native';

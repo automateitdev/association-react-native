@@ -5,9 +5,12 @@ import { useSession } from '@/features/auth/session';
 /**
  * The staff surface.
  *
- * A Stack for now rather than Tabs: there is one placeholder screen, and
- * choosing the navigation shape before the R-1 component inventory would be
- * guessing at how the report screens want to be laid out.
+ * Still a Stack rather than Tabs, now for a different reason than before: the
+ * R-1 inventory has been taken (HeroUI Native has no table, data grid,
+ * pagination control or date picker), and payment approvals is built. But one
+ * real screen does not tell you what the tab bar should hold - members, fee
+ * setup and reports will, and inventing the shape now would just have to be
+ * undone.
  *
  * The guard mirrors the member layout - a member account reaching here would
  * hit staff endpoints and be refused by `EnsureStaff` with a 403 it cannot act
