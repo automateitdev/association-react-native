@@ -76,7 +76,20 @@ export default function MemberLayout() {
         tabBarIcon: () => null,
         ...(isDesktop
           ? {
-              tabBarStyle: { width: 220 },
+              /*
+               * minWidth as well as width, and both are needed.
+               *
+               * The navigator applies its own `minWidth` from
+               * getDefaultSidebarWidth - a flat 360 from the Material drawer
+               * spec - and a minWidth beats a width, so setting width alone did
+               * nothing and the rail sat at 360. Measured: 320 of the item at
+               * 1280 before this.
+               *
+               * 360 is a drawer built to hold sections and descriptions. This
+               * holds five one-word labels, and every pixel it does not take is
+               * a pixel a report column can have.
+               */
+              tabBarStyle: { width: 220, minWidth: 220 },
               tabBarItemStyle: { justifyContent: 'flex-start', paddingHorizontal: 16 },
             }
           : null),
