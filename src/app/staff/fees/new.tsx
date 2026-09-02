@@ -83,7 +83,7 @@ export default function NewFeeSetupScreen() {
   };
 
   return (
-    <Screen>
+    <Screen width="reading">
       <ScreenHeader
         title="Add fee head"
         action={

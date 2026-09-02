@@ -87,7 +87,7 @@ export default function EditFeeSetupScreen() {
   };
 
   return (
-    <Screen onRefresh={() => void setups.refetch()} refreshing={setups.isRefetching}>
+    <Screen width="reading" onRefresh={() => void setups.refetch()} refreshing={setups.isRefetching}>
       <ScreenHeader
         title={setup?.fee_head ?? 'Fee head'}
         subtitle={

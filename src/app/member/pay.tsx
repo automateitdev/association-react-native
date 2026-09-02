@@ -116,7 +116,7 @@ export default function PayScreen() {
   const error = createPayment.error instanceof ApiError ? createPayment.error : null;
 
   return (
-    <Screen onRefresh={dues.refetch} refreshing={dues.isRefetching}>
+    <Screen width="reading" onRefresh={dues.refetch} refreshing={dues.isRefetching}>
       <ScreenHeader title="Make a payment" />
 
       <StateView

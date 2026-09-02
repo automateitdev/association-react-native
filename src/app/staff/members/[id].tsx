@@ -50,7 +50,7 @@ export default function MemberDetailScreen() {
   const member = useMember(memberId);
 
   return (
-    <Screen onRefresh={() => void member.refetch()} refreshing={member.isRefetching}>
+    <Screen width="reading" onRefresh={() => void member.refetch()} refreshing={member.isRefetching}>
       <ScreenHeader
         title={member.data?.name ?? 'Member'}
         subtitle={

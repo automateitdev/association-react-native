@@ -16,7 +16,7 @@ export default function ProfileScreen() {
   const profile = session?.profile;
 
   return (
-    <Screen>
+    <Screen width="reading">
       <ScreenHeader title="Your details" />
 
       <Section title="Membership" first>

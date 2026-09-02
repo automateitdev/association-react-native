@@ -63,11 +63,9 @@ export const type = {
 } as const;
 
 /**
- * Reading measure.
+ * Measure lives in `breakpoint.ts`, not here.
  *
- * React Native Web stretches to the viewport, so on a desktop browser a list
- * row ran the full 1280pt with small text at either end - the single biggest
- * reason the staff screens looked wrong. Phones are narrower than this and are
- * unaffected by it.
+ * There was a single `maxContentWidth = 720` constant, which is why a desktop
+ * browser rendered a phone-width column. A measure is not one number: a form
+ * wants a short line and a report wants every pixel going. See useContentWidth.
  */
-export const maxContentWidth = 720;

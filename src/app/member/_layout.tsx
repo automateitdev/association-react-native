@@ -1,6 +1,7 @@
 import { Redirect, Tabs } from 'expo-router';
 import { ActivityIndicator, View } from 'react-native';
 import { useSession } from '@/features/auth/session';
+import { useIsDesktop } from '@/ui';
 
 /**
  * The member surface.
@@ -14,6 +15,7 @@ import { useSession } from '@/features/auth/session';
  */
 export default function MemberLayout() {
   const { isLoading, session, isStaff } = useSession();
+  const isDesktop = useIsDesktop();
 
   /*
    * Wait for the session check before deciding anything.
@@ -37,7 +39,49 @@ export default function MemberLayout() {
   if (isStaff) return <Redirect href="/staff" />;
 
   return (
-    <Tabs screenOptions={{ headerShown: false }}>
+    <Tabs
+      /*
+       * Remount when the layout changes shape.
+       *
+       * react-navigation reads `tabBarPosition` when the navigator mounts and
+       * does not re-apply it from changed screenOptions, so without this a
+       * browser dragged across the breakpoint kept whichever layout it started
+       * with - a sidebar squeezed into 700pt, or bottom tabs on a full desktop -
+       * until the page was reloaded. Verified: it needed a reload to switch.
+       *
+       * The cost is that crossing the breakpoint resets navigation state and
+       * returns to the first tab. That is worth it: crossing 1024 is a rare and
+       * deliberate act, and being stuck in the wrong layout is the worse of the
+       * two. Ordinary resizing within a breakpoint remounts nothing.
+       */
+      key={isDesktop ? 'desktop' : 'phone'}
+      screenOptions={{
+        headerShown: false,
+
+        // Members are overwhelmingly on phones, but a member who opens this in
+        // a browser should get a browser rather than a phone drawn in the
+        // middle of their screen.
+        tabBarPosition: isDesktop ? 'left' : 'bottom',
+        tabBarLabelPosition: isDesktop ? 'beside-icon' : 'below-icon',
+
+        /*
+         * No icon at all, rather than the navigator's placeholder.
+         *
+         * No icon set has been chosen for this app, so every tab was rendering
+         * the default placeholder glyph - five identical chevrons that read as
+         * dropdown arrows next to the labels. A word on its own is clearer than
+         * a word beside a meaningless mark. Icons can come back when there is a
+         * set worth using.
+         */
+        tabBarIcon: () => null,
+        ...(isDesktop
+          ? {
+              tabBarStyle: { width: 220 },
+              tabBarItemStyle: { justifyContent: 'flex-start', paddingHorizontal: 16 },
+            }
+          : null),
+      }}
+    >
       <Tabs.Screen name="index" options={{ title: 'Dues' }} />
       <Tabs.Screen name="pay" options={{ title: 'Pay' }} />
       <Tabs.Screen name="history" options={{ title: 'History' }} />

@@ -1,5 +1,5 @@
-import type { ReactNode } from 'react';
-import { ScrollView, View } from 'react-native';
+import { useState, type ReactNode } from 'react';
+import { ScrollView, View, type LayoutChangeEvent } from 'react-native';
 import { Text } from './Text';
 import { Divider } from './Section';
 import { space, type } from './tokens';
@@ -53,8 +53,32 @@ export function DataTable<T>({
   const width = columns.reduce((sum, c) => sum + c.width, 0);
   const hasTotals = columns.some((c) => c.total !== undefined);
 
+  /*
+   * Whether the hint is TRUE, measured rather than assumed.
+   *
+   * Both report screens printed "scroll sideways for the remaining columns"
+   * unconditionally. On a desktop the table fits and nothing scrolls, so the
+   * line was simply false - and a false instruction is worse than none, because
+   * a reader who cannot make it happen assumes something is broken.
+   */
+  const [available, setAvailable] = useState(0);
+  const overflows = available > 0 && width > available;
+
+  const measure = (event: LayoutChangeEvent) => setAvailable(event.nativeEvent.layout.width);
+
   return (
-    <ScrollView horizontal showsHorizontalScrollIndicator style={{ marginTop: space.sm }}>
+    <View onLayout={measure}>
+      {overflows ? (
+        <Text tone="muted" style={{ ...type.rowMeta, marginBottom: space.xs }}>
+          Scroll sideways for the remaining columns.
+        </Text>
+      ) : null}
+
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={overflows}
+        style={{ marginTop: space.sm }}
+      >
       <View style={{ width }}>
         {/* Header */}
         <View style={{ flexDirection: 'row', paddingBottom: space.sm }}>
@@ -121,8 +145,9 @@ export function DataTable<T>({
             ))}
           </View>
         ) : null}
-      </View>
-    </ScrollView>
+        </View>
+      </ScrollView>
+    </View>
   );
 }
 

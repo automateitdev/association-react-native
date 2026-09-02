@@ -2,32 +2,43 @@ import type { ReactNode } from 'react';
 import { RefreshControl, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from './Text';
-import { maxContentWidth, space, type } from './tokens';
+import { useContentWidth } from './breakpoint';
+import { space, type } from './tokens';
 
 /**
- * Page frame: safe area, reading measure, and pull-to-refresh.
+ * Page frame: safe area, measure, and pull-to-refresh.
  *
  * Pull-to-refresh is not decoration here. A member pays at a bank counter and
  * then opens the app to see whether it has landed; letting them pull is the
  * difference between "the app is broken" and "not approved yet".
  *
- * The measure matters as much. React Native Web stretches to the viewport, so
- * on a desktop browser every row ran the full 1280pt with small text stranded
- * at either end - most of why the staff screens read as slabs. Capping and
- * centring costs phones nothing and fixes the browser entirely.
+ * The measure is now breakpoint-aware, and the fixed 720pt cap it replaces was
+ * a mistake worth naming: it was introduced to stop rows running the full width
+ * of a browser with text stranded at either end, which was a real problem - but
+ * applying one phone-sized cap to every surface meant a desktop showed a narrow
+ * column with 280pt of dead space on each side. The answer to "too wide" was
+ * never "as narrow as a phone", it was a measure chosen per kind of screen.
  */
 export function Screen({
   children,
   scroll = true,
   onRefresh,
   refreshing = false,
+  width = 'wide',
 }: {
   children: ReactNode;
   scroll?: boolean;
   onRefresh?: () => void;
   refreshing?: boolean;
+  /**
+   * `reading` for forms and prose - a stretched text input looks broken and
+   * long lines are harder to read. `wide` for lists, dashboards and tables,
+   * where more visible at once is the whole point of a desktop.
+   */
+  width?: 'reading' | 'wide';
 }) {
   const insets = useSafeAreaInsets();
+  const maxWidth = useContentWidth(width);
 
   const padding = {
     paddingTop: insets.top + space.md,
@@ -38,7 +49,7 @@ export function Screen({
 
   const measure = {
     width: '100%' as const,
-    maxWidth: maxContentWidth,
+    maxWidth,
     alignSelf: 'center' as const,
   };
 

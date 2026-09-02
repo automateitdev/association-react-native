@@ -170,10 +170,6 @@ export default function DueReportScreen() {
         onRetry={() => void report.refetch()}
       >
         <Section title="Report">
-          <Text tone="muted" style={{ ...type.rowMeta, marginBottom: space.xs }}>
-            Scroll sideways for the remaining columns.
-          </Text>
-
           <DataTable
             columns={columns}
             rows={rows}

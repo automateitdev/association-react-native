@@ -32,7 +32,7 @@ export default function SignInScreen() {
   const error = attempt.error instanceof ApiError ? attempt.error : null;
 
   return (
-    <Screen>
+    <Screen width="reading">
       <View style={{ gap: 8, paddingTop: 24 }}>
         <Text style={{ fontSize: 24, fontWeight: '700' }}>Sign in</Text>
         <Text>Use the mobile number or email registered with your association.</Text>

@@ -71,7 +71,7 @@ export default function NewMemberScreen() {
   };
 
   return (
-    <Screen>
+    <Screen width="reading">
       <ScreenHeader
         title="Add member"
         action={

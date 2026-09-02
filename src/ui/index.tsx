@@ -69,4 +69,5 @@ export { StateView } from './StateView';
 export { StatusBadge } from './StatusBadge';
 
 // Shared measurements, for the cases a screen genuinely needs one directly.
-export { space, type, maxContentWidth } from './tokens';
+export { space, type } from './tokens';
+export { useIsDesktop, useContentWidth, DESKTOP_BREAKPOINT } from './breakpoint';
