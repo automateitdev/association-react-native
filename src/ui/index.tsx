@@ -63,7 +63,8 @@ export { Picker, PickerField, type PickerOption } from './Picker';
 export { DataTable, Cell, NumberCell, type Column } from './DataTable';
 
 // Content
-export { Amount, AmountBreakdown, Stat } from './Amount';
+export { Amount, AmountBreakdown } from './Amount';
+export { Stat, StatGrid, Tile } from './Stat';
 export { MoneyRow } from './MoneyRow';
 export { StateView } from './StateView';
 export { StatusBadge } from './StatusBadge';

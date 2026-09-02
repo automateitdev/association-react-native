@@ -84,25 +84,3 @@ export function AmountBreakdown({
     </View>
   );
 }
-
-/**
- * A dashboard figure: a big number with a quiet label under it.
- *
- * Takes a pre-formatted string rather than Money so it can serve counts as well
- * as amounts - and so nothing here is tempted to do arithmetic on the way in.
- */
-export function Stat({ label, value, meta }: { label: string; value: string; meta?: string }) {
-  return (
-    <View style={{ gap: space.xs, minWidth: 120, flexGrow: 1, flexBasis: 140 }}>
-      <Text tone="muted" style={type.rowMeta}>
-        {label}
-      </Text>
-      <Text style={{ ...type.stat, fontVariant: ['tabular-nums'] }}>{value}</Text>
-      {meta ? (
-        <Text tone="muted" style={type.rowMeta}>
-          {meta}
-        </Text>
-      ) : null}
-    </View>
-  );
-}

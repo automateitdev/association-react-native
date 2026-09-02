@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
 import { View } from 'react-native';
 import { useSession } from '@/features/auth/session';
+import { formatMoney } from '@/api/money';
 import { useDues, useSummary, type Due } from '@/features/dues/queries';
 import {
   Actions,
@@ -13,6 +14,7 @@ import {
   Section,
   StateView,
   Stat,
+  StatGrid,
   Text,
   space,
   type,
@@ -60,8 +62,19 @@ export default function DuesScreen() {
       >
         {dues.data ? (
           <>
+            {/*
+              What the member owes, on a surface of its own.
+              
+              This is the one figure they opened the app for, and as bare text
+              under a heading it read as another paragraph on a page of them.
+              Tinted because it is a call to act, which is also why the only
+              button on the screen sits inside it.
+            */}
             <Section title="Outstanding" first>
-              <View style={{ gap: space.md }}>
+              <View
+                className="bg-accent-soft border border-accent"
+                style={{ padding: space.lg, borderRadius: 12, gap: space.md }}
+              >
                 {/* Instalments and fines apart, and a server-computed total. */}
                 <AmountBreakdown
                   instalment={dues.data.meta.instalment_total}
@@ -93,23 +106,25 @@ export default function DuesScreen() {
 
       {summary.data ? (
         <Section title="Since you joined">
-          {/* Four numbers, never collapsed into one "savings" figure. */}
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space.lg }}>
-            <Stat label="Instalments paid" value={String(summary.data.instalments_paid_count)} />
-            <Stat label="Shares" value={String(summary.data.shares)} />
-          </View>
-
-          <View style={{ marginTop: space.md }}>
-            <Row
-              title="Instalments"
-              trailing={<Amount value={summary.data.instalments_paid_amount} />}
+          {/* Four figures, never collapsed into one "savings" number. */}
+          <StatGrid>
+            <Stat
+              label="Instalments paid"
+              value={String(summary.data.instalments_paid_count)}
+              icon="check"
             />
-            <Row
-              title="Fines"
-              trailing={<Amount value={summary.data.fines_paid_amount} />}
-              divider={false}
+            <Stat label="Shares held" value={String(summary.data.shares)} icon="members" />
+            <Stat
+              label="Instalments"
+              value={formatMoney(summary.data.instalments_paid_amount)}
+              icon="pay"
             />
-          </View>
+            <Stat
+              label="Fines"
+              value={formatMoney(summary.data.fines_paid_amount)}
+              icon="warning"
+            />
+          </StatGrid>
         </Section>
       ) : null}
     </Screen>

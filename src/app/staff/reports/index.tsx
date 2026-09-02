@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { useSession } from '@/features/auth/session';
-import { Row, Screen, ScreenHeader, Section, Text, type } from '@/ui';
+import { Screen, ScreenHeader, Section, StatGrid, Text, Tile, type } from '@/ui';
 
 /**
  * The reports available, and what each one answers.
@@ -17,22 +17,30 @@ export default function ReportsScreen() {
       <ScreenHeader title="Reports" />
 
       <Section first>
-        {can('reports.due') ? (
-          <Row
-            title="Outstanding dues"
-            meta="Who owes what, as at a date"
-            onPress={() => router.push('/staff/reports/due')}
-          />
-        ) : null}
+        {/*
+          Cards rather than rows. A list of report NAMES tells staff nothing
+          about which to open; each of these is a thing you go into, and the
+          sentence under it is what makes the choice.
+        */}
+        <StatGrid>
+          {can('reports.due') ? (
+            <Tile
+              title="Outstanding dues"
+              description="Who owes what, as at any date — by member status"
+              icon="dues"
+              onPress={() => router.push('/staff/reports/due')}
+            />
+          ) : null}
 
-        {can('reports.paid') ? (
-          <Row
-            title="Memberwise paid"
-            meta="What each member has actually paid, over a period"
-            onPress={() => router.push('/staff/reports/paid')}
-            divider={false}
-          />
-        ) : null}
+          {can('reports.paid') ? (
+            <Tile
+              title="Memberwise paid"
+              description="What each member actually paid over a period — instalments and fines apart"
+              icon="pay"
+              onPress={() => router.push('/staff/reports/paid')}
+            />
+          ) : null}
+        </StatGrid>
       </Section>
 
       {/*
