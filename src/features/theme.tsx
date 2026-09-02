@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import { useColorScheme } from 'react-native';
+import { Platform, useColorScheme } from 'react-native';
 import { getItem, setItem } from '@/api/storage';
 
 export type ThemePreference = 'light' | 'dark' | 'system';
@@ -68,6 +68,29 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   const scheme: 'light' | 'dark' =
     preference === 'system' ? (systemScheme === 'dark' ? 'dark' : 'light') : preference;
+
+  /*
+   * Mirror the choice onto <html> on web.
+   *
+   * ScopedTheme scopes the palette to a wrapper it renders, which is right for
+   * everything inside the app - but two things sit outside it and were left on
+   * the system's theme: the page ground painted by global.css, and anything
+   * reading a variable from :root.
+   *
+   * The result was a half-switched app - cards turned light while the page
+   * behind them and the sidebar stayed dark. Measured: --foreground read dark
+   * inside the wrapper and light on <html> at the same moment.
+   *
+   * Web only, and deliberately so: there is no document on native, where
+   * ScopedTheme alone is the whole mechanism.
+   */
+  useEffect(() => {
+    if (Platform.OS !== 'web' || typeof document === 'undefined') return;
+
+    const root = document.documentElement;
+    root.classList.remove('light', 'dark');
+    root.classList.add(scheme);
+  }, [scheme]);
 
   const value = useMemo(
     () => ({ preference, scheme, setPreference, cycle }),
