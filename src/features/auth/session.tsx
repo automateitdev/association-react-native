@@ -1,6 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { request } from '@/api/client';
-import { ApiError } from '@/api/errors';
 import {
   clearSession,
   getTenantSlug,
@@ -68,29 +67,44 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     let cancelled = false;
 
     (async () => {
-      const slug = await getTenantSlug();
-      if (cancelled) return;
-
-      setTenantSlugState(slug);
-
-      if (!slug) {
-        setIsLoading(false);
-        return;
-      }
-
-      // A stored token may have been revoked from another device. Ask the
-      // server rather than trusting its presence.
+      /*
+       * EVERYTHING here is inside one try/finally, deliberately.
+       *
+       * An earlier version awaited storage OUTSIDE the try. When
+       * expo-secure-store threw - which it does on web, where it has no
+       * implementation at all - the rejection escaped, `setIsLoading(false)`
+       * never ran, and the app sat on a spinner forever with no error and no
+       * way forward.
+       *
+       * That is not a web-only concern: a Keychain read can fail on a device
+       * too. Whatever happens, this must end with isLoading false, because a
+       * screen that explains itself beats a spinner that does not.
+       */
       try {
+        const slug = await getTenantSlug();
+        if (cancelled) return;
+
+        setTenantSlugState(slug);
+
+        // No association yet: nothing to validate, and the picker is next.
+        if (!slug) return;
+
+        // A stored token may have been revoked from another device. Ask the
+        // server rather than trusting its presence.
         const me = await request<{ data: Session }>('/me');
         if (!cancelled) setSession(me.data);
       } catch (error) {
         // An expired token is an ordinary state, not an error worth surfacing:
-        // the member simply sees the sign-in screen.
-        if (!(error instanceof ApiError) || !error.requiresReauthentication) {
-          // Anything else (offline, suspended association) is left to the
-          // screen that renders next, which has the room to explain it.
+        // the member simply lands on the sign-in screen. Anything else -
+        // offline, suspended association, unreadable storage - is left to the
+        // screen that renders next, which has room to explain it.
+        if (!cancelled) {
+          try {
+            await clearSession();
+          } catch {
+            // Storage is already misbehaving; there is nothing further to do.
+          }
         }
-        if (!cancelled) await clearSession();
       } finally {
         if (!cancelled) setIsLoading(false);
       }

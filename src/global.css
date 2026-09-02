@@ -6,6 +6,18 @@
  * component renders unstyled - which reads as a broken layout rather than a
  * missing build step.
  */
+/*
+ * Order matters, and the failure is not obvious.
+ *
+ * `tailwindcss` FIRST: it defines the core theme, including the `--spacing`
+ * variable. `uniwind` supplies React Native variants and safe-area utilities
+ * but no theme, and HeroUI's component styles call `--spacing(...)` - so
+ * without this import the bundle fails outright with
+ *
+ *   "The --spacing(...) function requires that the `--spacing` theme variable
+ *    exists, but it was not found."
+ */
+@import 'tailwindcss';
 @import 'uniwind';
 @import 'heroui-native/styles';
 
@@ -17,4 +29,24 @@
     ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, Courier New, monospace;
   --font-rounded: 'SF Pro Rounded', 'Hiragino Maru Gothic ProN', Meiryo, 'MS PGothic', sans-serif;
   --font-serif: Georgia, 'Times New Roman', serif;
+}
+
+/*
+ * Paint the page ground on WEB.
+ *
+ * React Native paints view backgrounds; the HTML page behind them is nobody's
+ * job by default, so on web every element in the chain computes to
+ * rgba(0,0,0,0) and the browser shows its own light ground. With a
+ * dark-preferring system that produced HeroUI's near-white foreground text on a
+ * light background - technically "themed", completely unreadable.
+ *
+ * These selectors do nothing on iOS or Android: Uniwind compiles class
+ * utilities for native, not element rules. This is a web-surface fix, which is
+ * exactly where the problem is.
+ */
+html,
+body,
+#root {
+  background-color: var(--color-background);
+  color: var(--color-foreground);
 }
