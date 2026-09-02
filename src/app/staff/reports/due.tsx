@@ -112,7 +112,7 @@ export default function DueReportScreen() {
         title="Outstanding dues"
         subtitle={meta ? `As at ${meta.as_of} · ${members(meta.members)}` : undefined}
         action={
-          <Button variant="tertiary" onPress={() => router.back()}>
+          <Button size="sm" variant="tertiary" onPress={() => router.back()}>
             <Button.Label>Back</Button.Label>
           </Button>
         }
@@ -126,7 +126,7 @@ export default function DueReportScreen() {
             filter rather than hidden entirely - staff occasionally need to see
             what an unapproved applicant has already been assigned.
           */}
-          <Chip variant={status === null ? 'primary' : 'secondary'} onPress={() => setStatus(null)}>
+          <Chip size="sm" variant={status === null ? 'primary' : 'secondary'} onPress={() => setStatus(null)}>
             <Chip.Label>Active and suspended</Chip.Label>
           </Chip>
           <Chip
@@ -154,6 +154,7 @@ export default function DueReportScreen() {
           </Chip>
           {monthEnds().map((date) => (
             <Chip
+              size="sm"
               key={date}
               variant={asOf === date ? 'primary' : 'secondary'}
               onPress={() => setAsOf(date)}

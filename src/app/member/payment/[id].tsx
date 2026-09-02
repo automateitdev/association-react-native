@@ -32,7 +32,7 @@ export default function PaymentDetailScreen() {
         title={payment.data?.invoice_no ?? 'Payment'}
         subtitle={payment.data ? describe(payment.data.status) : undefined}
         action={
-          <Button variant="tertiary" onPress={() => router.back()}>
+          <Button size="sm" variant="tertiary" onPress={() => router.back()}>
             <Button.Label>Back</Button.Label>
           </Button>
         }

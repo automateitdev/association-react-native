@@ -98,7 +98,7 @@ export default function EditFeeSetupScreen() {
             : undefined
         }
         action={
-          <Button variant="tertiary" onPress={() => router.back()}>
+          <Button size="sm" variant="tertiary" onPress={() => router.back()}>
             <Button.Label>Back</Button.Label>
           </Button>
         }
@@ -188,7 +188,7 @@ export default function EditFeeSetupScreen() {
                 first
                 action={
                   editable ? (
-                    <Button variant="tertiary" onPress={beginEdit}>
+                    <Button size="sm" variant="tertiary" onPress={beginEdit}>
                       <Button.Label>Edit</Button.Label>
                     </Button>
                   ) : undefined

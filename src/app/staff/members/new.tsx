@@ -4,6 +4,7 @@ import { View } from 'react-native';
 import { ApiError } from '@/api/errors';
 import { useCreateMember, type NewMemberFields } from '@/features/staff/members';
 import {
+  Actions,
   Button,
   Chip,
   FieldError,
@@ -75,7 +76,7 @@ export default function NewMemberScreen() {
       <ScreenHeader
         title="Add member"
         action={
-          <Button variant="tertiary" onPress={() => router.back()}>
+          <Button size="sm" variant="tertiary" onPress={() => router.back()}>
             <Button.Label>Back</Button.Label>
           </Button>
         }
@@ -172,6 +173,7 @@ export default function NewMemberScreen() {
           {/* Chip is pressable itself; no wrapper needed. */}
           {(['male', 'female', 'other'] as const).map((option) => (
             <Chip
+              size="sm"
               key={option}
               variant={fields.gender === option ? 'primary' : 'secondary'}
               onPress={() => set('gender')(option)}
@@ -203,11 +205,11 @@ export default function NewMemberScreen() {
 
       </Section>
 
-      <View style={{ marginTop: space.xl }}>
+      <Actions>
         <Button isDisabled={!canSubmit || create.isPending} onPress={() => void submit()}>
           <Button.Label>{create.isPending ? 'Creating…' : 'Create member'}</Button.Label>
         </Button>
-      </View>
+      </Actions>
     </Screen>
   );
 }

@@ -12,6 +12,7 @@ import {
 } from '@/features/dues/queries';
 import { startAttempt, useCreatePayment } from '@/features/payments/queries';
 import {
+  Actions,
   AmountBreakdown,
   Button,
   Checkbox,
@@ -231,11 +232,13 @@ export default function PayScreen() {
 
         {chosen.length > 0 ? (
           <View style={{ marginTop: space.xl, gap: space.sm }}>
-            <Button isDisabled={slips.length === 0 || createPayment.isPending} onPress={submit}>
-              <Button.Label>
-                {createPayment.isPending ? 'Submitting…' : 'Submit for approval'}
-              </Button.Label>
-            </Button>
+            <Actions>
+              <Button isDisabled={slips.length === 0 || createPayment.isPending} onPress={submit}>
+                <Button.Label>
+                  {createPayment.isPending ? 'Submitting…' : 'Submit for approval'}
+                </Button.Label>
+              </Button>
+            </Actions>
 
             {slips.length === 0 ? (
               <Text tone="muted" style={{ ...type.rowMeta, textAlign: 'center' }}>

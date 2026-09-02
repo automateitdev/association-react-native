@@ -62,7 +62,7 @@ export default function MemberDetailScreen() {
             : undefined
         }
         action={
-          <Button variant="tertiary" onPress={() => router.back()}>
+          <Button size="sm" variant="tertiary" onPress={() => router.back()}>
             <Button.Label>Back</Button.Label>
           </Button>
         }
@@ -258,7 +258,7 @@ function SocietyRecord({ member, editable }: { member: MemberDetail; editable: b
         title="Society record"
         action={
           editable ? (
-            <Button variant="tertiary" onPress={() => setOpen(true)}>
+            <Button size="sm" variant="tertiary" onPress={() => setOpen(true)}>
               <Button.Label>{member.membership_no ? 'Edit' : 'Assign number'}</Button.Label>
             </Button>
           ) : undefined
@@ -451,7 +451,7 @@ function PersonalDetails({ member, editable }: { member: MemberDetail; editable:
       title="Details"
       action={
         editable ? (
-          <Button variant="tertiary" onPress={() => setOpen(true)}>
+          <Button size="sm" variant="tertiary" onPress={() => setOpen(true)}>
             <Button.Label>Edit</Button.Label>
           </Button>
         ) : undefined

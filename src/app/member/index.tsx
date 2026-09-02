@@ -3,6 +3,7 @@ import { View } from 'react-native';
 import { useSession } from '@/features/auth/session';
 import { useDues, useSummary, type Due } from '@/features/dues/queries';
 import {
+  Actions,
   Amount,
   AmountBreakdown,
   Button,
@@ -69,9 +70,11 @@ export default function DuesScreen() {
                   align="left"
                 />
 
-                <Button onPress={() => router.push('/member/pay')}>
-                  <Button.Label>Pay now</Button.Label>
-                </Button>
+                <Actions>
+                  <Button onPress={() => router.push('/member/pay')}>
+                    <Button.Label>Pay now</Button.Label>
+                  </Button>
+                </Actions>
               </View>
             </Section>
 

@@ -39,7 +39,9 @@ export function Row({
   divider?: boolean;
 }) {
   const body = (
-    <View style={{ paddingVertical: space.md, gap: space.xs }}>
+    // ~38pt rows rather than ~66. A desktop list is scanned, not tapped through,
+    // and density is what makes scanning possible.
+    <View style={{ paddingVertical: space.sm, gap: 2 }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.md }}>
         {leading}
 

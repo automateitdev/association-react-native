@@ -22,14 +22,25 @@
  * breaks in whichever theme it was not written in.
  */
 
-/** A 4pt grid. Anything not on it is a mistake, not a refinement. */
+/**
+ * A 2pt grid, tuned for a desktop.
+ *
+ * The first version ran 4/8/12/16/24/40 and produced 66pt list rows: five
+ * members filled an entire 743pt viewport when a desktop list should show
+ * fifteen. That is a phone's spacing stretched across a monitor, and it reads
+ * as one - loose, unserious, nothing within reach of anything else.
+ *
+ * Tightened roughly a third throughout. These are still comfortable on a phone;
+ * touch targets come from a control's own padding, not from the gaps between
+ * things.
+ */
 export const space = {
   xs: 4,
-  sm: 8,
-  md: 12,
-  lg: 16,
-  xl: 24,
-  xxl: 40,
+  sm: 6,
+  md: 10,
+  lg: 14,
+  xl: 20,
+  xxl: 32,
 } as const;
 
 /**
@@ -53,50 +64,64 @@ export const font = {
 } as const;
 
 /**
- * A type scale with real steps in it.
+ * A type scale, sized for a desktop.
  *
- * The old screens ran 12/13/14/16/18/22 with almost everything at 12 or 14,
- * which is why nothing stood out. Contrast between adjacent levels is what
- * creates hierarchy; a scale whose steps are 2pt apart has none.
+ * The previous scale ran 13/15/16/19/28 - phone sizes, and they looked it on a
+ * monitor: a 28pt page title over 15pt rows reads as an app blown up to fill a
+ * window rather than one built for it. Desktop software runs around 13-14pt for
+ * body text, and the hierarchy comes from weight and colour rather than size.
  *
- * `fontWeight` is kept alongside `fontFamily` because web still renders from
- * the CSS weight; native takes the family. Both have to agree.
+ * Still readable on a phone. 13.5pt body is what a great many production apps
+ * ship, and the figures stay legible because Inter was chosen for that.
+ *
+ * `fontWeight` is kept alongside `fontFamily` because web renders from the CSS
+ * weight while native takes the family. Both have to agree.
+ *
+ * EVERY LEVEL SETS ITS OWN lineHeight, AND THAT IS NOT OPTIONAL.
+ * HeroUI's Typography takes line-height from a CSS variable on its component
+ * class, so setting only `fontSize` leaves the leading of whatever size the
+ * component thought it was. Rows measured 71pt when their content was 48pt -
+ * two lines of text carrying ~24pt of leading each - and no amount of tightening
+ * the padding would have found it.
  */
 export const type = {
   /** Page title. One per screen. */
   title: {
     fontFamily: font.bold,
-    fontSize: 28,
+    fontSize: 20,
+    lineHeight: 26,
     fontWeight: '700' as const,
-    letterSpacing: -0.6,
+    letterSpacing: -0.3,
   },
 
   /** Section heading. Small and quiet - the space around it does the work. */
   section: {
     fontFamily: font.semibold,
-    fontSize: 11,
+    fontSize: 10.5,
+    lineHeight: 14,
     fontWeight: '600' as const,
-    letterSpacing: 0.9,
+    letterSpacing: 0.7,
   },
 
   /** The primary line of a row: a member's name, a fee head. */
-  rowTitle: { fontFamily: font.semibold, fontSize: 15, fontWeight: '600' as const },
+  rowTitle: { fontFamily: font.semibold, fontSize: 13.5, lineHeight: 18, fontWeight: '600' as const },
 
   /** Supporting detail under it. */
-  rowMeta: { fontFamily: font.regular, fontSize: 13, fontWeight: '400' as const },
+  rowMeta: { fontFamily: font.regular, fontSize: 12, lineHeight: 16, fontWeight: '400' as const },
 
   /** Body copy in a paragraph. */
-  body: { fontFamily: font.regular, fontSize: 15, fontWeight: '400' as const },
+  body: { fontFamily: font.regular, fontSize: 13.5, lineHeight: 20, fontWeight: '400' as const },
 
   /** The figure a row is about. Large enough to anchor the eye. */
-  amount: { fontFamily: font.semibold, fontSize: 19, fontWeight: '600' as const },
+  amount: { fontFamily: font.semibold, fontSize: 15, lineHeight: 20, fontWeight: '600' as const },
 
   /** A dashboard figure. */
   stat: {
     fontFamily: font.bold,
-    fontSize: 30,
+    fontSize: 24,
+    lineHeight: 30,
     fontWeight: '700' as const,
-    letterSpacing: -0.8,
+    letterSpacing: -0.5,
   },
 } as const;
 

@@ -4,6 +4,7 @@ import { View } from 'react-native';
 import { ApiError } from '@/api/errors';
 import { useCreateFeeSetup, useLedgerOptions, useLedgers } from '@/features/staff/fees';
 import {
+  Actions,
   Button,
   Checkbox,
   FieldError,
@@ -87,7 +88,7 @@ export default function NewFeeSetupScreen() {
       <ScreenHeader
         title="Add fee head"
         action={
-          <Button variant="tertiary" onPress={() => router.back()}>
+          <Button size="sm" variant="tertiary" onPress={() => router.back()}>
             <Button.Label>Back</Button.Label>
           </Button>
         }
@@ -197,11 +198,11 @@ export default function NewFeeSetupScreen() {
         </View>
       </Section>
 
-      <View style={{ marginTop: space.xl }}>
+      <Actions>
         <Button isDisabled={!canSubmit || create.isPending} onPress={() => void submit()}>
           <Button.Label>{create.isPending ? 'Creating…' : 'Create fee head'}</Button.Label>
         </Button>
-      </View>
+      </Actions>
     </Screen>
   );
 }

@@ -10,6 +10,7 @@ import {
   type AssignSummary,
 } from '@/features/staff/fees';
 import {
+  Actions,
   Button,
   Checkbox,
   Chip,
@@ -120,7 +121,7 @@ export default function AssignFeesScreen() {
       <ScreenHeader
         title="Assign fees"
         action={
-          <Button variant="tertiary" onPress={() => router.back()}>
+          <Button size="sm" variant="tertiary" onPress={() => router.back()}>
             <Button.Label>Back</Button.Label>
           </Button>
         }
@@ -160,6 +161,7 @@ export default function AssignFeesScreen() {
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space.sm }}>
           {months.map((period) => (
             <Chip
+              size="sm"
               key={period}
               variant={periods.includes(period) ? 'primary' : 'secondary'}
               onPress={() => togglePeriod(period)}
@@ -194,14 +196,16 @@ export default function AssignFeesScreen() {
           separate decision.
         </Text>
 
-        <TextField>
-          <Input
-            value={search}
-            onChangeText={setSearch}
-            placeholder="Search name or mobile"
-            autoCapitalize="none"
-          />
-        </TextField>
+        <View style={{ maxWidth: 340 }}>
+          <TextField>
+            <Input
+              value={search}
+              onChangeText={setSearch}
+              placeholder="Search name or mobile"
+              autoCapitalize="none"
+            />
+          </TextField>
+        </View>
 
         <StateView
           loading={members.isLoading}
@@ -244,6 +248,7 @@ export default function AssignFeesScreen() {
       </Section>
 
       <View style={{ marginTop: space.xl, gap: space.sm }}>
+        <Actions>
         <Button isDisabled={!canSubmit || assign.isPending} onPress={() => void submit()}>
           <Button.Label>
             {assign.isPending
@@ -253,6 +258,7 @@ export default function AssignFeesScreen() {
                 : 'Assign'}
           </Button.Label>
         </Button>
+        </Actions>
 
         {/*
           No total value anywhere on this screen, deliberately. Members times

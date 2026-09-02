@@ -123,7 +123,7 @@ export default function PaidReportScreen() {
             : undefined
         }
         action={
-          <Button variant="tertiary" onPress={() => router.back()}>
+          <Button size="sm" variant="tertiary" onPress={() => router.back()}>
             <Button.Label>Back</Button.Label>
           </Button>
         }
@@ -133,6 +133,7 @@ export default function PaidReportScreen() {
         <View style={{ flexDirection: 'row', gap: space.sm, flexWrap: 'wrap' }}>
           {RANGE_PRESETS.map((preset) => (
             <Chip
+              size="sm"
               key={preset.key}
               variant={presetKey === preset.key ? 'primary' : 'secondary'}
               onPress={() => setPresetKey(preset.key)}

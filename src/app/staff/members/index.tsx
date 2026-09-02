@@ -61,22 +61,29 @@ export default function MembersScreen() {
         }
         action={
           can('members.create') ? (
-            <Button onPress={() => router.push('/staff/members/new')}>
-              <Button.Label>Add</Button.Label>
+            <Button size="sm" onPress={() => router.push('/staff/members/new')}>
+              <Button.Label>Add member</Button.Label>
             </Button>
           ) : undefined
         }
       />
 
       <View style={{ marginTop: space.lg, gap: space.md }}>
-        <TextField>
-          <Input
-            value={search}
-            onChangeText={setSearch}
-            placeholder="Search name, mobile or email"
-            autoCapitalize="none"
-          />
-        </TextField>
+        {/*
+          Capped, not full-bleed. Stretched to the content width it read as a
+          banner across the page rather than a control, and no search box needs
+          1280pt to hold a name.
+        */}
+        <View style={{ maxWidth: 340 }}>
+          <TextField>
+            <Input
+              value={search}
+              onChangeText={setSearch}
+              placeholder="Search name, mobile or email"
+              autoCapitalize="none"
+            />
+          </TextField>
+        </View>
 
         <View style={{ flexDirection: 'row', gap: space.sm, flexWrap: 'wrap' }}>
           <FilterChip label="All" active={status === null} onPress={() => setStatus(null)} />
@@ -150,7 +157,7 @@ function FilterChip({
   onPress: () => void;
 }) {
   return (
-    <Chip variant={active ? 'primary' : 'secondary'} onPress={onPress}>
+    <Chip size="sm" variant={active ? 'primary' : 'secondary'} onPress={onPress}>
       <Chip.Label>{label}</Chip.Label>
     </Chip>
   );

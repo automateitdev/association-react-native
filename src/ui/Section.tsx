@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { View } from 'react-native';
 import { Text } from './Text';
+import { useIsDesktop } from './breakpoint';
 import { space, type } from './tokens';
 
 /**
@@ -88,6 +89,41 @@ export function Panel({
         padding: space.lg,
         borderRadius: 14,
         gap: space.sm,
+      }}
+    >
+      {children}
+    </View>
+  );
+}
+
+/**
+ * Where a screen's primary action goes.
+ *
+ * Buttons were rendering full-bleed - "Pay now" as a 1000pt green capsule
+ * across the whole content column. That is a phone pattern, where a thumb needs
+ * the width; on a desktop it reads as a banner and makes the page look like an
+ * enlarged app rather than a built one.
+ *
+ * On a phone it still stretches, because there the original reason holds.
+ */
+export function Actions({
+  children,
+  align = 'start',
+}: {
+  children: ReactNode;
+  align?: 'start' | 'stretch';
+}) {
+  const isDesktop = useIsDesktop();
+  const stretch = align === 'stretch' || !isDesktop;
+
+  return (
+    <View
+      style={{
+        marginTop: space.lg,
+        flexDirection: 'row',
+        gap: space.sm,
+        alignSelf: stretch ? 'stretch' : 'flex-start',
+        minWidth: stretch ? undefined : 200,
       }}
     >
       {children}

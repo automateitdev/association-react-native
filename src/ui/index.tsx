@@ -57,7 +57,7 @@ export { Text } from './Text';
 
 // Layout
 export { Screen, ScreenHeader } from './Screen';
-export { Section, Divider, Panel } from './Section';
+export { Section, Divider, Panel, Actions } from './Section';
 export { Row, Field } from './Row';
 export { Picker, PickerField, type PickerOption } from './Picker';
 export { DataTable, Cell, NumberCell, type Column } from './DataTable';
