@@ -103,8 +103,23 @@ export function Icon({
         lineHeight: size,
         color: resolved,
       }}
-      // The glyph carries no meaning a screen reader can use; the label beside
-      // it does. Announcing "dashboard" twice is worse than announcing it once.
+      /*
+       * Hidden from assistive technology, on every platform.
+       *
+       * This is a LIGATURE font: the element's text content is literally
+       * "account_balance". Without hiding it a screen reader reads that out -
+       * verified on web, where every icon in the app bar announced its ligature
+       * name as a word.
+       *
+       * `aria-hidden` is the web one and is what was missing;
+       * accessibilityElementsHidden and importantForAccessibility are the iOS
+       * and Android equivalents, and React Native Web does not map either of
+       * them to aria-hidden. All three are needed to cover all three platforms.
+       *
+       * Nothing is lost: an icon here always sits beside a label, or inside a
+       * control that carries its own accessibilityLabel.
+       */
+      aria-hidden
       accessibilityElementsHidden
       importantForAccessibility="no-hide-descendants"
     >

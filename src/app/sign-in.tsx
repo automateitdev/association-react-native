@@ -5,7 +5,20 @@ import { View } from 'react-native';
 import { ApiError, ErrorCode } from '@/api/errors';
 import { clearTenantSlug } from '@/api/storage';
 import { useSession } from '@/features/auth/session';
-import { Button, Input, Label, Screen, Text, TextField } from '@/ui';
+import {
+  Actions,
+  Button,
+  Icon,
+  Input,
+  Label,
+  Panel,
+  Screen,
+  Text,
+  TextField,
+  space,
+  type,
+} from '@/ui';
+import { useTheme } from '@/features/theme';
 
 /**
  * Sign in.
@@ -21,6 +34,7 @@ import { Button, Input, Label, Screen, Text, TextField } from '@/ui';
  */
 export default function SignInScreen() {
   const { signIn, tenantSlug } = useSession();
+  const { preference, cycle } = useTheme();
   const [login, setLogin] = useState('');
   const [password, setPassword] = useState('');
 
@@ -33,10 +47,51 @@ export default function SignInScreen() {
 
   return (
     <Screen width="reading">
-      <View style={{ gap: 8, paddingTop: 24 }}>
-        <Text style={{ fontSize: 24, fontWeight: '700' }}>Sign in</Text>
-        <Text>Use the mobile number or email registered with your association.</Text>
+      {/*
+        The one screen with no AppBar, because there is no session yet to name
+        an association or a user. It still needs the mark and the theme control:
+        without them it looked like a different, unfinished application - and a
+        member who prefers light mode should not have to sign in to a theme they
+        cannot read first.
+      */}
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: space.md,
+          marginBottom: space.xl,
+        }}
+      >
+        <View
+          className="bg-accent"
+          style={{ width: 30, height: 30, borderRadius: 9, alignItems: 'center', justifyContent: 'center' }}
+        >
+          <Icon name="bank" size={17} tone="inverse" />
+        </View>
+
+        <Text style={{ ...type.rowTitle, flex: 1 }}>Cooperative Society</Text>
+
+        <Text
+          accessibilityRole="button"
+          accessibilityLabel={`Theme: ${preference}. Tap to change.`}
+          onPress={cycle}
+        >
+          <Icon
+            name={preference === 'light' ? 'light' : preference === 'dark' ? 'dark' : 'auto'}
+            size={18}
+            tone="muted"
+          />
+        </Text>
       </View>
+
+      <View style={{ gap: space.xs }}>
+        <Text style={type.title}>Sign in</Text>
+        <Text tone="muted" style={type.body}>
+          Use the mobile number or email registered with your association.
+        </Text>
+      </View>
+
+      <View style={{ marginTop: space.lg }} />
 
       <TextField>
         <Label>Mobile number or email</Label>
@@ -64,19 +119,22 @@ export default function SignInScreen() {
 
       {error ? <SignInError error={error} /> : null}
 
-      <Button
-        isDisabled={!login.trim() || !password || attempt.isPending}
-        onPress={() => attempt.mutate()}
-      >
-        <Button.Label>
-          {attempt.isPending ? 'Signing in…' : 'Sign in'}
-        </Button.Label>
-      </Button>
+      <Actions>
+        <Button
+          isDisabled={!login.trim() || !password || attempt.isPending}
+          onPress={() => attempt.mutate()}
+        >
+          <Button.Label>{attempt.isPending ? 'Signing in…' : 'Sign in'}</Button.Label>
+        </Button>
+      </Actions>
 
-      <View style={{ marginTop: 8, gap: 4 }}>
-        <Text style={{ fontSize: 12, opacity: 0.7 }}>Association: {tenantSlug}</Text>
+      <View style={{ marginTop: space.xl, gap: space.xs }}>
+        <Text tone="muted" style={type.rowMeta}>
+          Association: {tenantSlug}
+        </Text>
         <Text
-          style={{ fontSize: 12, textDecorationLine: 'underline' }}
+          tone="accent"
+          style={{ ...type.rowMeta, textDecorationLine: 'underline' }}
           onPress={async () => {
             await clearTenantSlug();
             router.replace('/association');

@@ -7,6 +7,7 @@ import {
   type PendingPayment,
 } from '@/features/staff/approvals';
 import {
+  Actions,
   useActionButtonStyle,
   AmountBreakdown,
   Button,
@@ -147,7 +148,7 @@ export default function PaymentApprovalsScreen() {
         {/* No pagination control exists in HeroUI Native, and on a phone this is
             the better pattern regardless. */}
         {pending.hasNextPage ? (
-          <View style={{ marginTop: space.lg }}>
+          <Actions>
             <Button
               variant="secondary"
               isDisabled={pending.isFetchingNextPage}
@@ -155,7 +156,7 @@ export default function PaymentApprovalsScreen() {
             >
               <Button.Label>{pending.isFetchingNextPage ? 'Loading…' : 'Load more'}</Button.Label>
             </Button>
-          </View>
+          </Actions>
         ) : null}
       </StateView>
 
@@ -317,9 +318,11 @@ function Outcome({ outcome, onDismiss }: { outcome: DecisionOutcome; onDismiss: 
         </Text>
       ) : null}
 
-      <Button variant="secondary" onPress={onDismiss}>
-        <Button.Label>Dismiss</Button.Label>
-      </Button>
+      <Actions>
+        <Button variant="secondary" onPress={onDismiss}>
+          <Button.Label>Dismiss</Button.Label>
+        </Button>
+      </Actions>
     </Panel>
   );
 }

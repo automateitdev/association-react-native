@@ -4,6 +4,7 @@ import { formatMoney } from '@/api/money';
 import { useSession } from '@/features/auth/session';
 import { useFeeSetups, type FeeSetup } from '@/features/staff/fees';
 import {
+  Actions,
   Amount,
   Button,
   Row,
@@ -56,11 +57,11 @@ export default function FeeSetupsScreen() {
         onRetry={() => void setups.refetch()}
       >
         {can('fee-assigns.create') && active.length > 0 ? (
-          <View style={{ marginTop: space.lg }}>
+          <Actions>
             <Button variant="secondary" onPress={() => router.push('/staff/fees/assign')}>
               <Button.Label>Assign to members</Button.Label>
             </Button>
-          </View>
+          </Actions>
         ) : null}
 
         <Section title="In use" first>

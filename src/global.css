@@ -96,6 +96,29 @@
     --success: oklch(0.55 0.11 140);
     --warning: oklch(0.68 0.13 70);
     --danger: oklch(0.53 0.19 28);
+
+    /*
+     * Neutrals and form fields.
+     *
+     * Left out of the first pass, and it showed: every text input and secondary
+     * button kept HeroUI's faintly BLUE neutrals (lab b of -2.1) inside an
+     * otherwise warm palette. Nobody would name the colour, but the fields read
+     * as belonging to a different app.
+     */
+    --default: oklch(0.93 0.012 95);
+    --default-foreground: oklch(0.26 0.025 75);
+
+    --field-background: oklch(0.995 0.008 95);
+    --field-foreground: oklch(0.26 0.025 75);
+    --field-placeholder: oklch(0.58 0.025 88);
+    --field-border: oklch(0.86 0.022 95);
+
+    --overlay: oklch(0.99 0.008 95);
+    --overlay-foreground: oklch(0.26 0.025 75);
+    --backdrop: oklch(0.26 0.02 80 / 28%);
+
+    --link: oklch(0.5 0.09 95);
+    --focus: oklch(0.55 0.09 95);
 }
 
 .dark,
@@ -121,6 +144,22 @@
     --success: oklch(0.75 0.12 145);
     --warning: oklch(0.8 0.13 78);
     --danger: oklch(0.68 0.16 25);
+
+    /* Neutrals and form fields, warm rather than the default blue-tinted greys. */
+    --default: oklch(0.27 0.014 90);
+    --default-foreground: oklch(0.945 0.018 95);
+
+    --field-background: oklch(0.235 0.014 90);
+    --field-foreground: oklch(0.945 0.018 95);
+    --field-placeholder: oklch(0.6 0.02 90);
+    --field-border: oklch(0.32 0.016 90);
+
+    --overlay: oklch(0.235 0.016 90);
+    --overlay-foreground: oklch(0.945 0.018 95);
+    --backdrop: oklch(0.1 0.01 90 / 55%);
+
+    --link: oklch(0.8 0.1 100);
+    --focus: oklch(0.8 0.1 100);
 }
 
 /*

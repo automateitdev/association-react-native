@@ -4,6 +4,7 @@ import { View } from 'react-native';
 import { useSession } from '@/features/auth/session';
 import { useMembers, type MemberStatus, type MemberSummary } from '@/features/staff/members';
 import {
+  Actions,
   Button,
   Chip,
   Input,
@@ -124,7 +125,7 @@ export default function MembersScreen() {
         </Section>
 
         {members.hasNextPage ? (
-          <View style={{ marginTop: space.lg }}>
+          <Actions>
             <Button
               variant="secondary"
               isDisabled={members.isFetchingNextPage}
@@ -132,7 +133,7 @@ export default function MembersScreen() {
             >
               <Button.Label>{members.isFetchingNextPage ? 'Loading…' : 'Load more'}</Button.Label>
             </Button>
-          </View>
+          </Actions>
         ) : null}
       </StateView>
     </Screen>

@@ -306,9 +306,11 @@ function Outcome({ summary, onDismiss }: { summary: AssignSummary; onDismiss: ()
         </Text>
       ))}
 
-      <Button variant="secondary" onPress={onDismiss}>
-        <Button.Label>Dismiss</Button.Label>
-      </Button>
+      <Actions>
+        <Button variant="secondary" onPress={onDismiss}>
+          <Button.Label>Dismiss</Button.Label>
+        </Button>
+      </Actions>
     </Panel>
   );
 }

@@ -98,6 +98,19 @@ export default function MemberLayout() {
          * label and icon invisible inside it. accent-foreground is the colour
          * the palette defines for exactly this, text on an accent ground.
          */
+        /*
+         * The active pill is painted EXPLICITLY, not left to the navigator.
+         *
+         * Relying on its default produced an invisible active tab: the label
+         * took accent-foreground (near-black, correct for sitting on an accent
+         * pill) while no pill was actually painted behind it, so the current
+         * page's own nav entry vanished into the sidebar. Measured on the Fees
+         * tab: label rgb(26,22,6), and not one element on the page painted in
+         * the accent behind it.
+         *
+         * Setting both halves means the pair can never disagree again.
+         */
+        tabBarActiveBackgroundColor: accent,
         tabBarActiveTintColor: accentForeground,
         tabBarInactiveTintColor: muted,
         tabBarLabelPosition: isDesktop ? 'beside-icon' : 'below-icon',
@@ -140,7 +153,12 @@ export default function MemberLayout() {
                * a pixel a report column can have.
                */
               tabBarStyle: { width: 220, minWidth: 220 },
-              tabBarItemStyle: { justifyContent: 'flex-start', paddingHorizontal: 16 },
+              tabBarItemStyle: {
+                justifyContent: 'flex-start',
+                paddingHorizontal: 14,
+                borderRadius: 8,
+                marginHorizontal: 8,
+              },
             }
           : null),
       }}
