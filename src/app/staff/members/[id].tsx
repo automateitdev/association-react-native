@@ -16,8 +16,8 @@ import {
 } from '@/features/staff/members';
 import {
   Button,
-  Description,
   Field,
+  FieldError,
   Input,
   Label,
   Panel,
@@ -493,6 +493,8 @@ function FormField({
   errors?: string[];
 }) {
   return (
+    // isInvalid propagates through TextField's form-item-state context, so Label,
+    // Input and FieldError pick up the invalid styling without being told.
     <TextField isInvalid={Boolean(errors?.length)}>
       <Label>{label}</Label>
       <Input
@@ -502,7 +504,29 @@ function FormField({
         placeholder={hint}
         autoCapitalize={keyboardType === 'email-address' ? 'none' : 'sentences'}
       />
-      {errors?.length ? <Description>{errors[0]}</Description> : null}
+      {/*
+        FieldError, not Description: this is what went wrong, not a hint.
+
+        TWO NON-OBVIOUS PROPS, BOTH LOAD-BEARING.
+
+        `isInvalid` explicitly, rather than relying on TextField's form-item
+        context: FieldError renders null unless it believes the field is
+        invalid, and not depending on ambient state is the safer call for the
+        one component whose whole job is to appear when something is wrong.
+
+        `animation={false}` because the default entering animation leaves the
+        element at `visibility: hidden` on React Native Web and never reveals
+        it. The message was in the DOM, 20pt tall, full opacity, and completely
+        invisible - after the 422 had already arrived. Disabled on every
+        platform rather than just web: an animation is a nicety, a permanently
+        invisible validation error is a defect, and native cannot be verified
+        from here. Worth revisiting when there is a device to test on.
+      */}
+      {errors?.length ? (
+        <FieldError isInvalid animation={false}>
+          {errors[0]}
+        </FieldError>
+      ) : null}
     </TextField>
   );
 }

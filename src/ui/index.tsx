@@ -36,6 +36,10 @@ export {
   Chip,
   Description,
   Dialog,
+  // The error slot for a form field. Distinct from Description, which is the
+  // helper text - using Description for a validation message says "here is a
+  // hint" in the place the user is looking for "here is what went wrong".
+  FieldError,
   Input,
   Label,
   Separator,
