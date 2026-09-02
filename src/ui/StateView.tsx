@@ -1,5 +1,8 @@
 import { View } from 'react-native';
-import { Button, Spinner, Typography as Text } from 'heroui-native';
+import { Button, Spinner } from 'heroui-native';
+import { Icon } from './Icon';
+import { Text } from './Text';
+import { space, type } from './tokens';
 import { ApiError, ErrorCode } from '@/api/errors';
 
 /**
@@ -33,9 +36,11 @@ export function StateView({
 }) {
   if (loading) {
     return (
-      <View style={{ paddingVertical: 48, alignItems: 'center', gap: 12 }}>
+      <View style={{ paddingVertical: space.xxl, alignItems: 'center', gap: space.md }}>
         <Spinner />
-        <Text>Loading…</Text>
+        <Text tone="muted" style={type.body}>
+          Loading…
+        </Text>
       </View>
     );
   }
@@ -46,9 +51,19 @@ export function StateView({
 
   if (empty) {
     return (
-      <View style={{ paddingVertical: 48, alignItems: 'center', gap: 8 }}>
-        <Text style={{ fontWeight: '600' }}>{emptyTitle}</Text>
-        {emptyMessage ? <Text style={{ textAlign: 'center' }}>{emptyMessage}</Text> : null}
+      <View style={{ paddingVertical: space.xxl, alignItems: 'center', gap: space.sm }}>
+        {/*
+          An empty state that is only text reads as a page that failed to load.
+          A glyph makes it look deliberate - "there is nothing here" rather than
+          "something did not arrive".
+        */}
+        <Icon name="empty" size={30} tone="muted" />
+        <Text style={type.rowTitle}>{emptyTitle}</Text>
+        {emptyMessage ? (
+          <Text tone="muted" style={{ ...type.body, textAlign: 'center' }}>
+            {emptyMessage}
+          </Text>
+        ) : null}
       </View>
     );
   }
@@ -67,9 +82,12 @@ function ErrorState({ error, onRetry }: { error: unknown; onRetry?: () => void }
   const canRetry = onRetry && (api === null || api.isRetryable);
 
   return (
-    <View style={{ paddingVertical: 40, alignItems: 'center', gap: 12 }}>
-      <Text style={{ fontWeight: '700', fontSize: 16, textAlign: 'center' }}>{title}</Text>
-      <Text style={{ textAlign: 'center' }}>{message}</Text>
+    <View style={{ paddingVertical: space.xl, alignItems: 'center', gap: space.md }}>
+      <Icon name="warning" size={30} tone="danger" />
+      <Text style={{ ...type.rowTitle, textAlign: 'center' }}>{title}</Text>
+      <Text tone="muted" style={{ ...type.body, textAlign: 'center' }}>
+        {message}
+      </Text>
 
       {api?.details?.overdue_periods ? (
         <Text style={{ textAlign: 'center' }}>

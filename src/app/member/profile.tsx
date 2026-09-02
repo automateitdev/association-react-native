@@ -12,7 +12,7 @@ import { Button, Field, Screen, ScreenHeader, Section, Text, space, type } from 
  * that submits a change REQUEST is the next piece of work here.
  */
 export default function ProfileScreen() {
-  const { session, signOut, tenantSlug } = useSession();
+  const { session, tenantSlug } = useSession();
   const profile = session?.profile;
 
   return (
@@ -39,17 +39,6 @@ export default function ProfileScreen() {
         </Text>
       </Section>
 
-      <View style={{ marginTop: space.xl }}>
-        <Button
-          variant="secondary"
-          onPress={async () => {
-            await signOut();
-            router.replace('/');
-          }}
-        >
-          <Button.Label>Sign out</Button.Label>
-        </Button>
-      </View>
     </Screen>
   );
 }

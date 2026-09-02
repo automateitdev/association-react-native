@@ -1,7 +1,6 @@
 import { router } from 'expo-router';
 import { View } from 'react-native';
 import { formatMoney, type Money } from '@/api/money';
-import { useSession } from '@/features/auth/session';
 import { useDashboard } from '@/features/staff/dashboard';
 import {
   Button,
@@ -32,28 +31,18 @@ import {
  * it is the only thing on the page that is pressable.
  */
 export default function DashboardScreen() {
-  const { session, signOut } = useSession();
   const dashboard = useDashboard();
 
   const data = dashboard.data;
 
   return (
     <Screen onRefresh={() => void dashboard.refetch()} refreshing={dashboard.isRefetching}>
-      <ScreenHeader
-        title="Overview"
-        subtitle={`${session?.profile.name} · ${session?.role}`}
-        action={
-          <Button
-            variant="tertiary"
-            onPress={async () => {
-              await signOut();
-              router.replace('/');
-            }}
-          >
-            <Button.Label>Sign out</Button.Label>
-          </Button>
-        }
-      />
+      {/*
+        No sign-out here any more, and no name either - both live in the AppBar
+        now, where they belong once and are visible on every screen rather than
+        only on this one.
+      */}
+      <ScreenHeader title="Overview" />
 
       <StateView
         loading={dashboard.isLoading}

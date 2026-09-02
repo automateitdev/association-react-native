@@ -33,33 +33,71 @@ export const space = {
 } as const;
 
 /**
+ * The typeface.
+ *
+ * WEIGHT IS A FONT FAMILY HERE, NOT A NUMBER.
+ * React Native does not synthesise weights: `fontWeight: '600'` against a family
+ * with only Regular loaded silently renders Regular. Every "semibold" heading in
+ * this app was plain text pretending to be bold, on top of the app running in
+ * the platform's default system font throughout - which is most of why it read
+ * as unfinished.
+ *
+ * Inter for the reason this app needs most: clear figures at small sizes and
+ * real tabular numerals, so a column of amounts lines up.
+ */
+export const font = {
+  regular: 'Inter_400Regular',
+  medium: 'Inter_500Medium',
+  semibold: 'Inter_600SemiBold',
+  bold: 'Inter_700Bold',
+} as const;
+
+/**
  * A type scale with real steps in it.
  *
  * The old screens ran 12/13/14/16/18/22 with almost everything at 12 or 14,
  * which is why nothing stood out. Contrast between adjacent levels is what
  * creates hierarchy; a scale whose steps are 2pt apart has none.
+ *
+ * `fontWeight` is kept alongside `fontFamily` because web still renders from
+ * the CSS weight; native takes the family. Both have to agree.
  */
 export const type = {
   /** Page title. One per screen. */
-  title: { fontSize: 28, fontWeight: '700' as const, letterSpacing: -0.5 },
+  title: {
+    fontFamily: font.bold,
+    fontSize: 28,
+    fontWeight: '700' as const,
+    letterSpacing: -0.6,
+  },
 
   /** Section heading. Small and quiet - the space around it does the work. */
-  section: { fontSize: 12, fontWeight: '600' as const, letterSpacing: 0.8 },
+  section: {
+    fontFamily: font.semibold,
+    fontSize: 11,
+    fontWeight: '600' as const,
+    letterSpacing: 0.9,
+  },
 
   /** The primary line of a row: a member's name, a fee head. */
-  rowTitle: { fontSize: 16, fontWeight: '600' as const },
+  rowTitle: { fontFamily: font.semibold, fontSize: 15, fontWeight: '600' as const },
 
   /** Supporting detail under it. */
-  rowMeta: { fontSize: 13, fontWeight: '400' as const },
+  rowMeta: { fontFamily: font.regular, fontSize: 13, fontWeight: '400' as const },
 
   /** Body copy in a paragraph. */
-  body: { fontSize: 15, fontWeight: '400' as const },
+  body: { fontFamily: font.regular, fontSize: 15, fontWeight: '400' as const },
 
   /** The figure a row is about. Large enough to anchor the eye. */
-  amount: { fontSize: 20, fontWeight: '700' as const },
+  amount: { fontFamily: font.semibold, fontSize: 19, fontWeight: '600' as const },
 
   /** A dashboard figure. */
-  stat: { fontSize: 32, fontWeight: '700' as const, letterSpacing: -1 },
+  stat: {
+    fontFamily: font.bold,
+    fontSize: 30,
+    fontWeight: '700' as const,
+    letterSpacing: -0.8,
+  },
 } as const;
 
 /**

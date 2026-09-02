@@ -57,8 +57,11 @@ export default function DueReportScreen() {
       },
       {
         key: 'count',
-        header: 'Instalments',
-        width: 100,
+        // "Due" rather than "Instalments": the full word wrapped to
+        // "INSTALMENT / S" at this column width once the type scale changed,
+        // and a header that breaks mid-word is worse than a shorter one.
+        header: 'Due',
+        width: 90,
         align: 'right',
         render: (row) => <NumberCell>{String(row.instalments_due_count)}</NumberCell>,
         /*

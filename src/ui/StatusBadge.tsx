@@ -1,5 +1,7 @@
+import { View } from 'react-native';
+import { Icon } from './Icon';
 import { Text } from './Text';
-import { type } from './tokens';
+import { space, type } from './tokens';
 
 /**
  * A member's status, in the words they would hear at the counter.
@@ -28,12 +30,18 @@ export function StatusBadge({ status }: { status: 'active' | 'inactive' | 'suspe
     );
   }
 
+  // A glyph only on the states that need someone to act. Active stays plain
+  // text, for the same reason it stays muted.
   return (
-    <Text
-      tone={status === 'suspended' ? 'danger' : 'accent'}
-      style={{ ...type.rowMeta, fontWeight: '600' }}
-    >
-      {status === 'suspended' ? 'Suspended' : 'Awaiting approval'}
-    </Text>
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.xs }}>
+      <Icon
+        name={status === 'suspended' ? 'suspended' : 'awaiting'}
+        size={15}
+        tone={status === 'suspended' ? 'danger' : 'accent'}
+      />
+      <Text tone={status === 'suspended' ? 'danger' : 'accent'} style={type.rowMeta}>
+        {status === 'suspended' ? 'Suspended' : 'Awaiting approval'}
+      </Text>
+    </View>
   );
 }

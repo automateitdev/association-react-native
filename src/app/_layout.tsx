@@ -1,10 +1,18 @@
 import '@/global.css';
 
+import {
+  Inter_400Regular,
+  Inter_500Medium,
+  Inter_600SemiBold,
+  Inter_700Bold,
+} from '@expo-google-fonts/inter';
+import { MaterialSymbols_400Regular } from '@expo-google-fonts/material-symbols';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
-import { HeroUINativeProvider } from 'heroui-native';
+import { HeroUINativeProvider, useThemeColor } from 'heroui-native';
+import { useFonts } from 'expo-font';
 import { useMemo } from 'react';
-import { I18nManager, useColorScheme, View } from 'react-native';
+import { ActivityIndicator, I18nManager, useColorScheme, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { ApiError } from '@/api/errors';
 import { SessionProvider } from '@/features/auth/session';
@@ -18,6 +26,28 @@ import { SessionProvider } from '@/features/auth/session';
  */
 export default function RootLayout() {
   const colorScheme = useColorScheme();
+
+  /*
+   * Typeface and icon font, loaded before anything renders.
+   *
+   * The app shipped in the platform's default system font, which is why it read
+   * as unfinished - and `--font-display: Spline Sans, Inter` sat unused in
+   * global.css the whole time, declared and never applied to anything.
+   *
+   * Inter is chosen for the reason this app needs most: its figures are clear
+   * at small sizes and it has proper tabular numerals, so a column of amounts
+   * lines up. Four weights, because the type scale actually uses four.
+   *
+   * MaterialSymbols is the icon set - a ligature font, so an icon costs one
+   * Text node and inherits colour and size like text. See ui/Icon.tsx.
+   */
+  const [fontsLoaded] = useFonts({
+    Inter_400Regular,
+    Inter_500Medium,
+    Inter_600SemiBold,
+    Inter_700Bold,
+    MaterialSymbols_400Regular,
+  });
 
   const queryClient = useMemo(
     () =>
@@ -55,6 +85,22 @@ export default function RootLayout() {
       }),
     [],
   );
+
+  /*
+   * Hold the first frame until the fonts are in.
+   *
+   * Rendering in the system font and swapping to Inter a beat later is a
+   * visible reflow on every launch - text jumps size and the layout settles
+   * after the user has started reading. A brief spinner is the lesser evil, and
+   * on web the fonts are usually cached anyway.
+   */
+  if (!fontsLoaded) {
+    return (
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+        <ActivityIndicator />
+      </View>
+    );
+  }
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
@@ -101,7 +147,7 @@ export default function RootLayout() {
             `contentStyle` never reached it. Giving it the dark theme is what
             actually fixes the unreadable white-on-light text.
           */}
-          <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+          <NavigationTheme scheme={colorScheme}>
             <QueryClientProvider client={queryClient}>
               <SessionProvider>
                 <Stack
@@ -112,9 +158,54 @@ export default function RootLayout() {
                 />
               </SessionProvider>
             </QueryClientProvider>
-          </ThemeProvider>
+          </NavigationTheme>
         </View>
       </HeroUINativeProvider>
     </GestureHandlerRootView>
   );
+}
+
+/**
+ * react-navigation's theme, taught about the app's palette.
+ *
+ * The navigator colours things from its OWN theme, not HeroUI's - the active
+ * tab's tint and its highlight both come from `colors.primary`, which is a stock
+ * blue. Left alone, the sidebar highlighted in blue while every other accent on
+ * screen was green, and no amount of styling on our side reached it.
+ *
+ * Nested inside HeroUINativeProvider because useThemeColor needs that context,
+ * so this cannot live in the component above.
+ */
+function NavigationTheme({
+  scheme,
+  children,
+}: {
+  scheme: ReturnType<typeof useColorScheme>;
+  children: React.ReactNode;
+}) {
+  const accent = useThemeColor('accent');
+  const background = useThemeColor('background');
+  const foreground = useThemeColor('foreground');
+  const surface = useThemeColor('surface');
+  const border = useThemeColor('border');
+
+  const base = scheme === 'dark' ? DarkTheme : DefaultTheme;
+
+  const theme = useMemo(
+    () => ({
+      ...base,
+      colors: {
+        ...base.colors,
+        primary: accent,
+        background,
+        text: foreground,
+        // `card` is what the tab bar and headers paint themselves with.
+        card: surface,
+        border,
+      },
+    }),
+    [base, accent, background, foreground, surface, border],
+  );
+
+  return <ThemeProvider value={theme}>{children}</ThemeProvider>;
 }

@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { Pressable, View } from 'react-native';
 import { Text } from './Text';
+import { Icon } from './Icon';
 import { Divider } from './Section';
 import { space, type } from './tokens';
 
@@ -52,6 +53,13 @@ export function Row({
         </View>
 
         {trailing}
+
+        {/*
+          A chevron only when the row actually leads somewhere. Without it a
+          pressable row is indistinguishable from a static one, and people stop
+          trying rows that would have worked.
+        */}
+        {onPress ? <Icon name="chevron" size={18} tone="muted" /> : null}
       </View>
 
       {footer}

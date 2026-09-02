@@ -65,8 +65,9 @@ export default function PaidReportScreen() {
       },
       {
         key: 'count',
-        header: 'Instalments',
-        width: 110,
+        // Short, for the same reason as the dues report: the full word wraps.
+        header: 'Paid',
+        width: 90,
         align: 'right',
         render: (row) => <NumberCell>{String(row.instalments_paid_count)}</NumberCell>,
         // This report DOES carry a count total - unlike the dues report, whose

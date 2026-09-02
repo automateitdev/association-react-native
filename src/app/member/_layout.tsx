@@ -1,7 +1,9 @@
-import { Redirect, Tabs } from 'expo-router';
-import { ActivityIndicator, View } from 'react-native';
+import { Redirect, router, Tabs } from 'expo-router';
+import { ActivityIndicator, View, type ColorValue } from 'react-native';
+import { useAssociation } from '@/features/auth/association';
 import { useSession } from '@/features/auth/session';
-import { useIsDesktop } from '@/ui';
+import { AppBar, Icon, useIsDesktop, type IconName } from '@/ui';
+import { useThemeColor } from 'heroui-native';
 
 /**
  * The member surface.
@@ -14,8 +16,18 @@ import { useIsDesktop } from '@/ui';
  * screens that call member-only endpoints and fail confusingly.
  */
 export default function MemberLayout() {
-  const { isLoading, session, isStaff } = useSession();
+  const { isLoading, session, isStaff, signOut, tenantSlug } = useSession();
   const isDesktop = useIsDesktop();
+  const association = useAssociation();
+
+  /*
+   * The navigator tints the active tab from react-navigation's own theme, which
+   * is a stock blue and knows nothing about HeroUI's palette. Left alone the
+   * sidebar highlighted in blue while every other accent on screen was green.
+   */
+  const accent = useThemeColor('accent');
+  const accentForeground = useThemeColor('accent-foreground');
+  const muted = useThemeColor('muted');
 
   /*
    * Wait for the session check before deciding anything.
@@ -38,8 +50,21 @@ export default function MemberLayout() {
   if (!session) return <Redirect href="/sign-in" />;
   if (isStaff) return <Redirect href="/staff" />;
 
+  const signOutAndReturn = async () => {
+    await signOut();
+    router.replace('/');
+  };
+
   return (
-    <Tabs
+    <View style={{ flex: 1 }}>
+      <AppBar
+        association={association.data?.name ?? tenantSlug ?? 'Association'}
+        userName={session.profile.name}
+        userRole={session.profile.membership_no ? `No. ${session.profile.membership_no}` : undefined}
+        onSignOut={() => void signOutAndReturn()}
+      />
+
+      <Tabs
       /*
        * Remount when the layout changes shape.
        *
@@ -62,6 +87,15 @@ export default function MemberLayout() {
         // a browser should get a browser rather than a phone drawn in the
         // middle of their screen.
         tabBarPosition: isDesktop ? 'left' : 'bottom',
+        /*
+         * The tint sits ON the active pill, which the navigator paints with
+         * `primary` - and primary is now the accent. Setting the tint to accent
+         * as well made the active item green-on-green: a solid pill with its
+         * label and icon invisible inside it. accent-foreground is the colour
+         * the palette defines for exactly this, text on an accent ground.
+         */
+        tabBarActiveTintColor: accentForeground,
+        tabBarInactiveTintColor: muted,
         tabBarLabelPosition: isDesktop ? 'beside-icon' : 'below-icon',
 
         /*
@@ -73,7 +107,6 @@ export default function MemberLayout() {
          * a word beside a meaningless mark. Icons can come back when there is a
          * set worth using.
          */
-        tabBarIcon: () => null,
         ...(isDesktop
           ? {
               /*
@@ -95,10 +128,10 @@ export default function MemberLayout() {
           : null),
       }}
     >
-      <Tabs.Screen name="index" options={{ title: 'Dues' }} />
-      <Tabs.Screen name="pay" options={{ title: 'Pay' }} />
-      <Tabs.Screen name="history" options={{ title: 'History' }} />
-      <Tabs.Screen name="profile" options={{ title: 'Profile' }} />
+      <Tabs.Screen name="index" options={{ tabBarIcon: tabIcon('dues'), title: 'Dues' }} />
+      <Tabs.Screen name="pay" options={{ tabBarIcon: tabIcon('pay'), title: 'Pay' }} />
+      <Tabs.Screen name="history" options={{ tabBarIcon: tabIcon('history'), title: 'History' }} />
+      <Tabs.Screen name="profile" options={{ tabBarIcon: tabIcon('profile'), title: 'Profile' }} />
 
       {/*
         Expo Router turns every file in this directory into a tab. The payment
@@ -107,6 +140,14 @@ export default function MemberLayout() {
         "payment/[id]" tab appears next to the four real ones.
       */}
       <Tabs.Screen name="payment/[id]" options={{ href: null }} />
-    </Tabs>
+      </Tabs>
+    </View>
+  );
+}
+
+/** A tab's icon, sized and coloured by the navigator. */
+function tabIcon(name: IconName) {
+  return ({ color }: { color: ColorValue }) => (
+    <Icon name={name} size={22} color={typeof color === 'string' ? color : undefined} />
   );
 }

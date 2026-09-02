@@ -1,5 +1,6 @@
 import type { ComponentProps } from 'react';
 import { Typography, useThemeColor } from 'heroui-native';
+import { font } from './tokens';
 
 type Tone = 'default' | 'muted' | 'danger' | 'accent';
 
@@ -36,13 +37,28 @@ export function Text({
   const danger = useThemeColor('danger');
   const accent = useThemeColor('accent');
 
+  /*
+   * Inter by default, so text with no explicit style still gets the typeface.
+   *
+   * `style` comes after, so anything from the type scale - which names its own
+   * weight's family - overrides this. Without the default, every string not
+   * passed a type token rendered in the system font, which is a scattering of
+   * mismatched text across otherwise styled screens.
+   */
+  const base = { fontFamily: font.regular };
+
   if (tone === 'muted') {
-    return <Typography color="muted" style={style} {...props} />;
+    return <Typography color="muted" style={[base, style]} {...props} />;
   }
 
   if (tone === 'default') {
-    return <Typography style={style} {...props} />;
+    return <Typography style={[base, style]} {...props} />;
   }
 
-  return <Typography style={[{ color: tone === 'danger' ? danger : accent }, style]} {...props} />;
+  return (
+    <Typography
+      style={[base, { color: tone === 'danger' ? danger : accent }, style]}
+      {...props}
+    />
+  );
 }

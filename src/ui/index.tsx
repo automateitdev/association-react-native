@@ -67,7 +67,9 @@ export { Amount, AmountBreakdown, Stat } from './Amount';
 export { MoneyRow } from './MoneyRow';
 export { StateView } from './StateView';
 export { StatusBadge } from './StatusBadge';
+export { Icon, ICONS, type IconName } from './Icon';
+export { AppBar } from './AppBar';
 
 // Shared measurements, for the cases a screen genuinely needs one directly.
-export { space, type } from './tokens';
+export { space, type, font } from './tokens';
 export { useIsDesktop, useContentWidth, DESKTOP_BREAKPOINT } from './breakpoint';
