@@ -24,6 +24,7 @@ export {
   Card,
   Checkbox,
   Chip,
+  Description,
   Dialog,
   Input,
   Label,
@@ -38,3 +39,4 @@ export {
 export { Screen } from './Screen';
 export { StateView } from './StateView';
 export { MoneyRow } from './MoneyRow';
+export { StatusBadge } from './StatusBadge';
