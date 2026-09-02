@@ -1,3 +1,14 @@
+/**
+ * Uniwind's CSS entry file. Metro compiles this (see metro.config.js) into the
+ * style objects HeroUI Native's components expect.
+ *
+ * Without the heroui-native import, its theme tokens are absent and every
+ * component renders unstyled - which reads as a broken layout rather than a
+ * missing build step.
+ */
+@import 'uniwind';
+@import 'heroui-native/styles';
+
 :root {
   --font-display:
     Spline Sans, Inter, ui-sans-serif, system-ui, sans-serif, Apple Color Emoji, Segoe UI Emoji,
