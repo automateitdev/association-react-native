@@ -187,6 +187,9 @@ export default function PaymentApprovalsScreen() {
 
                   <Button
                     style={{ flex: 1 }}
+                    // Refusing a member's payment is destructive, and the button
+                    // that does it should not look like the one that cancels.
+                    variant="danger"
                     // The server requires a reason when rejecting. Enforcing it
                     // here too means the approver is told before the round trip.
                     isDisabled={reason.trim().length === 0 || decide.isPending}

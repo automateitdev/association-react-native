@@ -234,7 +234,14 @@ export type MemberTransition = 'approve' | 'reject' | 'suspend' | 'reinstate';
  */
 export const TRANSITIONS: Record<
   MemberTransition,
-  { label: string; from: MemberStatus[]; reasonRequired: boolean; permission: string }
+  {
+    label: string;
+    from: MemberStatus[];
+    reasonRequired: boolean;
+    permission: string;
+    /** Takes something away from the member, so the UI weights it differently. */
+    destructive: boolean;
+  }
 > = {
   approve: {
     label: 'Approve',
@@ -243,24 +250,28 @@ export const TRANSITIONS: Record<
     // outcome, and requiring justification for it would be noise.
     reasonRequired: false,
     permission: 'members.approve',
+    destructive: false,
   },
   reject: {
     label: 'Reject',
     from: ['inactive'],
     reasonRequired: true,
     permission: 'members.approve',
+    destructive: true,
   },
   suspend: {
     label: 'Suspend',
     from: ['active'],
     reasonRequired: true,
     permission: 'members.suspend',
+    destructive: true,
   },
   reinstate: {
     label: 'Reinstate',
     from: ['suspended'],
     reasonRequired: true,
     permission: 'members.suspend',
+    destructive: false,
   },
 };
 

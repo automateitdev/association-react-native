@@ -183,6 +183,9 @@ function Transitions({
 
             <Button
               style={{ flex: 1 }}
+              // Rejecting and suspending take something away from a member; the
+              // button that does it should not look like the one that approves.
+              variant={config.destructive ? 'danger' : 'primary'}
               // Mirrors the server's required_if, so the approver is told before
               // the round trip rather than by a 422 afterwards.
               isDisabled={

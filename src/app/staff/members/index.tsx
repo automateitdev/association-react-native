@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { Pressable, View } from 'react-native';
+import { View } from 'react-native';
 import { useSession } from '@/features/auth/session';
 import { useMembers, type MemberStatus, type MemberSummary } from '@/features/staff/members';
 import {
@@ -132,6 +132,14 @@ export default function MembersScreen() {
   );
 }
 
+/**
+ * Chip takes `onPress` itself - it inherits PressableProps.
+ *
+ * This used to be wrapped in a Pressable, which was not just redundant: the
+ * Chip swallowed the press as the inner pressable, so the wrapper's handler was
+ * the one that did NOT fire. The docs say so plainly; reading node_modules did
+ * not.
+ */
 function FilterChip({
   label,
   active,
@@ -142,11 +150,9 @@ function FilterChip({
   onPress: () => void;
 }) {
   return (
-    <Pressable onPress={onPress}>
-      <Chip variant={active ? 'primary' : 'secondary'}>
-        <Chip.Label>{label}</Chip.Label>
-      </Chip>
-    </Pressable>
+    <Chip variant={active ? 'primary' : 'secondary'} onPress={onPress}>
+      <Chip.Label>{label}</Chip.Label>
+    </Chip>
   );
 }
 

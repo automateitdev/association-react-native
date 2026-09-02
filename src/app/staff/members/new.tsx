@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, View } from 'react-native';
+import { View } from 'react-native';
 import { ApiError } from '@/api/errors';
 import { useCreateMember, type NewMemberFields } from '@/features/staff/members';
 import {
@@ -169,12 +169,15 @@ export default function NewMemberScreen() {
       <View style={{ gap: space.sm, marginTop: space.md }}>
         <Text tone="muted" style={type.rowMeta}>Gender</Text>
         <View style={{ flexDirection: 'row', gap: space.sm }}>
+          {/* Chip is pressable itself; no wrapper needed. */}
           {(['male', 'female', 'other'] as const).map((option) => (
-            <Pressable key={option} onPress={() => set('gender')(option)}>
-              <Chip variant={fields.gender === option ? 'primary' : 'secondary'}>
-                <Chip.Label>{option}</Chip.Label>
-              </Chip>
-            </Pressable>
+            <Chip
+              key={option}
+              variant={fields.gender === option ? 'primary' : 'secondary'}
+              onPress={() => set('gender')(option)}
+            >
+              <Chip.Label>{option}</Chip.Label>
+            </Chip>
           ))}
         </View>
       </View>
