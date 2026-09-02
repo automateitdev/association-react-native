@@ -1,3 +1,4 @@
+import { useQueryClient } from '@tanstack/react-query';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { request } from '@/api/client';
 import {
@@ -63,6 +64,9 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   const [tenantSlug, setTenantSlugState] = useState<string | null>(null);
   const [session, setSession] = useState<Session | null>(null);
 
+  // Used on sign-out to drop another member's cached money. See signOut below.
+  const queryClient = useQueryClient();
+
   useEffect(() => {
     let cancelled = false;
 
@@ -115,10 +119,20 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  const chooseTenant = useCallback(async (slug: string) => {
-    await persistTenantSlug(slug);
-    setTenantSlugState(slug);
-  }, []);
+  const chooseTenant = useCallback(
+    async (slug: string) => {
+      await persistTenantSlug(slug);
+      setTenantSlugState(slug);
+
+      // Same leak as sign-out, across a harder boundary: cached data belonging
+      // to one association must never survive into another. Every request is
+      // scoped by X-Tenant, but the cache is keyed by path alone, so switching
+      // association without clearing would serve the previous association's
+      // figures under the new one's name.
+      queryClient.clear();
+    },
+    [queryClient],
+  );
 
   const signIn = useCallback(async (login: string, password: string) => {
     const response = await request<{ data: LoginResult }>('/auth/login', {
@@ -141,9 +155,40 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       // Ignored deliberately.
     }
 
-    await clearSession();
-    setSession(null);
-  }, []);
+    /*
+     * Dropping local state must happen even if clearing storage fails.
+     *
+     * A member who taps Sign out has to end up signed out. If the storage write
+     * throws and we bail here, they stay signed in holding a token the server
+     * has already revoked - and, worse, holding a warm cache of their own data
+     * for whoever signs in next. The finally block is what makes the guarantee
+     * below unconditional.
+     */
+    try {
+      await clearSession();
+    } finally {
+      setSession(null);
+
+      /*
+       * Clearing the token is NOT enough. The query cache outlives it.
+       *
+       * Without this, signing out and signing in as someone else on the same
+       * device serves the PREVIOUS member's cached dues, lifetime totals and
+       * share count to the new one. The header updates - /me is refetched - so
+       * the screen shows the right name above the wrong money, which is the
+       * worst possible form of it: nothing looks broken. Only a full page
+       * reload cleared it, and members do not reload.
+       *
+       * This is one member seeing another's finances, so it runs on EVERY
+       * sign-out path - including the one where the logout request failed and
+       * the one where storage failed.
+       *
+       * Clearing after setSession(null) means no query is mounted and
+       * refetching as the cache empties.
+       */
+      queryClient.clear();
+    }
+  }, [queryClient]);
 
   const value = useMemo<SessionContextValue>(
     () => ({
