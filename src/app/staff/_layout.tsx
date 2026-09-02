@@ -45,6 +45,7 @@ export default function StaffLayout() {
       <Tabs.Screen name="index" options={{ title: 'Overview' }} />
       <Tabs.Screen name="approvals" options={{ title: 'Approvals' }} />
       <Tabs.Screen name="members/index" options={{ title: 'Members' }} />
+      <Tabs.Screen name="fees/index" options={{ title: 'Fees' }} />
 
       {/*
         Reached from the list, not chosen from the bar. Without href: null every
@@ -53,6 +54,9 @@ export default function StaffLayout() {
       */}
       <Tabs.Screen name="members/[id]" options={{ href: null }} />
       <Tabs.Screen name="members/new" options={{ href: null }} />
+      <Tabs.Screen name="fees/[id]" options={{ href: null }} />
+      <Tabs.Screen name="fees/new" options={{ href: null }} />
+      <Tabs.Screen name="fees/assign" options={{ href: null }} />
     </Tabs>
   );
 }

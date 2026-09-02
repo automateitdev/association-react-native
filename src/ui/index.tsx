@@ -42,6 +42,7 @@ export {
   FieldError,
   Input,
   Label,
+  Select,
   Separator,
   Spinner,
   Surface,
@@ -58,6 +59,7 @@ export { Text } from './Text';
 export { Screen, ScreenHeader } from './Screen';
 export { Section, Divider, Panel } from './Section';
 export { Row, Field } from './Row';
+export { Picker, PickerField, type PickerOption } from './Picker';
 
 // Content
 export { Amount, AmountBreakdown, Stat } from './Amount';
