@@ -53,6 +53,11 @@ export const ICONS = {
   document: 'description',
   empty: 'inbox',
   chevron: 'chevron_right',
+
+  // Theme control
+  light: 'light_mode',
+  dark: 'dark_mode',
+  auto: 'brightness_auto',
 } as const;
 
 export type IconName = keyof typeof ICONS;

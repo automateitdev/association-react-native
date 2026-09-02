@@ -2,6 +2,7 @@ import { Redirect, router, Tabs } from 'expo-router';
 import { ActivityIndicator, View, type ColorValue } from 'react-native';
 import { useAssociation } from '@/features/auth/association';
 import { useSession } from '@/features/auth/session';
+import { useTheme } from '@/features/theme';
 import { AppBar, Icon, font, useIsDesktop, type IconName } from '@/ui';
 import { useThemeColor } from 'heroui-native';
 
@@ -19,6 +20,7 @@ export default function MemberLayout() {
   const { isLoading, session, isStaff, signOut, tenantSlug } = useSession();
   const isDesktop = useIsDesktop();
   const association = useAssociation();
+  const { preference, cycle } = useTheme();
 
   /*
    * The navigator tints the active tab from react-navigation's own theme, which
@@ -62,6 +64,8 @@ export default function MemberLayout() {
         userName={session.profile.name}
         userRole={session.profile.membership_no ? `No. ${session.profile.membership_no}` : undefined}
         onSignOut={() => void signOutAndReturn()}
+        themePreference={preference}
+        onCycleTheme={cycle}
       />
 
       <Tabs

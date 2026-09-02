@@ -25,11 +25,16 @@ export function AppBar({
   userName,
   userRole,
   onSignOut,
+  themePreference,
+  onCycleTheme,
 }: {
   association: string;
   userName?: string;
   userRole?: string;
   onSignOut: () => void;
+  /** Shown so the control says which of the three states it is in. */
+  themePreference?: 'light' | 'dark' | 'system';
+  onCycleTheme?: () => void;
 }) {
   const insets = useSafeAreaInsets();
 
@@ -73,6 +78,38 @@ export function AppBar({
           </Text>
         ) : null}
       </View>
+
+      {/*
+        The theme control names its CURRENT state rather than the next one.
+        A sun that means "you are in light mode" and a sun that means "switch to
+        light mode" look identical, and only one of them is honest - so the
+        label spells it out for a screen reader, and `system` gets its own glyph
+        rather than borrowing whichever mode it happens to be resolving to.
+      */}
+      {onCycleTheme ? (
+        <Pressable
+          onPress={onCycleTheme}
+          accessibilityRole="button"
+          accessibilityLabel={`Theme: ${themePreference ?? 'system'}. Tap to change.`}
+          style={{
+            paddingVertical: space.sm,
+            paddingHorizontal: space.sm,
+            borderRadius: 8,
+          }}
+        >
+          <Icon
+            name={
+              themePreference === 'light'
+                ? 'light'
+                : themePreference === 'dark'
+                  ? 'dark'
+                  : 'auto'
+            }
+            size={18}
+            tone="muted"
+          />
+        </Pressable>
+      ) : null}
 
       {/*
         Sign out lives here, once, rather than on whichever screen had room for

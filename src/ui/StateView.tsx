@@ -1,5 +1,6 @@
 import { View } from 'react-native';
-import { Button, Spinner } from 'heroui-native';
+import { Spinner } from 'heroui-native';
+import { Button } from './Button';
 import { Icon } from './Icon';
 import { Text } from './Text';
 import { space, type } from './tokens';

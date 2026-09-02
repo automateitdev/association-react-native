@@ -102,3 +102,39 @@ export async function clearTenantSlug(): Promise<void> {
 export async function clearSession(): Promise<void> {
   await clearToken();
 }
+
+/**
+ * A non-secret preference, such as the chosen theme.
+ *
+ * Deliberately NOT routed through SecureStore on native. The Keychain is for
+ * credentials; putting a colour scheme in it is both slower and misleading
+ * about what the store is for. AsyncStorage is not a dependency here, so on
+ * native this is in-memory for now and the preference simply does not survive a
+ * restart there - stated rather than pretended otherwise.
+ */
+const prefs = new Map<string, string>();
+
+export async function getItem(key: string): Promise<string | null> {
+  if (isWeb) {
+    try {
+      return globalThis.localStorage?.getItem(key) ?? null;
+    } catch {
+      return null;
+    }
+  }
+
+  return prefs.get(key) ?? null;
+}
+
+export async function setItem(key: string, value: string): Promise<void> {
+  if (isWeb) {
+    try {
+      globalThis.localStorage?.setItem(key, value);
+    } catch {
+      // Nothing useful to do.
+    }
+    return;
+  }
+
+  prefs.set(key, value);
+}

@@ -30,7 +30,6 @@ export {
   Alert,
   Avatar,
   BottomSheet,
-  Button,
   Card,
   Checkbox,
   Chip,
@@ -54,6 +53,10 @@ export {
 // that Tailwind utilities cannot override, so tones have to be resolved from the
 // theme and applied as a style. See Text.tsx.
 export { Text } from './Text';
+
+// Ours, not HeroUI's: the library's smallest button is 40pt, which is a touch
+// target and too tall beside 13.5pt text on a desktop. See Button.tsx.
+export { Button } from './Button';
 
 // Layout
 export { Screen, ScreenHeader } from './Screen';
