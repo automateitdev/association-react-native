@@ -4,16 +4,20 @@ import { View } from 'react-native';
 import { useSession } from '@/features/auth/session';
 import {
   TRANSITIONS,
+  useAssignAssociatorInfo,
   useMember,
   useTransitionMember,
   useUpdateMember,
+  type AssociatorInfoFields,
   type MemberDetail,
   type MemberTransition,
   type UpdatableMemberFields,
 } from '@/features/staff/members';
+import { ApiError } from '@/api/errors';
 import {
   Button,
   Card,
+  Description,
   Input,
   Label,
   Screen,
@@ -57,6 +61,7 @@ export default function MemberDetailScreen() {
         {member.data ? (
           <>
             <Header member={member.data} />
+            <SocietyRecord member={member.data} editable={can('members.edit')} />
             <Transitions member={member.data} can={can} />
             {can('members.edit') ? <EditForm member={member.data} /> : null}
             <ReadOnlyDetails member={member.data} editable={can('members.edit')} />
@@ -75,7 +80,9 @@ function Header({ member }: { member: MemberDetail }) {
           <View style={{ flex: 1, gap: 2 }}>
             <Text style={{ fontSize: 18, fontWeight: '700' }}>{member.name}</Text>
             <Text style={{ opacity: 0.7 }}>
-              {member.membership_no ?? 'No membership number'} · {member.mobile}
+              {member.membership_no ? `No. ${member.membership_no}` : 'Number not assigned'}
+              {' · '}
+              {member.mobile}
             </Text>
           </View>
           <StatusBadge status={member.status} />
@@ -211,6 +218,150 @@ function Transitions({
         )}
       </Card.Body>
     </Card>
+  );
+}
+
+/**
+ * The society record: the membership number and what the office recorded with it.
+ *
+ * Separate from "Edit details" because it is a different act by a different
+ * person - the legacy system draws the same line, with its own screen and a
+ * field labelled "Office use only". A member's address is a correction; their
+ * membership number is a decision of the register.
+ *
+ * The number is TYPED, not generated, and that is deliberate. The association's
+ * register runs 01 to 317 across 315 live members, with gaps at 221 and 245
+ * where numbers were retired. A generator would either refuse to reproduce
+ * those gaps or quietly reissue a retired number, and the register - not this
+ * system - is the authority on which it is.
+ *
+ * Share count is absent on purpose: it comes from share payments and is
+ * recomputable from share history, so there is nowhere here to type it.
+ */
+function SocietyRecord({ member, editable }: { member: MemberDetail; editable: boolean }) {
+  const assign = useAssignAssociatorInfo(member.id);
+  const [open, setOpen] = useState(false);
+
+  const [fields, setFields] = useState<AssociatorInfoFields>({
+    membership_no: member.membership_no ?? '',
+    join_date: member.join_date ?? '',
+    share_no: member.share_no ?? '',
+    company: member.company ?? '',
+    designation: member.designation ?? '',
+  });
+
+  const set = (key: keyof AssociatorInfoFields) => (value: string) =>
+    setFields((current) => ({ ...current, [key]: value }));
+
+  const fieldErrors =
+    assign.error instanceof ApiError
+      ? ((assign.error.details ?? {}) as Record<string, string[]>)
+      : {};
+
+  if (!open) {
+    return (
+      <Card>
+        <Card.Body style={{ gap: 8 }}>
+          <Text style={{ fontWeight: '600' }}>Society record</Text>
+
+          <Row label="Membership no." value={member.membership_no} />
+          <Row label="Joined" value={member.join_date} />
+          <Row label="Share no." value={member.share_no} />
+          <Row label="Employer" value={member.company} />
+          <Row label="Designation" value={member.designation} />
+
+          {/*
+            Say what is missing rather than showing a dash and leaving staff to
+            wonder whether it failed to load. A member with no number cannot be
+            quoted one on a receipt or an approval SMS.
+          */}
+          {!member.membership_no ? (
+            <Text style={{ fontWeight: '600' }}>No membership number assigned yet.</Text>
+          ) : null}
+
+          {editable ? (
+            <Button variant="secondary" onPress={() => setOpen(true)}>
+              <Button.Label>
+                {member.membership_no ? 'Edit society record' : 'Assign membership number'}
+              </Button.Label>
+            </Button>
+          ) : null}
+        </Card.Body>
+      </Card>
+    );
+  }
+
+  return (
+    <Card>
+      <Card.Body style={{ gap: 12 }}>
+        <Text style={{ fontWeight: '600' }}>Society record</Text>
+        <Text style={{ opacity: 0.7 }}>
+          Office use. The number must be unique within this association.
+        </Text>
+
+        <Field
+          label="Membership no."
+          value={fields.membership_no}
+          onChangeText={set('membership_no')}
+          errors={fieldErrors.membership_no}
+        />
+        <Field
+          label="Joined"
+          hint="YYYY-MM-DD"
+          value={fields.join_date ?? ''}
+          onChangeText={set('join_date')}
+          errors={fieldErrors.join_date}
+        />
+        <Field
+          label="Share no."
+          value={fields.share_no ?? ''}
+          onChangeText={set('share_no')}
+          errors={fieldErrors.share_no}
+        />
+        <Field label="Employer" value={fields.company ?? ''} onChangeText={set('company')} />
+        <Field
+          label="Designation"
+          value={fields.designation ?? ''}
+          onChangeText={set('designation')}
+        />
+
+        <View style={{ flexDirection: 'row', gap: 8 }}>
+          <Button variant="secondary" style={{ flex: 1 }} onPress={() => setOpen(false)}>
+            <Button.Label>Cancel</Button.Label>
+          </Button>
+
+          <Button
+            style={{ flex: 1 }}
+            isDisabled={assign.isPending || fields.membership_no.trim().length === 0}
+            onPress={async () => {
+              try {
+                await assign.mutateAsync({
+                  ...fields,
+                  membership_no: fields.membership_no.trim(),
+                  // Empty means "not recorded", not an empty date - the server
+                  // would refuse '' as a date.
+                  join_date: fields.join_date?.trim() ? fields.join_date.trim() : null,
+                });
+                setOpen(false);
+              } catch {
+                // Field errors are shown above.
+              }
+            }}
+          >
+            <Button.Label>{assign.isPending ? 'Saving…' : 'Save'}</Button.Label>
+          </Button>
+        </View>
+      </Card.Body>
+    </Card>
+  );
+}
+
+function Row({ label, value }: { label: string; value: string | null }) {
+  return (
+    <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 12 }}>
+      <Text style={{ opacity: 0.7 }}>{label}</Text>
+      <Text>{value || '\u2014'}</Text>
+    </View>
   );
 }
 
@@ -354,21 +505,27 @@ function Field({
   value,
   onChangeText,
   keyboardType,
+  hint,
+  errors,
 }: {
   label: string;
   value: string;
   onChangeText: (value: string) => void;
   keyboardType?: 'phone-pad' | 'email-address';
+  hint?: string;
+  errors?: string[];
 }) {
   return (
-    <TextField>
+    <TextField isInvalid={Boolean(errors?.length)}>
       <Label>{label}</Label>
       <Input
         value={value}
         onChangeText={onChangeText}
         keyboardType={keyboardType}
+        placeholder={hint}
         autoCapitalize={keyboardType === 'email-address' ? 'none' : 'sentences'}
       />
+      {errors?.length ? <Description>{errors[0]}</Description> : null}
     </TextField>
   );
 }

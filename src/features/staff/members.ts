@@ -31,12 +31,28 @@ export type MemberSummary = {
   mobile: string;
   email: string | null;
   status: MemberStatus;
+
+  /**
+   * Null until the office assigns it.
+   *
+   * Not an error state and not missing data: a member legitimately exists
+   * before anyone knows their number. The association assigns it afterwards,
+   * on its own screen, exactly as the legacy system did.
+   */
   membership_no: string | null;
+
+  /** Derived from share payments, never typed. */
   shares: number;
 };
 
 /** What `show` adds. Most of it is NOT editable - see the asymmetry above. */
 export type MemberDetail = MemberSummary & {
+  /** The society record the office maintains. */
+  join_date: string | null;
+  share_no: string | null;
+  company: string | null;
+  designation: string | null;
+
   father_name: string | null;
   mother_name: string | null;
   bcs_batch: string | null;
@@ -149,6 +165,48 @@ export function useUpdateMember(id: number) {
     mutationFn: async (fields: UpdatableMemberFields) =>
       (
         await request<{ data: MemberDetail }>(`/staff/members/${id}`, {
+          method: 'PUT',
+          body: fields,
+        })
+      ).data,
+
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: memberKeys.all });
+    },
+  });
+}
+
+/**
+ * The society record the office assigns, after the member exists.
+ *
+ * Deliberately excludes `num_or_shares`: that total is maintained by
+ * ShareService from share payments and is recomputable from share history. The
+ * legacy system let staff type it AND credited it from payments, which is why
+ * its two sources disagree.
+ */
+export type AssociatorInfoFields = {
+  membership_no: string;
+  join_date?: string | null;
+  share_no?: string | null;
+  bcs_batch?: string | null;
+  company?: string | null;
+  designation?: string | null;
+};
+
+/**
+ * Assign or correct the society record.
+ *
+ * Numbers are typed, not generated - matching the association's register, where
+ * 315 live numbers run 01 to 317 with gaps at 221 and 245. A generator would
+ * either refuse to reproduce those gaps or quietly reissue a retired number.
+ */
+export function useAssignAssociatorInfo(id: number) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (fields: AssociatorInfoFields) =>
+      (
+        await request<{ data: MemberDetail }>(`/staff/members/${id}/associator-info`, {
           method: 'PUT',
           body: fields,
         })
