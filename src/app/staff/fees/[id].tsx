@@ -5,6 +5,7 @@ import { ApiError } from '@/api/errors';
 import { useSession } from '@/features/auth/session';
 import { useFeeSetups, useLedgerOptions, useLedgers, useUpdateFeeSetup } from '@/features/staff/fees';
 import {
+  useActionButtonStyle,
   Button,
   Field,
   FieldError,
@@ -45,6 +46,7 @@ export default function EditFeeSetupScreen() {
   const setups = useFeeSetups();
   const ledgers = useLedgers();
   const update = useUpdateFeeSetup(setupId);
+  const actionStyle = useActionButtonStyle();
 
   const setup = setups.data?.find((s) => s.id === setupId);
   const options = useLedgerOptions(ledgers.data);
@@ -169,11 +171,11 @@ export default function EditFeeSetupScreen() {
                   />
 
                   <View style={{ flexDirection: 'row', gap: space.sm }}>
-                    <Button variant="secondary" style={{ flex: 1 }} onPress={() => setOpen(false)}>
+                    <Button variant="secondary" style={actionStyle} onPress={() => setOpen(false)}>
                       <Button.Label>Cancel</Button.Label>
                     </Button>
                     <Button
-                      style={{ flex: 1 }}
+                      style={actionStyle}
                       isDisabled={update.isPending || sameLedger || feeHead.trim().length === 0}
                       onPress={() => void save()}
                     >

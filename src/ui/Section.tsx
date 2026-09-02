@@ -123,10 +123,28 @@ export function Actions({
         flexDirection: 'row',
         gap: space.sm,
         alignSelf: stretch ? 'stretch' : 'flex-start',
-        minWidth: stretch ? undefined : 200,
       }}
     >
       {children}
     </View>
   );
+}
+
+/**
+ * The style a button inside `Actions` should carry.
+ *
+ * Paired buttons were written as `style={{ flex: 1 }}` - right on a phone, where
+ * Cancel and Confirm split the screen between them, and absurd on a desktop,
+ * where they split 1240pt and each came out 620pt wide. A confirm button the
+ * width of half a monitor does not read as a button.
+ *
+ * A hook rather than a constant because the answer depends on the viewport, and
+ * a hook is the only thing a component can ask at render time.
+ */
+export function useActionButtonStyle() {
+  const isDesktop = useIsDesktop();
+
+  // Wide enough for "Confirm reinstate" without wrapping; nowhere near the
+  // width of the page.
+  return isDesktop ? { minWidth: 150 } : { flex: 1 };
 }

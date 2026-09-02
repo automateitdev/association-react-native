@@ -15,6 +15,7 @@ import {
   type UpdatableMemberFields,
 } from '@/features/staff/members';
 import {
+  useActionButtonStyle,
   Button,
   Field,
   FieldError,
@@ -104,6 +105,7 @@ function Transitions({
   can: (permission: string) => boolean;
 }) {
   const transition = useTransitionMember(member.id);
+  const actionStyle = useActionButtonStyle();
   const [pendingAction, setPendingAction] = useState<MemberTransition | null>(null);
   const [reason, setReason] = useState('');
 
@@ -172,7 +174,7 @@ function Transitions({
           <View style={{ flexDirection: 'row', gap: space.sm }}>
             <Button
               variant="secondary"
-              style={{ flex: 1 }}
+              style={actionStyle}
               onPress={() => {
                 setPendingAction(null);
                 setReason('');
@@ -182,7 +184,7 @@ function Transitions({
             </Button>
 
             <Button
-              style={{ flex: 1 }}
+              style={actionStyle}
               // Rejecting and suspending take something away from a member; the
               // button that does it should not look like the one that approves.
               variant={config.destructive ? 'danger' : 'primary'}
@@ -234,6 +236,7 @@ function Transitions({
  */
 function SocietyRecord({ member, editable }: { member: MemberDetail; editable: boolean }) {
   const assign = useAssignAssociatorInfo(member.id);
+  const actionStyle = useActionButtonStyle();
   const [open, setOpen] = useState(false);
 
   const [fields, setFields] = useState<AssociatorInfoFields>({
@@ -324,12 +327,12 @@ function SocietyRecord({ member, editable }: { member: MemberDetail; editable: b
         />
 
         <View style={{ flexDirection: 'row', gap: space.sm }}>
-          <Button variant="secondary" style={{ flex: 1 }} onPress={() => setOpen(false)}>
+          <Button variant="secondary" style={actionStyle} onPress={() => setOpen(false)}>
             <Button.Label>Cancel</Button.Label>
           </Button>
 
           <Button
-            style={{ flex: 1 }}
+            style={actionStyle}
             isDisabled={assign.isPending || fields.membership_no.trim().length === 0}
             onPress={async () => {
               try {
@@ -364,6 +367,7 @@ function SocietyRecord({ member, editable }: { member: MemberDetail; editable: b
  */
 function PersonalDetails({ member, editable }: { member: MemberDetail; editable: boolean }) {
   const update = useUpdateMember(member.id);
+  const actionStyle = useActionButtonStyle();
   const [open, setOpen] = useState(false);
 
   const [fields, setFields] = useState<UpdatableMemberFields>({
@@ -416,12 +420,12 @@ function PersonalDetails({ member, editable }: { member: MemberDetail; editable:
           />
 
           <View style={{ flexDirection: 'row', gap: space.sm }}>
-            <Button variant="secondary" style={{ flex: 1 }} onPress={() => setOpen(false)}>
+            <Button variant="secondary" style={actionStyle} onPress={() => setOpen(false)}>
               <Button.Label>Cancel</Button.Label>
             </Button>
 
             <Button
-              style={{ flex: 1 }}
+              style={actionStyle}
               isDisabled={update.isPending || (fields.name ?? '').trim().length === 0}
               onPress={async () => {
                 try {

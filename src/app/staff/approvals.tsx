@@ -7,6 +7,7 @@ import {
   type PendingPayment,
 } from '@/features/staff/approvals';
 import {
+  useActionButtonStyle,
   AmountBreakdown,
   Button,
   Checkbox,
@@ -46,6 +47,7 @@ import {
  */
 export default function PaymentApprovalsScreen() {
   const pending = usePendingPayments();
+  const actionStyle = useActionButtonStyle();
   const decide = useDecidePayments();
 
   const [selected, setSelected] = useState<Set<number>>(new Set());
@@ -176,7 +178,7 @@ export default function PaymentApprovalsScreen() {
                 <View style={{ flexDirection: 'row', gap: space.sm }}>
                   <Button
                     variant="secondary"
-                    style={{ flex: 1 }}
+                    style={actionStyle}
                     onPress={() => {
                       setRejecting(false);
                       setReason('');
@@ -186,7 +188,7 @@ export default function PaymentApprovalsScreen() {
                   </Button>
 
                   <Button
-                    style={{ flex: 1 }}
+                    style={actionStyle}
                     // Refusing a member's payment is destructive, and the button
                     // that does it should not look like the one that cancels.
                     variant="danger"
@@ -210,7 +212,7 @@ export default function PaymentApprovalsScreen() {
                 <View style={{ flexDirection: 'row', gap: space.sm }}>
                   <Button
                     variant="secondary"
-                    style={{ flex: 1 }}
+                    style={actionStyle}
                     isDisabled={decide.isPending}
                     onPress={() => setRejecting(true)}
                   >
@@ -218,7 +220,7 @@ export default function PaymentApprovalsScreen() {
                   </Button>
 
                   <Button
-                    style={{ flex: 1 }}
+                    style={actionStyle}
                     isDisabled={decide.isPending}
                     onPress={() => void submit('completed')}
                   >
