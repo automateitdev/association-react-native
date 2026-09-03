@@ -68,9 +68,23 @@ export function Screen({
     alignSelf: (isDesktop ? 'flex-start' : 'center') as 'flex-start' | 'center',
   };
 
+  /*
+   * EVERY SCREEN PAINTS ITS OWN GROUND, and that is not cosmetic.
+   *
+   * react-navigation only truly hides an inactive tab when react-native-screens
+   * is active. On web `screensEnabled()` is false, so its MaybeScreen falls back
+   * to a plain View and inactive screens are merely pushed to `zIndex: -1` -
+   * still mounted, still laid out, still painted. With transparent scenes the
+   * result was every visited tab showing through every other one at identical
+   * coordinates: five titles stacked on the same pixel.
+   *
+   * An opaque background on the focused screen is what actually covers them.
+   * `bg-background` rather than a colour prop so it follows the theme through
+   * CSS, which is the one mechanism that has proved reliable here.
+   */
   if (!scroll) {
     return (
-      <View style={[{ flex: 1 }, padding]}>
+      <View className="bg-background" style={[{ flex: 1 }, padding]}>
         <View style={[{ flex: 1 }, measure]}>{children}</View>
       </View>
     );
@@ -78,6 +92,7 @@ export function Screen({
 
   return (
     <ScrollView
+      className="bg-background"
       style={{ flex: 1 }}
       contentContainerStyle={padding}
       keyboardShouldPersistTaps="handled"

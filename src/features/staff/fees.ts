@@ -114,10 +114,23 @@ export function useFeeSetups() {
  * screen groups by category and lets income sort first rather than hiding the
  * rest.
  */
-export function useLedgers() {
+/**
+ * The chart of accounts, optionally narrowed to one kind.
+ *
+ * `type` matters at the counter: a collection asks where the money LANDED, and
+ * that is an asset account - a cash box or a bank. Offering income ledgers
+ * there would invite crediting the same account twice, since the fee head has
+ * already named where the instalment posts.
+ */
+export function useLedgers(type?: 'asset' | 'income' | 'expense' | 'liability' | 'equity') {
   return useQuery({
-    queryKey: feeKeys.ledgers,
-    queryFn: async () => (await request<{ data: Ledger[] }>('/staff/ledgers')).data,
+    queryKey: [...feeKeys.ledgers, type ?? 'all'] as const,
+    queryFn: async () =>
+      (
+        await request<{ data: Ledger[] }>('/staff/ledgers', {
+          query: type ? { type } : undefined,
+        })
+      ).data,
 
     // A chart of accounts changes about never.
     staleTime: 5 * 60_000,

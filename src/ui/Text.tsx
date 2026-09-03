@@ -2,7 +2,7 @@ import type { ComponentProps } from 'react';
 import { Typography, useThemeColor } from 'heroui-native';
 import { font } from './tokens';
 
-type Tone = 'default' | 'muted' | 'danger' | 'accent';
+type Tone = 'default' | 'muted' | 'danger' | 'accent' | 'inverse';
 
 /**
  * Text with a theme-resolved tone.
@@ -36,6 +36,10 @@ export function Text({
   // Hooks cannot be conditional, so both are read regardless of tone.
   const danger = useThemeColor('danger');
   const accent = useThemeColor('accent');
+  // Text sitting ON an accent ground - a selected calendar day, a filled chip.
+  // The palette defines a colour for exactly this; guessing white breaks in the
+  // light theme, where the accent is a deep olive but not dark enough for it.
+  const inverse = useThemeColor('accent-foreground');
 
   /*
    * Inter by default, so text with no explicit style still gets the typeface.
@@ -57,7 +61,11 @@ export function Text({
 
   return (
     <Typography
-      style={[base, { color: tone === 'danger' ? danger : accent }, style]}
+      style={[
+        base,
+        { color: tone === 'danger' ? danger : tone === 'inverse' ? inverse : accent },
+        style,
+      ]}
       {...props}
     />
   );

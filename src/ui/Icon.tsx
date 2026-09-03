@@ -27,6 +27,7 @@ export const ICONS = {
   members: 'group',
   fees: 'receipt_long',
   reports: 'bar_chart',
+  settings: 'manage_accounts',
 
   // Member surface
   dues: 'account_balance_wallet',
@@ -38,6 +39,10 @@ export const ICONS = {
   add: 'add',
   edit: 'edit',
   back: 'arrow_back',
+  forward: 'arrow_forward',
+  sortUp: 'arrow_upward',
+  sortDown: 'arrow_downward',
+  calendar: 'calendar_month',
   search: 'search',
   signOut: 'logout',
   refresh: 'refresh',
@@ -53,6 +58,12 @@ export const ICONS = {
   document: 'description',
   empty: 'inbox',
   chevron: 'chevron_right',
+  chevronDown: 'expand_more',
+  chevronUp: 'expand_less',
+
+  // Export formats
+  table: 'table_view',
+  print: 'print',
 
   // Theme control
   light: 'light_mode',
@@ -70,13 +81,14 @@ export function Icon({
 }: {
   name: IconName;
   size?: number;
-  tone?: 'default' | 'muted' | 'danger' | 'accent' | 'inverse';
+  tone?: 'default' | 'muted' | 'danger' | 'accent' | 'inverse' | 'success';
   /** An explicit colour, for cases where the tone presets do not fit. */
   color?: string;
 }) {
   // Hooks cannot be conditional, so every tone colour is resolved.
   const muted = useThemeColor('muted');
   const danger = useThemeColor('danger');
+  const success = useThemeColor('success');
   const accent = useThemeColor('accent');
   const foreground = useThemeColor('foreground');
   const inverse = useThemeColor('accent-foreground');
@@ -87,6 +99,8 @@ export function Icon({
       ? muted
       : tone === 'danger'
         ? danger
+        : tone === 'success'
+          ? success
         : tone === 'accent'
           ? accent
           : tone === 'inverse'

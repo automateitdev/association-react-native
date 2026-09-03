@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
 import { View } from 'react-native';
 import { formatMoney, type Money } from '@/api/money';
+import { useSession } from '@/features/auth/session';
 import { useDashboard } from '@/features/staff/dashboard';
 import {
   Screen,
@@ -32,6 +33,7 @@ import {
  * figure is a distinct object, and it reads as one when it has an edge.
  */
 export default function DashboardScreen() {
+  const { can } = useSession();
   const dashboard = useDashboard();
   const data = dashboard.data;
 
@@ -60,8 +62,17 @@ export default function DashboardScreen() {
                   meta={
                     data.payments_pending_approval === 0 ? 'Nothing waiting' : 'Review and decide'
                   }
+                  /*
+                    Only where this account may actually go.
+
+                    A cashier holds collections and members and nothing else,
+                    so offering the approvals queue here sends them to a screen
+                    that answers 403 - the same gap the sidebar had before its
+                    tabs were gated. A figure worth knowing is still worth
+                    showing; it simply stops being a door.
+                  */
                   onPress={
-                    data.payments_pending_approval > 0
+                    data.payments_pending_approval > 0 && can('payments.view')
                       ? () => router.push('/staff/approvals')
                       : undefined
                   }
@@ -72,7 +83,7 @@ export default function DashboardScreen() {
                   icon="awaiting"
                   tone={data.members.inactive > 0 ? 'attention' : 'neutral'}
                   meta={data.members.inactive === 0 ? 'None' : 'Not yet admitted'}
-                  onPress={() => router.push('/staff/members')}
+                  onPress={can('members.view') ? () => router.push('/staff/members') : undefined}
                 />
                 <Stat
                   label="Suspended"
@@ -80,7 +91,7 @@ export default function DashboardScreen() {
                   icon="suspended"
                   tone={data.members.suspended > 0 ? 'danger' : 'neutral'}
                   meta={data.members.suspended === 0 ? 'None' : 'For arrears'}
-                  onPress={() => router.push('/staff/members')}
+                  onPress={can('members.view') ? () => router.push('/staff/members') : undefined}
                 />
               </StatGrid>
             </Section>
@@ -121,7 +132,7 @@ export default function DashboardScreen() {
                   value={String(data.members.active)}
                   icon="members"
                   meta="Able to sign in and pay"
-                  onPress={() => router.push('/staff/members')}
+                  onPress={can('members.view') ? () => router.push('/staff/members') : undefined}
                 />
                 {/* Keeps a lone card to one column's width instead of letting it
                     stretch across the grid. */}

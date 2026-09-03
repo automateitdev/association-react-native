@@ -3,8 +3,10 @@ import { ActivityIndicator, View, type ColorValue } from 'react-native';
 import { useAssociation } from '@/features/auth/association';
 import { useSession } from '@/features/auth/session';
 import { useTheme } from '@/features/theme';
-import { AppBar, Icon, font, useIsDesktop, type IconName } from '@/ui';
-import { useThemeColor } from 'heroui-native';
+import { AppBar, Icon, font, useIsDesktop, type IconName,
+  NavSurface,
+  useThemeColorReader,
+} from '@/ui';
 
 /**
  * The member surface.
@@ -20,16 +22,17 @@ export default function MemberLayout() {
   const { isLoading, session, isStaff, signOut, tenantSlug } = useSession();
   const isDesktop = useIsDesktop();
   const association = useAssociation();
-  const { preference, cycle } = useTheme();
+  const { preference, scheme, cycle } = useTheme();
 
   /*
    * The navigator tints the active tab from react-navigation's own theme, which
    * is a stock blue and knows nothing about HeroUI's palette. Left alone the
    * sidebar highlighted in blue while every other accent on screen was green.
    */
-  const accent = useThemeColor('accent');
-  const accentForeground = useThemeColor('accent-foreground');
-  const muted = useThemeColor('muted');
+  const themeColor = useThemeColorReader(scheme);
+  const accent = themeColor('accent');
+  const accentForeground = themeColor('accent-foreground');
+  const muted = themeColor('muted');
 
   /*
    * Wait for the session check before deciding anything.
@@ -68,7 +71,16 @@ export default function MemberLayout() {
         onCycleTheme={cycle}
       />
 
-      <Tabs
+      {/*
+        The navigator needs its own flex: <Tabs> sits in a column beside the
+        AppBar, so without this it is a flex child with no flex of its own.
+
+        This is NOT what caused tabs to render on top of each other - that was
+        transparent scenes, and is fixed in ui/Screen.tsx, which see. The two
+        looked alike enough that this wrapper was tried first and did nothing.
+      */}
+      <View style={{ flex: 1 }}>
+        <Tabs
       /*
        * Remount when the layout changes shape.
        *
@@ -110,6 +122,17 @@ export default function MemberLayout() {
          *
          * Setting both halves means the pair can never disagree again.
          */
+        /*
+         * The rail paints itself, because the navigator could not.
+         *
+         * Supplying this makes the navigator set its own background to
+         * transparent (BottomTabBar.js: `tabBarBackgroundElement != null ?
+         * 'transparent' : colors.card`), which is what we want - `colors.card`
+         * was being dropped anyway and the rail was showing the page through
+         * it.
+         */
+        tabBarBackground: () => <NavSurface scheme={scheme} sidebar={isDesktop} />,
+
         tabBarActiveBackgroundColor: accent,
         tabBarActiveTintColor: accentForeground,
         tabBarInactiveTintColor: muted,
@@ -152,7 +175,13 @@ export default function MemberLayout() {
                * holds five one-word labels, and every pixel it does not take is
                * a pixel a report column can have.
                */
-              tabBarStyle: { width: 220, minWidth: 220 },
+              /*
+               * borderRightWidth: 0 because the navigator draws its hairline
+               * from `colors.border`, which React Native Web drops - leaving
+               * borderColor at its initial value of pure black. NavSurface
+               * draws the real one.
+               */
+              tabBarStyle: { width: 220, minWidth: 220, borderRightWidth: 0 },
               tabBarItemStyle: {
                 justifyContent: 'flex-start',
                 paddingHorizontal: 14,
@@ -160,7 +189,7 @@ export default function MemberLayout() {
                 marginHorizontal: 8,
               },
             }
-          : null),
+          : { tabBarStyle: { borderTopWidth: 0 } }),
       }}
     >
       <Tabs.Screen name="index" options={{ tabBarIcon: tabIcon('dues'), title: 'Dues' }} />
@@ -175,7 +204,8 @@ export default function MemberLayout() {
         "payment/[id]" tab appears next to the four real ones.
       */}
       <Tabs.Screen name="payment/[id]" options={{ href: null }} />
-      </Tabs>
+        </Tabs>
+      </View>
     </View>
   );
 }

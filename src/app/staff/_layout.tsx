@@ -3,8 +3,10 @@ import { ActivityIndicator, View, type ColorValue } from 'react-native';
 import { useAssociation } from '@/features/auth/association';
 import { useSession } from '@/features/auth/session';
 import { useTheme } from '@/features/theme';
-import { AppBar, Icon, font, useIsDesktop, type IconName } from '@/ui';
-import { useThemeColor } from 'heroui-native';
+import { AppBar, Icon, font, useIsDesktop, type IconName,
+  NavSurface,
+  useThemeColorReader,
+} from '@/ui';
 
 /**
  * The staff surface.
@@ -26,19 +28,20 @@ import { useThemeColor } from 'heroui-native';
  * staff endpoints and be refused by `EnsureStaff` with a 403 it cannot act on.
  */
 export default function StaffLayout() {
-  const { isLoading, session, isStaff, signOut, tenantSlug } = useSession();
+  const { isLoading, session, isStaff, signOut, tenantSlug, can } = useSession();
   const isDesktop = useIsDesktop();
   const association = useAssociation();
-  const { preference, cycle } = useTheme();
+  const { preference, scheme, cycle } = useTheme();
 
   /*
    * The navigator tints the active tab from react-navigation's own theme, which
    * is a stock blue and knows nothing about HeroUI's palette. Left alone the
    * sidebar highlighted in blue while every other accent on screen was green.
    */
-  const accent = useThemeColor('accent');
-  const accentForeground = useThemeColor('accent-foreground');
-  const muted = useThemeColor('muted');
+  const themeColor = useThemeColorReader(scheme);
+  const accent = themeColor('accent');
+  const accentForeground = themeColor('accent-foreground');
+  const muted = themeColor('muted');
 
   /*
    * Wait for the session check before deciding anything.
@@ -61,6 +64,14 @@ export default function StaffLayout() {
   if (!session) return <Redirect href="/sign-in" />;
   if (!isStaff) return <Redirect href="/member" />;
 
+  /*
+   * A tab's href, or null to leave it out of the bar.
+   *
+   * Returning `undefined` would mean "use the default", which is the route -
+   * so the tab would appear. null is the only value that hides it.
+   */
+  const tab = (permission: string) => (can(permission) ? undefined : null);
+
   const signOutAndReturn = async () => {
     await signOut();
     router.replace('/');
@@ -77,7 +88,16 @@ export default function StaffLayout() {
         onCycleTheme={cycle}
       />
 
-      <Tabs
+      {/*
+        The navigator needs its own flex: <Tabs> sits in a column beside the
+        AppBar, so without this it is a flex child with no flex of its own.
+
+        This is NOT what caused tabs to render on top of each other - that was
+        transparent scenes, and is fixed in ui/Screen.tsx, which see. The two
+        looked alike enough that this wrapper was tried first and did nothing.
+      */}
+      <View style={{ flex: 1 }}>
+        <Tabs
       /*
        * Remount when the layout changes shape.
        *
@@ -115,6 +135,17 @@ export default function StaffLayout() {
          *
          * Setting both halves means the pair can never disagree again.
          */
+        /*
+         * The rail paints itself, because the navigator could not.
+         *
+         * Supplying this makes the navigator set its own background to
+         * transparent (BottomTabBar.js: `tabBarBackgroundElement != null ?
+         * 'transparent' : colors.card`), which is what we want - `colors.card`
+         * was being dropped anyway and the rail was showing the page through
+         * it.
+         */
+        tabBarBackground: () => <NavSurface scheme={scheme} sidebar={isDesktop} />,
+
         tabBarActiveBackgroundColor: accent,
         tabBarActiveTintColor: accentForeground,
         tabBarInactiveTintColor: muted,
@@ -158,7 +189,13 @@ export default function StaffLayout() {
                * holds five one-word labels, and every pixel it does not take is
                * a pixel a report column can have.
                */
-              tabBarStyle: { width: 220, minWidth: 220 },
+              /*
+               * borderRightWidth: 0 because the navigator draws its hairline
+               * from `colors.border`, which React Native Web drops - leaving
+               * borderColor at its initial value of pure black. NavSurface
+               * draws the real one.
+               */
+              tabBarStyle: { width: 220, minWidth: 220, borderRightWidth: 0 },
               tabBarItemStyle: {
                 justifyContent: 'flex-start',
                 paddingHorizontal: 14,
@@ -166,19 +203,70 @@ export default function StaffLayout() {
                 marginHorizontal: 8,
               },
             }
-          : null),
+          : { tabBarStyle: { borderTopWidth: 0 } }),
       }}
     >
-      <Tabs.Screen name="index" options={{ tabBarIcon: tabIcon('overview'), title: 'Overview' }} />
-      <Tabs.Screen name="approvals" options={{ tabBarIcon: tabIcon('approvals'), title: 'Approvals' }} />
-      <Tabs.Screen name="members/index" options={{ tabBarIcon: tabIcon('members'), title: 'Members' }} />
-      <Tabs.Screen name="fees/index" options={{ tabBarIcon: tabIcon('fees'), title: 'Fees' }} />
-      <Tabs.Screen name="reports/index" options={{ tabBarIcon: tabIcon('reports'), title: 'Reports' }} />
+      {/*
+        EVERY TAB IS GATED ON A PERMISSION, and this was a real gap once roles
+        became something an association configures.
+
+        A cashier - members.view and collections.* and nothing else - was shown
+        Fees and Reports like everybody else, and pressing either got a 403 with
+        no explanation. A navigation bar that offers places you may not go is
+        not a cosmetic problem; it teaches staff that the app is unreliable.
+
+        `href: null` is expo-router's way of keeping a route reachable while
+        removing it from the bar, which is what a permission check needs: the
+        screen still exists for a deep link, it simply is not offered.
+      */}
+      <Tabs.Screen
+        name="index"
+        options={{ tabBarIcon: tabIcon('overview'), title: 'Overview', href: tab('dashboard.view') }}
+      />
+      <Tabs.Screen
+        name="approvals"
+        options={{
+          tabBarIcon: tabIcon('approvals'),
+          title: 'Approvals',
+          href: tab('payments.view'),
+        }}
+      />
+      <Tabs.Screen
+        name="collect"
+        options={{ tabBarIcon: tabIcon('pay'), title: 'Collect', href: tab('collections.view') }}
+      />
+      <Tabs.Screen
+        name="members/index"
+        options={{ tabBarIcon: tabIcon('members'), title: 'Members', href: tab('members.view') }}
+      />
+      <Tabs.Screen
+        name="fees/index"
+        options={{ tabBarIcon: tabIcon('fees'), title: 'Fees', href: tab('fee-setups.view') }}
+      />
+      <Tabs.Screen
+        name="reports/index"
+        options={{
+          tabBarIcon: tabIcon('reports'),
+          title: 'Reports',
+          // Either report is enough to make the menu worth showing.
+          href: tab('reports.due') ?? tab('reports.paid'),
+        }}
+      />
+      <Tabs.Screen
+        name="admin/index"
+        options={{
+          tabBarIcon: tabIcon('settings'),
+          title: 'Admin',
+          href: tab('users.view') ?? tab('roles.view'),
+        }}
+      />
 
       {/*
         Reached from a list, not chosen from the bar. Without href: null every
         file in this tree becomes its own tab.
       */}
+      <Tabs.Screen name="admin/users" options={{ href: null }} />
+      <Tabs.Screen name="admin/roles" options={{ href: null }} />
       <Tabs.Screen name="members/[id]" options={{ href: null }} />
       <Tabs.Screen name="members/new" options={{ href: null }} />
       <Tabs.Screen name="fees/[id]" options={{ href: null }} />
@@ -186,7 +274,8 @@ export default function StaffLayout() {
       <Tabs.Screen name="fees/assign" options={{ href: null }} />
       <Tabs.Screen name="reports/due" options={{ href: null }} />
       <Tabs.Screen name="reports/paid" options={{ href: null }} />
-      </Tabs>
+        </Tabs>
+      </View>
     </View>
   );
 }

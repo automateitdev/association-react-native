@@ -2,7 +2,7 @@ import { router } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { View } from 'react-native';
 import { ApiError } from '@/api/errors';
-import { useMembers } from '@/features/staff/members';
+import { useMemberOptions } from '@/features/staff/members';
 import {
   recentPeriods,
   useAssignFees,
@@ -63,7 +63,7 @@ export default function AssignFeesScreen() {
    * already the reason they are suspended. Both are decisions, not defaults, so
    * neither is offered here.
    */
-  const members = useMembers(
+  const members = useMemberOptions(
     useMemo(() => ({ q: query || undefined, status: 'active' as const }), [query]),
   );
 

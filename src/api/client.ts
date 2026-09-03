@@ -1,4 +1,5 @@
 import Constants from 'expo-constants';
+import { Platform } from 'react-native';
 import { ApiError, ErrorCode, fallbackMessage } from './errors';
 import { getTenantSlug, getToken } from './storage';
 
@@ -23,6 +24,9 @@ const BASE_URL: string =
 /** Timeout for a normal request. Uploads get their own, longer, budget. */
 const DEFAULT_TIMEOUT_MS = 20_000;
 const UPLOAD_TIMEOUT_MS = 120_000;
+
+/** Generating a report is real server work; 20s would abort one that was coming. */
+const EXPORT_TIMEOUT_MS = 60_000;
 
 type RequestOptions = {
   method?: 'GET' | 'POST' | 'PUT' | 'DELETE';
@@ -105,6 +109,123 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
   }
 
   return parse<T>(response);
+}
+
+/**
+ * Fetch a file and hand it to the user to save (FR-REP-7).
+ *
+ * WHY THIS IS NOT A LINK
+ * ----------------------
+ * The obvious implementation is an anchor pointing at the export URL. It cannot
+ * work: the endpoint is authenticated with a bearer token in a HEADER, and a
+ * browser navigation carries no headers. The request would arrive
+ * unauthenticated and be refused.
+ *
+ * So the file is fetched like any other request, with the same tenant header
+ * and the same token, and the resulting blob is handed to the browser to save.
+ *
+ * The FILENAME comes from the server's Content-Disposition, which the API
+ * exposes to cross-origin readers for exactly this purpose (see the backend's
+ * config/cors.php). `fallbackName` covers the case where a proxy strips the
+ * header - a file that saves under a dull name is a far better outcome than a
+ * download that fails.
+ *
+ * WEB ONLY, AND SAID OUT LOUD.
+ * There is no download on a device yet. Doing it properly needs expo-file-system
+ * to write the bytes and expo-sharing to hand them to another app, and neither
+ * is a declared dependency of this project today. Rather than ship a native path
+ * that cannot be tested from here, this fails with a message that says what is
+ * missing. Staff reporting is a desktop activity by design (R-3), so the gap is
+ * real but not on the main path.
+ */
+export async function download(
+  path: string,
+  options: { query?: RequestOptions['query']; fallbackName: string } & Pick<
+    RequestOptions,
+    'signal'
+  >,
+): Promise<void> {
+  if (Platform.OS !== 'web') {
+    throw new ApiError(
+      ErrorCode.UNSUPPORTED,
+      'Downloading a report is only available in a web browser at the moment.',
+      0,
+    );
+  }
+
+  const headers: Record<string, string> = { Accept: '*/*' };
+
+  const slug = await getTenantSlug();
+  if (!slug) {
+    throw new ApiError(
+      ErrorCode.TENANT_NOT_RESOLVED,
+      fallbackMessage(ErrorCode.TENANT_NOT_RESOLVED),
+      0,
+    );
+  }
+  headers['X-Tenant'] = slug;
+
+  const token = await getToken();
+  if (token) headers.Authorization = `Bearer ${token}`;
+
+  const controller = new AbortController();
+  // Longer than a normal read: a PDF of several hundred members is real work
+  // for the server, and the 20s default would abort a report that was coming.
+  const timeout = setTimeout(() => controller.abort(), EXPORT_TIMEOUT_MS);
+  options.signal?.addEventListener('abort', () => controller.abort());
+
+  let response: Response;
+
+  try {
+    response = await fetch(`${BASE_URL}${path}${buildQuery(options.query)}`, {
+      method: 'GET',
+      headers,
+      signal: controller.signal,
+    });
+  } catch {
+    throw new ApiError(
+      ErrorCode.NETWORK_UNAVAILABLE,
+      fallbackMessage(ErrorCode.NETWORK_UNAVAILABLE),
+      0,
+    );
+  } finally {
+    clearTimeout(timeout);
+  }
+
+  /*
+   * A failure here is JSON, not a file - REPORT_TOO_LARGE is the one staff will
+   * actually meet. Routing it through the same parser means it reaches the
+   * screen as an ApiError carrying the server's own explanation, rather than
+   * saving an error page to the user's Downloads folder.
+   */
+  if (!response.ok) {
+    await parse<never>(response);
+  }
+
+  const blob = await response.blob();
+  const url = URL.createObjectURL(blob);
+
+  try {
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = filenameFrom(response) ?? options.fallbackName;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+  } finally {
+    // Without this the blob is held for the lifetime of the page, and a few
+    // report downloads is a few megabytes that never come back.
+    URL.revokeObjectURL(url);
+  }
+}
+
+/** The server's chosen filename, if it survived the trip. */
+function filenameFrom(response: Response): string | null {
+  const disposition = response.headers.get('content-disposition');
+  if (!disposition) return null;
+
+  const match = /filename="?([^";]+)"?/i.exec(disposition);
+  return match ? match[1] : null;
 }
 
 async function parse<T>(response: Response): Promise<T> {

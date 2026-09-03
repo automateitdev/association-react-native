@@ -44,17 +44,19 @@ export default function ReportsScreen() {
       </Section>
 
       {/*
-        Said plainly rather than left as an empty space where a button should
-        be. Export is a real requirement (FR-REP-10) with no endpoint behind it
-        yet, and staff who expect to download a report should know it is coming
-        rather than assume it is broken.
+        Where the download lives is worth saying once here, because it is not
+        on this screen. Each report carries its own, under the filters, so the
+        file matches the period and status you are actually looking at - a
+        download from this menu could only ever guess at those.
       */}
-      <Section title="Not built yet">
-        <Text tone="muted" style={type.body}>
-          Downloading a report as PDF, Excel or CSV is not available yet. The
-          figures on screen are complete and can be read from here.
-        </Text>
-      </Section>
+      {can('reports.export') ? (
+        <Section title="Downloads">
+          <Text tone="muted" style={type.body}>
+            Open a report to download it as Excel, CSV or PDF. The file follows
+            the filters you have set, and carries the same totals.
+          </Text>
+        </Section>
+      ) : null}
     </Screen>
   );
 }

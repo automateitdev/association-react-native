@@ -62,6 +62,15 @@ export const ErrorCode = {
   /** Not from the server: the request never completed. */
   NETWORK_UNAVAILABLE: 'NETWORK_UNAVAILABLE',
 
+  /**
+   * Not from the server either: this build cannot do the thing on THIS
+   * platform. Report download, which exists on web and not yet on a device.
+   *
+   * Distinct from a failure, and the distinction matters to whoever reads the
+   * message: nothing went wrong, and retrying will not help.
+   */
+  UNSUPPORTED: 'UNSUPPORTED',
+
   /** A code this build has never heard of. See `isUnknown`. */
   UNKNOWN: 'UNKNOWN',
 } as const;
@@ -134,6 +143,8 @@ export function fallbackMessage(code: string): string {
       return 'That association could not be found.';
     case ErrorCode.TOKEN_EXPIRED:
       return 'Your session has ended. Please sign in again.';
+    case ErrorCode.UNSUPPORTED:
+      return 'That is not available on this device yet.';
     default:
       return 'Something went wrong. Please try again.';
   }

@@ -30,6 +30,8 @@ import type { Money } from '@/api/money';
 
 export type PaidRow = {
   member_id: number;
+  /** Empty string when the office has not assigned one yet. */
+  membership_no: string;
   member_name: string;
   /** DISTINCT assignments, never a row count. */
   instalments_paid_count: number;
@@ -48,6 +50,8 @@ export type PaidMeta = {
 
 export type DueRow = {
   member_id: number;
+  /** Empty string when the office has not assigned one yet. */
+  membership_no: string;
   member_name: string;
   member_status: 'active' | 'inactive' | 'suspended';
   instalments_due_count: number;
@@ -57,42 +61,77 @@ export type DueRow = {
 };
 
 export type DueMeta = {
+  /** Null when the report is the open-ended snapshot. See useDueInfo. */
+  from: string | null;
+  /** The upper bound. Keeps its name: it is what this report has always meant. */
   as_of: string;
+  /** People, not instalments. Never a column total - see due.tsx. */
   members: number;
+  /** Instalments, not people. The total for the count COLUMN. */
+  instalments_due_count: number;
   instalments_due: Money;
   fines_due: Money;
   total_due: Money;
 };
 
-export type DateRange = { from?: string; to?: string };
+/*
+ * Re-exported rather than redeclared.
+ *
+ * The date picker in ui/ owns this shape, and an identical second definition
+ * here is the kind of duplicate that stays in step right up until one of them
+ * gains a field.
+ */
+import type { DateRange } from '@/ui';
+
+export type { DateRange };
 
 export const reportKeys = {
-  paid: (range: DateRange) => ['staff', 'reports', 'paid', range] as const,
-  due: (as_of: string | undefined, status: string | null) =>
-    ['staff', 'reports', 'due', as_of ?? 'today', status] as const,
+  paid: (range: DateRange, q: string | undefined) =>
+    ['staff', 'reports', 'paid', range, q ?? ''] as const,
+  due: (assigned: DateRange, status: string | null, q: string | undefined) =>
+    [
+      'staff',
+      'reports',
+      'due',
+      assigned.from ?? 'open',
+      assigned.to ?? 'today',
+      status,
+      q ?? '',
+    ] as const,
 };
 
-export function useMemberwisePaid(range: DateRange) {
+export function useMemberwisePaid(range: DateRange, q?: string) {
   return useQuery({
-    queryKey: reportKeys.paid(range),
+    queryKey: reportKeys.paid(range, q),
     queryFn: async () =>
       await request<{ data: PaidRow[]; meta: PaidMeta }>('/staff/reports/memberwise-paid', {
         query: {
           ...(range.from ? { from: range.from } : {}),
           ...(range.to ? { to: range.to } : {}),
+          ...(q ? { q } : {}),
         },
       }),
   });
 }
 
-export function useDueInfo(asOf: string | undefined, memberStatus: string | null) {
+/**
+ * Outstanding dues over a range of ASSIGNMENT dates.
+ *
+ * `to` maps to `as_of`, which is the name the API has always used for the upper
+ * bound and which the exports and the tests still use. `from` is new and
+ * optional: without it this is the open-ended snapshot the report has always
+ * been, so the original question is still askable and is still the default.
+ */
+export function useDueInfo(assigned: DateRange, memberStatus: string | null, q?: string) {
   return useQuery({
-    queryKey: reportKeys.due(asOf, memberStatus),
+    queryKey: reportKeys.due(assigned, memberStatus, q),
     queryFn: async () =>
       await request<{ data: DueRow[]; meta: DueMeta }>('/staff/reports/due-info', {
         query: {
-          ...(asOf ? { as_of: asOf } : {}),
+          ...(assigned.from ? { from: assigned.from } : {}),
+          ...(assigned.to ? { as_of: assigned.to } : {}),
           ...(memberStatus ? { member_status: memberStatus } : {}),
+          ...(q ? { q } : {}),
         },
       }),
   });

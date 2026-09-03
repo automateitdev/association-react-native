@@ -1,5 +1,12 @@
-import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  keepPreviousData,
+  useInfiniteQuery,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
 import { request } from '@/api/client';
+import type { SortState } from '@/ui';
 
 /**
  * Staff member management (FR-MEM-1 … FR-MEM-7).
@@ -97,30 +104,85 @@ export type NewMemberFields = {
 export type MemberFilters = {
   q?: string;
   status?: MemberStatus | null;
+  /** When the office added the member. See the note in useMembers. */
+  from?: string;
+  to?: string;
+};
+
+export type MemberPage = {
+  data: MemberSummary[];
+  meta: { current_page: number; per_page: number; total: number; last_page: number };
 };
 
 export const memberKeys = {
   all: ['staff', 'members'] as const,
-  list: (filters: MemberFilters) => ['staff', 'members', 'list', filters] as const,
+  list: (filters: MemberFilters, page: number, sort: SortState) =>
+    ['staff', 'members', 'list', filters, page, sort] as const,
   detail: (id: number) => ['staff', 'members', id] as const,
 };
 
 /**
- * The member list.
+ * The member list, one page at a time.
  *
- * Infinite rather than paged for the same reason as the approval queue: HeroUI
- * Native has no pagination control (R-1), and "load more" is the better phone
- * pattern anyway.
+ * PAGED RATHER THAN INFINITE, and this changed.
+ *
+ * It was an infinite "load more" list, chosen because HeroUI Native ships no
+ * pagination control (R-1) and endless scrolling is the better phone pattern.
+ * That reasoning held while this was a list of cards. It stopped holding once
+ * the listing became a table with numbered pages, because the two cannot both
+ * be true: a table that says "Showing 26-43 of 43" has to be able to go
+ * BACKWARDS, and an infinite query only ever grows.
+ *
+ * SEARCH, FILTER, SORT AND PAGE ALL GO TO THE SERVER. Doing any of them here
+ * would silently apply to whichever page happened to be loaded, so a member on
+ * page three would appear not to exist - a bug that looks like missing data
+ * rather than a broken filter.
+ *
+ * `keepPreviousData` holds the previous page on screen while the next one
+ * loads. Without it the table empties and the page height collapses on every
+ * press, which reads as the list breaking rather than as it fetching.
  */
-export function useMembers(filters: MemberFilters) {
+export function useMembers(filters: MemberFilters, page: number, sort: SortState) {
+  return useQuery({
+    queryKey: memberKeys.list(filters, page, sort),
+    placeholderData: keepPreviousData,
+    queryFn: async () =>
+      await request<MemberPage>('/staff/members', {
+        query: {
+          page,
+          per_page: 25,
+          ...(filters.q ? { q: filters.q } : {}),
+          ...(filters.status ? { status: filters.status } : {}),
+          ...(filters.from ? { from: filters.from } : {}),
+          ...(filters.to ? { to: filters.to } : {}),
+          ...(sort ? { sort: sort.key, direction: sort.direction } : {}),
+        },
+      }),
+  });
+}
+
+/**
+ * Members for a PICKER, loaded a page at a time on demand.
+ *
+ * Deliberately still an infinite query while the list screen is paged, because
+ * the two are answering different questions.
+ *
+ * A listing is read: you want to know how many there are, jump to the end, sort
+ * by shares. Numbered pages serve that. A picker is searched: you type a name,
+ * take the one you meant, and never care which page it was on - and on the fee
+ * assignment screen you are ticking several before submitting, so a control
+ * that reshuffles the list under your selection is actively hostile.
+ *
+ * Sharing one hook between them was what forced this apart: making the listing
+ * pageable broke the picker, which is the honest signal that they were never
+ * the same thing.
+ */
+export function useMemberOptions(filters: MemberFilters) {
   return useInfiniteQuery({
-    queryKey: memberKeys.list(filters),
+    queryKey: ['staff', 'members', 'options', filters] as const,
     initialPageParam: 1,
     queryFn: async ({ pageParam }) =>
-      await request<{
-        data: MemberSummary[];
-        meta: { current_page: number; total: number; last_page: number };
-      }>('/staff/members', {
+      await request<MemberPage>('/staff/members', {
         query: {
           page: pageParam,
           per_page: 25,

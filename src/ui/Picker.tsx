@@ -1,26 +1,21 @@
-import { Fragment } from 'react';
-import { Select } from 'heroui-native';
+import { AnchoredSelect, type SelectOption } from './AnchoredSelect';
 import { Text } from './Text';
 import { type } from './tokens';
 
-export type PickerOption = {
-  value: string;
-  label: string;
-  /** Optional heading this option sits under. Options are grouped in order. */
-  group?: string;
-};
+export type PickerOption = SelectOption;
 
 /**
- * A single choice from a list, with optional grouping.
+ * A single choice from a list, with optional grouping, for a FORM.
  *
- * Wraps HeroUI's Select, which is a compound component - Trigger, Portal,
- * Overlay, Content, Item - and whose value is an option OBJECT rather than the
- * raw value. Repeating that composition at every call site would be five
- * elements of ceremony around one decision, and the object-vs-string detail is
- * exactly the kind of thing that gets half-remembered and quietly mismatched.
+ * This used to wrap HeroUI's Select. It no longer does, and the reason is a bug
+ * rather than a preference: that popover does not anchor under React Native
+ * Web, so every dropdown on the fee forms opened at the corner of the window
+ * instead of under its own field. Measured on an untouched form - trigger at
+ * x=234, y=143, menu at x=27, y=5.
  *
- * The public shape here is the plain one: a list of options, the selected
- * value as a string, and a callback with a string.
+ * The public shape here is unchanged - a list of options, the selected value as
+ * a string, a callback with a string - so nothing that used it had to move. See
+ * ui/AnchoredSelect for the mechanism, which the toolbar filters share.
  */
 export function Picker({
   options,
@@ -36,49 +31,15 @@ export function Picker({
   placeholder?: string;
   isDisabled?: boolean;
 }) {
-  const selected = options.find((o) => o.value === value);
-
-  // Groups in first-seen order, so the caller controls precedence by sorting
-  // rather than by an extra prop.
-  const groups: string[] = [];
-  for (const option of options) {
-    const key = option.group ?? '';
-    if (!groups.includes(key)) groups.push(key);
-  }
-
   return (
-    <Select
+    <AnchoredSelect
+      variant="field"
+      options={options}
+      value={value}
+      onChange={onChange}
+      placeholder={placeholder}
       isDisabled={isDisabled}
-      value={selected ? { value: selected.value, label: selected.label } : undefined}
-      onValueChange={(option) => {
-        // Single-select only; the array form is for multi-select, which nothing
-        // here uses.
-        const picked = Array.isArray(option) ? option[0] : option;
-        if (picked) onChange(String(picked.value));
-      }}
-    >
-      <Select.Trigger>
-        <Select.Value placeholder={placeholder} />
-        <Select.TriggerIndicator />
-      </Select.Trigger>
-
-      <Select.Portal>
-        <Select.Overlay />
-        <Select.Content presentation="popover" width="trigger">
-          {groups.map((group) => (
-            <Fragment key={group || 'ungrouped'}>
-              {group ? <Select.ListLabel>{group}</Select.ListLabel> : null}
-
-              {options
-                .filter((o) => (o.group ?? '') === group)
-                .map((option) => (
-                  <Select.Item key={option.value} value={option.value} label={option.label} />
-                ))}
-            </Fragment>
-          ))}
-        </Select.Content>
-      </Select.Portal>
-    </Select>
+    />
   );
 }
 

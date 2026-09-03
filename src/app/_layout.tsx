@@ -9,7 +9,7 @@ import {
 import { MaterialSymbols_400Regular } from '@expo-google-fonts/material-symbols';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
-import { HeroUINativeProvider, useThemeColor } from 'heroui-native';
+import { HeroUINativeProvider } from 'heroui-native';
 import { useFonts } from 'expo-font';
 import { useMemo } from 'react';
 import { ActivityIndicator, I18nManager, useColorScheme, View } from 'react-native';
@@ -18,6 +18,7 @@ import { ScopedTheme } from 'uniwind';
 import { ApiError } from '@/api/errors';
 import { SessionProvider } from '@/features/auth/session';
 import { ThemeProvider as AppThemeProvider, useTheme } from '@/features/theme';
+import { useThemeColorReader } from '@/ui';
 
 /**
  * Application shell.
@@ -198,18 +199,9 @@ function NavigationTheme({
   children: React.ReactNode;
 }) {
   /*
-   * Read from the document, NOT from useThemeColor.
-   *
-   * useThemeColor tracks the system colour scheme rather than the theme
-   * ScopedTheme is applying, so after a manual switch it kept handing back the
-   * old palette - and because the navigator BAKES these into inline styles, the
-   * page ground and the sidebar stayed dark while every CSS-driven surface went
-   * light. Measured: rgb(21,18,12) painted inline over a container whose own
-   * --background had already resolved light.
-   *
-   * Keyed on `scheme` so it recomputes on every switch. Native has no document
-   * and falls back to useThemeColor, which is correct there because ScopedTheme
-   * is the only mechanism in play.
+   * Read from the document rather than from useThemeColor, and converted to
+   * sRGB on the way out. Both halves matter and neither is obvious - the
+   * reasoning, and the two bugs that produced it, are in ui/themeColor.ts.
    */
   const themeColor = useThemeColorReader(scheme);
 
@@ -240,40 +232,3 @@ function NavigationTheme({
   return <ThemeProvider value={theme}>{children}</ThemeProvider>;
 }
 
-/**
- * Resolves a theme colour for code that needs a real string, not a class.
- *
- * Only third-party components need this - anything of ours takes a className
- * and lets CSS do the work. react-navigation is the case in point: it wants
- * concrete colours and freezes them into inline styles.
- */
-function useThemeColorReader(scheme: 'light' | 'dark') {
-  const fallbackAccent = useThemeColor('accent');
-  const fallbackBackground = useThemeColor('background');
-  const fallbackForeground = useThemeColor('foreground');
-  const fallbackSurface = useThemeColor('surface');
-  const fallbackBorder = useThemeColor('border');
-
-  const fallbacks: Record<string, string> = {
-    accent: fallbackAccent,
-    background: fallbackBackground,
-    foreground: fallbackForeground,
-    surface: fallbackSurface,
-    border: fallbackBorder,
-  };
-
-  return useMemo(() => {
-    return (name: keyof typeof fallbacks): string => {
-      if (typeof document === 'undefined') return fallbacks[name];
-
-      const value = getComputedStyle(document.documentElement)
-        .getPropertyValue(`--color-${name}`)
-        .trim();
-
-      return value || fallbacks[name];
-    };
-    // `scheme` is the dependency that matters: the variables themselves change
-    // underneath us when it does, and nothing else signals that.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scheme, fallbackAccent, fallbackBackground, fallbackForeground, fallbackSurface, fallbackBorder]);
-}

@@ -62,8 +62,27 @@ export { Button } from './Button';
 export { Screen, ScreenHeader } from './Screen';
 export { Section, Divider, Panel, Actions, useActionButtonStyle } from './Section';
 export { Row, Field } from './Row';
+export { SearchField } from './SearchField';
+export { Toolbar } from './Toolbar';
 export { Picker, PickerField, type PickerOption } from './Picker';
-export { DataTable, Cell, NumberCell, type Column } from './DataTable';
+
+// Ours, not HeroUI's: its Select popover does not anchor on React Native Web.
+// See FilterSelect.tsx for the measurements.
+export { FilterSelect, type FilterOption } from './FilterSelect';
+export { AnchoredSelect, type SelectOption } from './AnchoredSelect';
+export {
+  DataTable,
+  Cell,
+  NumberCell,
+  type Column,
+  type SortState,
+  type ServerPaging,
+} from './DataTable';
+
+// Ours, not HeroUI's: the library ships no date picker (R-1), and preset chips
+// alone cannot express an arbitrary period. See Calendar.tsx.
+export { Calendar, toIso, todayIso, humanDate, type IsoDate, type DateRange } from './Calendar';
+export { DateField } from './DateField';
 
 // Content
 export { Amount, AmountBreakdown } from './Amount';
@@ -73,6 +92,11 @@ export { StateView } from './StateView';
 export { StatusBadge } from './StatusBadge';
 export { Icon, ICONS, type IconName } from './Icon';
 export { AppBar } from './AppBar';
+export { NavSurface } from './NavSurface';
+
+// Theme colours as strings, for the third-party components that cannot take a
+// className. See themeColor.ts - the conversion it does is not optional.
+export { useThemeColorReader, type ThemeToken } from './themeColor';
 
 // Shared measurements, for the cases a screen genuinely needs one directly.
 export { space, type, font } from './tokens';

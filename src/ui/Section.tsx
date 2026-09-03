@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { View } from 'react-native';
+import { Icon, type IconName } from './Icon';
 import { Text } from './Text';
 import { useIsDesktop } from './breakpoint';
 import { space, type } from './tokens';
@@ -17,11 +18,22 @@ import { space, type } from './tokens';
  */
 export function Section({
   title,
+  icon,
   action,
   children,
   first = false,
 }: {
   title?: string;
+  /**
+   * A glyph beside the heading.
+   *
+   * Optional and used sparingly. Section headings are small, letterspaced and
+   * muted precisely so they are findable when scanning and invisible when
+   * reading - an icon on every one of them would undo that. It earns its place
+   * where a heading marks a change of KIND rather than just the next group:
+   * the money on a dues screen, the download beside a table.
+   */
+  icon?: IconName;
   /** A single control belonging to this section - "Add", "Edit". */
   action?: ReactNode;
   children: ReactNode;
@@ -40,9 +52,12 @@ export function Section({
             gap: space.md,
           }}
         >
-          <Text tone="muted" style={{ ...type.section, textTransform: 'uppercase' }}>
-            {title}
-          </Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.xs }}>
+            {icon ? <Icon name={icon} size={14} tone="muted" /> : null}
+            <Text tone="muted" style={{ ...type.section, textTransform: 'uppercase' }}>
+              {title}
+            </Text>
+          </View>
           {action}
         </View>
       ) : null}

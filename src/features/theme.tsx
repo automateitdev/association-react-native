@@ -81,16 +81,30 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
    * behind them and the sidebar stayed dark. Measured: --foreground read dark
    * inside the wrapper and light on <html> at the same moment.
    *
+   * DURING RENDER, NOT IN AN EFFECT.
+   * This began as a useEffect, which is the ordinary place for it, and that was
+   * a render too late for anything reading the palette back out of the
+   * document. ui/themeColor.ts does exactly that, and the ordering is: this
+   * provider renders -> its children render and READ -> effects run and the
+   * class finally changes. So the navigation rail resolved its colours from the
+   * OLD theme and stayed dark against a light page until something else forced
+   * it to render again.
+   *
+   * Writing to the DOM during render is normally worth avoiding. Here it is
+   * idempotent, touches nothing React manages, and is the only ordering in
+   * which a synchronous read by a descendant can be correct.
+   *
    * Web only, and deliberately so: there is no document on native, where
    * ScopedTheme alone is the whole mechanism.
    */
-  useEffect(() => {
-    if (Platform.OS !== 'web' || typeof document === 'undefined') return;
-
+  if (Platform.OS === 'web' && typeof document !== 'undefined') {
     const root = document.documentElement;
-    root.classList.remove('light', 'dark');
-    root.classList.add(scheme);
-  }, [scheme]);
+
+    if (!root.classList.contains(scheme)) {
+      root.classList.remove('light', 'dark');
+      root.classList.add(scheme);
+    }
+  }
 
   const value = useMemo(
     () => ({ preference, scheme, setPreference, cycle }),

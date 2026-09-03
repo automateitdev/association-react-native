@@ -1,6 +1,18 @@
 import { router } from 'expo-router';
+import { View } from 'react-native';
 import { usePayments, type Payment } from '@/features/payments/queries';
-import { AmountBreakdown, Row, Screen, ScreenHeader, Section, StateView, Text, type } from '@/ui';
+import { ReceiptButton } from '@/features/payments/ReceiptButton';
+import {
+  AmountBreakdown,
+  Row,
+  Screen,
+  ScreenHeader,
+  Section,
+  StateView,
+  Text,
+  space,
+  type,
+} from '@/ui';
 
 /**
  * Every payment the member has made or submitted.
@@ -58,7 +70,26 @@ function PaymentRow({ payment, divider }: { payment: Payment; divider: boolean }
           total={payment.total_amount}
         />
       }
-      footer={<StatusLine status={payment.status} />}
+      footer={
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.md, flexWrap: 'wrap' }}>
+          <StatusLine status={payment.status} />
+
+          {/*
+            The receipt, and only once the payment is COMPLETED.
+            
+            It asserts the association has the money, so it does not exist for
+            anything still awaiting approval - the server refuses those, and a
+            button that appeared and then explained itself with an error is
+            worse than one that was never there.
+          */}
+          {payment.status === 'completed' ? (
+            <ReceiptButton
+              path={`/payments/${payment.id}/invoice`}
+              invoiceNo={payment.invoice_no}
+            />
+          ) : null}
+        </View>
+      }
       onPress={() => router.push(`/member/payment/${payment.id}`)}
       divider={divider}
     />
