@@ -257,7 +257,17 @@ export default function StaffLayout() {
         options={{
           tabBarIcon: tabIcon('settings'),
           title: 'Admin',
-          href: tab('users.view') ?? tab('roles.view'),
+          /*
+            Any of the four things the hub holds is enough to make it worth
+            offering. An account with settings.view but no users.view still
+            needs a way in - gating on users.view alone hid the whole hub from
+            whoever configures the association.
+          */
+          href:
+            tab('users.view') ??
+            tab('roles.view') ??
+            tab('settings.view') ??
+            tab('ledgers.view'),
         }}
       />
 
@@ -267,6 +277,8 @@ export default function StaffLayout() {
       */}
       <Tabs.Screen name="admin/users" options={{ href: null }} />
       <Tabs.Screen name="admin/roles" options={{ href: null }} />
+      <Tabs.Screen name="admin/settings" options={{ href: null }} />
+      <Tabs.Screen name="admin/ledgers" options={{ href: null }} />
       <Tabs.Screen name="members/[id]" options={{ href: null }} />
       <Tabs.Screen name="members/new" options={{ href: null }} />
       <Tabs.Screen name="fees/[id]" options={{ href: null }} />

@@ -1,6 +1,8 @@
 import { router } from 'expo-router';
 import { useSession } from '@/features/auth/session';
 import { useStaffRoles, useStaffUsers } from '@/features/staff/admin';
+import { useLedgers } from '@/features/staff/ledgers';
+import { useSettings } from '@/features/staff/settings';
 import { Screen, ScreenHeader, Section, StatGrid, Text, Tile, type } from '@/ui';
 
 /**
@@ -18,6 +20,8 @@ export default function AdminScreen() {
   // Counts on the tiles, so the screen says something rather than being a menu.
   const users = useStaffUsers();
   const roles = useStaffRoles();
+  const settings = useSettings();
+  const ledgers = useLedgers();
 
   return (
     <Screen>
@@ -50,6 +54,39 @@ export default function AdminScreen() {
               onPress={() => router.push('/staff/admin/roles')}
             />
           ) : null}
+
+          {can('settings.view') ? (
+            <Tile
+              title="Settings"
+              description={
+                settings.data
+                  ? /*
+                      The gateway is the one setting whose absence stops members
+                      paying, so it is what the tile reports rather than a count
+                      of settings nobody thinks of as countable.
+                    */
+                    settings.data.gateway.configured
+                    ? `Fine ${settings.data.fine.rate} · gateway configured`
+                    : 'Fine rules set · no payment gateway yet'
+                  : 'Fines, payments, bank details and the gateway'
+              }
+              icon="settings"
+              onPress={() => router.push('/staff/admin/settings')}
+            />
+          ) : null}
+
+          {can('ledgers.view') ? (
+            <Tile
+              title="Chart of accounts"
+              description={
+                ledgers.data
+                  ? `${ledgers.data.length} ledger${ledgers.data.length === 1 ? '' : 's'} · where money posts`
+                  : 'The accounts fee heads post into'
+              }
+              icon="reports"
+              onPress={() => router.push('/staff/admin/ledgers')}
+            />
+          ) : null}
         </StatGrid>
       </Section>
 
@@ -60,8 +97,8 @@ export default function AdminScreen() {
           concluding the app has hidden them.
         */}
         <Text tone="muted" style={type.body}>
-          Association details and the signature used on generated documents are
-          not editable here yet. Gateway credentials are under Settings.
+          Association details and the signature used on generated documents are not
+          editable here yet, and ledgers can be read but not created or changed.
         </Text>
       </Section>
     </Screen>
