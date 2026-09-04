@@ -4,23 +4,26 @@ import { request } from '@/api/client';
 /**
  * Per-association configuration (FR-SET-1).
  *
- * This is the screen that makes a second association possible without a code
- * change: the fine rate, the grace period, the suspension threshold, the bank
- * account members pay into and the gateway credentials are all rows here, where
- * the legacy system hard-codes every one of them.
+ * This is what makes a second association possible without a code change: the
+ * fine rate, the grace period, the suspension threshold and the bank account
+ * members pay into are all rows here, where the legacy system hard-codes every
+ * one of them.
  *
- * GATEWAY CREDENTIALS ARE WRITE-ONLY.
+ * THE GATEWAY IS NOT SET FROM HERE AT ALL.
  *
- * The API never returns them - not to anybody, including the superadmin who
- * entered them. `GatewaySummary` is all that comes back: whether a gateway is
- * configured, whether it is switched on, and the last four digits of the AR
- * account so somebody can confirm WHICH account is set without being handed
- * anything they could use.
+ * It used to be: an association's own admin could enter the merchant
+ * credentials. `ar_account` is where members' money lands, so that put a
+ * money-diversion vector behind `settings.edit` - a permission granted for
+ * editing fine rates. And because credentials are deliberately never readable,
+ * a malicious change left almost nothing to compare against afterwards.
  *
- * So the form cannot be pre-filled, and rotating a credential means typing the
- * whole set again. That is not an oversight to work around - an API able to
- * display a merchant password turns one stolen staff token into a compromised
- * merchant account.
+ * Setting them moved to whoever provisions the association, at the server
+ * console (`php artisan tenant:gateway`). What the association keeps is what it
+ * needs: `GatewaySummary` says whether a gateway is configured, whether it is
+ * switched on, and the last four digits of the AR account - enough to confirm
+ * WHICH account, never enough to use it. It can also turn online payment off
+ * through `payment.online_enabled`, which reduces capability and cannot
+ * redirect anything.
  */
 
 /** Money arrives as a string and is only ever displayed (FR-MON-4). */
@@ -56,6 +59,8 @@ export type GatewaySummary = {
   is_active: boolean;
   /** Enough to confirm which account, never enough to use it. */
   ar_account_last4: string | null;
+  /** Always 'platform' - the association cannot set this itself. */
+  managed_by: string;
 };
 
 /**
@@ -77,19 +82,6 @@ export type SettingsUpdate = {
     routing_number: string | null;
     instructions: string | null;
   }>;
-};
-
-export type GatewayCredentials = {
-  api_base_url: string;
-  redirect_base_url: string;
-  username: string;
-  password: string;
-  ar_account: string;
-  basic_auth: string;
-  /** What the gateway sends US, so a real callback can be told from a guess. */
-  callback_username: string;
-  callback_password: string;
-  is_active?: boolean;
 };
 
 export const settingsKeys = {
@@ -117,21 +109,5 @@ export function useUpdateSettings() {
       the save having failed.
     */
     onSuccess: (data) => queryClient.setQueryData(settingsKeys.all, data),
-  });
-}
-
-export function useUpdateGateway() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (body: GatewayCredentials) =>
-      (await request<{ data: GatewaySummary }>('/staff/settings/gateway', { method: 'PUT', body }))
-        .data,
-
-    // Only the summary comes back, so the rest of the settings are left alone.
-    onSuccess: (gateway) =>
-      queryClient.setQueryData<Settings>(settingsKeys.all, (current) =>
-        current ? { ...current, gateway } : current,
-      ),
   });
 }

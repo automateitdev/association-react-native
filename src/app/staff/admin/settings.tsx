@@ -5,9 +5,7 @@ import { ApiError } from '@/api/errors';
 import { useSession } from '@/features/auth/session';
 import {
   useSettings,
-  useUpdateGateway,
   useUpdateSettings,
-  type GatewayCredentials,
   type Settings,
 } from '@/features/staff/settings';
 import {
@@ -406,54 +404,20 @@ function BankSection({ settings, editable }: { settings: Settings; editable: boo
 }
 
 /**
- * Gateway credentials. WRITE-ONLY, and the screen has to say so.
+ * What the association may know about its payment gateway, which is not much
+ * and deliberately so.
  *
- * The API never returns them, so the form starts empty every time even when a
- * gateway is configured. An empty form above the words "configured" reads as a
- * bug unless the reason is stated, which is what the panel is for.
+ * There is no form here. Setting the credentials moved to whoever provisions
+ * the association, because `ar_account` is where members' money lands and an
+ * association admin holding `settings.edit` - granted for editing fine rates -
+ * should not be able to point it somewhere else. Since credentials are never
+ * readable, such a change would also have left almost nothing to compare
+ * against.
+ *
+ * The screen says who to ask rather than showing a control that 404s.
  */
 function GatewaySection({ settings, editable }: { settings: Settings; editable: boolean }) {
-  const update = useUpdateGateway();
   const gateway = settings.gateway;
-
-  const empty: GatewayCredentials = {
-    api_base_url: '',
-    redirect_base_url: '',
-    username: '',
-    password: '',
-    ar_account: '',
-    basic_auth: '',
-    callback_username: '',
-    callback_password: '',
-  };
-
-  const [form, setForm] = useState<GatewayCredentials>(empty);
-  const [editing, setEditing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [saved, setSaved] = useState(false);
-
-  const set = (key: keyof GatewayCredentials) => (value: string) =>
-    setForm((current) => ({ ...current, [key]: value }));
-
-  const complete = (Object.keys(empty) as (keyof GatewayCredentials)[]).every((key) =>
-    String(form[key] ?? '').trim() !== '',
-  );
-
-  const save = async () => {
-    setError(null);
-    setSaved(false);
-
-    try {
-      await update.mutateAsync(form);
-      // Cleared immediately: there is no reason for a merchant password to sit
-      // in component state one moment longer than the request needs it.
-      setForm(empty);
-      setEditing(false);
-      setSaved(true);
-    } catch (e) {
-      setError(e instanceof ApiError ? e.message : 'The gateway credentials could not be saved.');
-    }
-  };
 
   return (
     <Section title="Payment gateway">
@@ -466,131 +430,24 @@ function GatewaySection({ settings, editable }: { settings: Settings; editable: 
             : 'No gateway is configured, so online payment cannot be taken.'}
         </Text>
 
-        {/*
-          The reason the form below is empty. Without this line, a screen that
-          says "configured" above eight blank boxes looks broken.
-        */}
         <Text tone="muted" style={{ ...type.rowMeta, marginTop: 4 }}>
-          Credentials are never shown, not even to a superadmin. Changing any of them means
-          entering the whole set again.
+          Set by whoever registered this association, not from here. The account the money
+          lands in is not something an association account can change - ask them to change
+          it, and they can confirm the new account back to you.
         </Text>
       </Panel>
 
-      {saved ? (
+      {editable ? (
         <View style={{ marginTop: space.md }}>
           <Panel>
-            <Text style={type.body}>
-              Gateway credentials saved. They are not shown back - the summary above is
-              the confirmation.
+            <Text tone="muted" style={type.rowMeta}>
+              {gateway.configured
+                ? 'To stop taking online payments, turn off "Accept online payments" under Payments above. That leaves the gateway configured and stops collection immediately.'
+                : 'Until a gateway is configured, members can still be recorded as paying at the counter.'}
             </Text>
           </Panel>
         </View>
       ) : null}
-
-      {error ? (
-        <View style={{ marginTop: space.md }}>
-          <Panel tone="danger">
-            <Text style={type.body}>{error}</Text>
-          </Panel>
-        </View>
-      ) : null}
-
-      {! editable ? null : editing ? (
-        <View style={{ marginTop: space.md }}>
-          <Form>
-            <InputField
-              label="API base URL"
-              value={form.api_base_url}
-              onChangeText={set('api_base_url')}
-              autoCapitalize="none"
-              required
-            />
-            <InputField
-              label="Redirect base URL"
-              value={form.redirect_base_url}
-              onChangeText={set('redirect_base_url')}
-              autoCapitalize="none"
-              required
-              hint="Where the gateway sends the member back to after paying."
-            />
-            <InputField
-              label="Merchant username"
-              value={form.username}
-              onChangeText={set('username')}
-              autoCapitalize="none"
-              required
-            />
-            <InputField
-              label="Merchant password"
-              value={form.password}
-              onChangeText={set('password')}
-              secureTextEntry
-              autoCapitalize="none"
-              required
-            />
-            <InputField
-              label="AR account"
-              value={form.ar_account}
-              onChangeText={set('ar_account')}
-              autoCapitalize="none"
-              required
-            />
-            <InputField
-              label="Basic auth token"
-              value={form.basic_auth}
-              onChangeText={set('basic_auth')}
-              secureTextEntry
-              autoCapitalize="none"
-              required
-            />
-
-            <InputField
-              label="Callback username"
-              value={form.callback_username}
-              onChangeText={set('callback_username')}
-              autoCapitalize="none"
-              required
-              hint="What the gateway sends us, so a real callback can be told from a guess."
-            />
-            <InputField
-              label="Callback password"
-              value={form.callback_password}
-              onChangeText={set('callback_password')}
-              secureTextEntry
-              autoCapitalize="none"
-              required
-            />
-
-            <FormActions>
-              <Button
-                variant="secondary"
-                onPress={() => {
-                  setForm(empty);
-                  setEditing(false);
-                  setError(null);
-                }}
-              >
-                <Button.Label>Cancel</Button.Label>
-              </Button>
-
-              <Button isDisabled={! complete || update.isPending} onPress={() => void save()}>
-                <Button.Label>
-                  {update.isPending ? 'Saving…' : gateway.configured ? 'Replace credentials' : 'Save credentials'}
-                </Button.Label>
-              </Button>
-            </FormActions>
-          </Form>
-        </View>
-      ) : (
-        <View style={{ marginTop: space.md, alignItems: 'flex-start' }}>
-          <Button size="sm" variant="secondary" onPress={() => setEditing(true)}>
-            <Icon name="settings" size={15} tone="muted" />
-            <Button.Label>
-              {gateway.configured ? 'Replace credentials' : 'Add credentials'}
-            </Button.Label>
-          </Button>
-        </View>
-      )}
     </Section>
   );
 }
