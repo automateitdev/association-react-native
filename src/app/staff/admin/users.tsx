@@ -16,16 +16,17 @@ import {
   Cell,
   DataTable,
   Divider,
-  FilterSelect,
+  Form,
+  FormActions,
   Icon,
-  Input,
+  InputField,
   Panel,
+  PickerField,
   Screen,
   ScreenHeader,
   Section,
   StateView,
   Text,
-  TextField,
   Toolbar,
   space,
   type,
@@ -289,58 +290,64 @@ function AccountForm({
   const complete = name.trim() && email.trim() && role && (user || password.length >= 8);
 
   return (
-    <View style={{ gap: space.md, maxWidth: 460 }}>
-      <View>
-        <Text style={{ ...type.rowMeta, marginBottom: 4 }}>Name</Text>
-        <TextField>
-          <Input value={name} onChangeText={setName} placeholder="e.g. Rokeya Begum" />
-        </TextField>
-      </View>
+    <Form>
+      <InputField
+        label="Name"
+        required
+        value={name}
+        onChangeText={setName}
+        placeholder="e.g. Rokeya Begum"
+      />
 
-      <View>
-        <Text style={{ ...type.rowMeta, marginBottom: 4 }}>Email</Text>
-        <TextField>
-          <Input
-            value={email}
-            onChangeText={setEmail}
-            placeholder="name@association.test"
-            autoCapitalize="none"
-          />
-        </TextField>
-      </View>
+      <InputField
+        label="Email"
+        required
+        value={email}
+        onChangeText={setEmail}
+        placeholder="name@association.test"
+        keyboardType="email-address"
+      />
 
-      <View>
-        <Text style={{ ...type.rowMeta, marginBottom: 4 }}>
-          {user ? 'New password (leave blank to keep)' : 'Password'}
-        </Text>
-        <TextField>
-          <Input
-            value={password}
-            onChangeText={setPassword}
-            placeholder="At least 8 characters"
-            secureTextEntry
-            autoCapitalize="none"
-          />
-        </TextField>
-
-        {/*
+      <InputField
+        label={user ? 'New password (leave blank to keep)' : 'Password'}
+        required={! user}
+        value={password}
+        onChangeText={setPassword}
+        placeholder="At least 8 characters"
+        secureTextEntry
+        autoCapitalize="none"
+        /*
           Said plainly, because it is a real limitation rather than a design
           choice: there is no mail or SMS to send an invitation with, so
           whoever creates the account has to tell the person their password.
-        */}
-        <Text tone="muted" style={{ ...type.rowMeta, marginTop: 4 }}>
-          {user
+        */
+        hint={
+          user
             ? 'Changing this signs the person out of nothing - their existing sessions continue.'
-            : 'There is no email to send this in, so tell them at the desk and ask them to change it.'}
-        </Text>
-      </View>
+            : 'There is no email to send this in, so tell them at the desk and ask them to change it.'
+        }
+      />
 
-      <View>
-        <Text style={{ ...type.rowMeta, marginBottom: 4 }}>Role</Text>
-        <FilterSelect options={roles} value={role} onChange={setRole} width={220} />
-      </View>
+      {/*
+        PickerField, not FilterSelect.
 
-      <View style={{ flexDirection: 'row', gap: space.sm }}>
+        FilterSelect is the TOOLBAR variant: it opens as an absolute overlay
+        and depends on ui/Toolbar raising the stacking context around it. Used
+        here, in a form with no Toolbar, the buttons below painted straight over
+        the open menu and the options were unreadable - exactly the failure
+        ui/AnchoredSelect documents. The field variant pushes the content below
+        it down instead, which no ancestor can defeat.
+      */}
+      <PickerField
+        label="Role"
+        required
+        options={roles}
+        value={role}
+        onChange={setRole}
+        placeholder="Choose a role"
+      />
+
+      <FormActions>
         <Button variant="secondary" onPress={onCancel}>
           <Button.Label>Cancel</Button.Label>
         </Button>
@@ -357,11 +364,13 @@ function AccountForm({
             })
           }
         >
-          <Button.Label>{pending ? 'Saving…' : user ? 'Save changes' : 'Create account'}</Button.Label>
+          <Button.Label>
+            {pending ? 'Saving…' : user ? 'Save changes' : 'Create account'}
+          </Button.Label>
         </Button>
-      </View>
+      </FormActions>
 
       <Divider />
-    </View>
+    </Form>
   );
 }

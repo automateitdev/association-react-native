@@ -9,8 +9,9 @@ import {
   Actions,
   Button,
   Icon,
+  Form,
+  FormField,
   Input,
-  Label,
   Panel,
   Screen,
   Text,
@@ -93,29 +94,36 @@ export default function SignInScreen() {
 
       <View style={{ marginTop: space.lg }} />
 
-      <TextField>
-        <Label>Mobile number or email</Label>
-        <Input
-          value={login}
-          onChangeText={setLogin}
-          autoCapitalize="none"
-          autoCorrect={false}
-          keyboardType="default"
-          textContentType="username"
-        />
-      </TextField>
+      {/*
+        FormField rather than InputField: these two inputs carry autofill and
+        keyboard props (textContentType, returnKeyType, onSubmitEditing) that
+        are particular to signing in. Widening InputField to pass every one of
+        them through would make the common case worse to read, and the chrome -
+        which is what has to match the rest of the app - is the same either way.
+      */}
+      <Form maxWidth={null}>
+        <FormField label="Mobile number or email" required>
+          <Input
+            value={login}
+            onChangeText={setLogin}
+            autoCapitalize="none"
+            autoCorrect={false}
+            keyboardType="default"
+            textContentType="username"
+          />
+        </FormField>
 
-      <TextField>
-        <Label>Password</Label>
-        <Input
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-          textContentType="password"
-          returnKeyType="go"
-          onSubmitEditing={() => attempt.mutate()}
-        />
-      </TextField>
+        <FormField label="Password" required>
+          <Input
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+            textContentType="password"
+            returnKeyType="go"
+            onSubmitEditing={() => attempt.mutate()}
+          />
+        </FormField>
+      </Form>
 
       {error ? <SignInError error={error} /> : null}
 

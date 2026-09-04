@@ -12,6 +12,7 @@ import {
   Input,
   Label,
   Panel,
+  Form,
   PickerField,
   Screen,
   ScreenHeader,
@@ -150,25 +151,29 @@ export default function EditFeeSetupScreen() {
                     with.
                   </Text>
 
-                  <PickerField
-                    label="Instalment income"
-                    value={ledgerId}
-                    onChange={setLedgerId}
-                    options={options}
-                    error={fieldErrors.ledger_id?.[0]}
-                  />
+                  <Form maxWidth={null}>
+                    <PickerField
+                      label="Instalment income"
+                      required
+                      value={ledgerId}
+                      onChange={setLedgerId}
+                      options={options}
+                      error={fieldErrors.ledger_id?.[0]}
+                    />
 
-                  <PickerField
-                    label="Fine income"
-                    value={fineLedgerId}
-                    onChange={setFineLedgerId}
-                    options={options}
-                    error={
-                      sameLedger
-                        ? 'Fine income must post to a different account from instalments.'
-                        : fieldErrors.fine_ledger_id?.[0]
-                    }
-                  />
+                    <PickerField
+                      label="Fine income"
+                      required
+                      value={fineLedgerId}
+                      onChange={setFineLedgerId}
+                      options={options}
+                      error={
+                        sameLedger
+                          ? 'Fine income must post to a different account from instalments.'
+                          : fieldErrors.fine_ledger_id?.[0]
+                      }
+                    />
+                  </Form>
 
                   <View style={{ flexDirection: 'row', gap: space.sm }}>
                     <Button variant="secondary" style={actionStyle} onPress={() => setOpen(false)}>

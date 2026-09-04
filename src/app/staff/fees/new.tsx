@@ -11,6 +11,7 @@ import {
   Input,
   Label,
   Panel,
+  Form,
   PickerField,
   Screen,
   ScreenHeader,
@@ -169,19 +170,22 @@ export default function NewFeeSetupScreen() {
           accounts, so an income statement can tell subscription from penalty.
         </Text>
 
-        <PickerField
-          label="Instalment income"
-          value={ledgerId}
-          onChange={setLedgerId}
-          options={options}
-          placeholder={ledgers.isLoading ? 'Loading accounts…' : 'Choose an account'}
-          isDisabled={ledgers.isLoading}
-          error={fieldErrors.ledger_id?.[0]}
-        />
+        {/* The gap belongs to Form, not to a marginTop on the second field. */}
+        <Form maxWidth={null}>
+          <PickerField
+            label="Instalment income"
+            required
+            value={ledgerId}
+            onChange={setLedgerId}
+            options={options}
+            placeholder={ledgers.isLoading ? 'Loading accounts…' : 'Choose an account'}
+            isDisabled={ledgers.isLoading}
+            error={fieldErrors.ledger_id?.[0]}
+          />
 
-        <View style={{ marginTop: space.md }}>
           <PickerField
             label="Fine income"
+            required
             value={fineLedgerId}
             onChange={setFineLedgerId}
             options={options}
@@ -195,7 +199,7 @@ export default function NewFeeSetupScreen() {
                 : fieldErrors.fine_ledger_id?.[0]
             }
           />
-        </View>
+        </Form>
       </Section>
 
       <Actions>

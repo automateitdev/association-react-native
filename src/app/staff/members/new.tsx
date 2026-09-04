@@ -7,15 +7,13 @@ import {
   Actions,
   Button,
   Chip,
-  FieldError,
-  Input,
-  Label,
+  Form,
+  InputField,
   Panel,
   Screen,
   ScreenHeader,
   Section,
   Text,
-  TextField,
   space,
   type,
 } from '@/ui';
@@ -105,104 +103,106 @@ export default function NewMemberScreen() {
       ) : null}
 
       <Section title="Who they are">
-      <Field
-        label="Name"
-        required
-        value={fields.name}
-        onChangeText={set('name')}
-        errors={fieldErrors.name}
-      />
-      <Field
-        label="Mobile"
-        required
-        value={fields.mobile}
-        onChangeText={set('mobile')}
-        keyboardType="phone-pad"
-        errors={fieldErrors.mobile}
-      />
-      <Field
-        label="Email"
-        value={fields.email ?? ''}
-        onChangeText={set('email')}
-        keyboardType="email-address"
-        errors={fieldErrors.email}
-      />
-      <Field
-        label="Father's name"
-        value={fields.father_name ?? ''}
-        onChangeText={set('father_name')}
-        errors={fieldErrors.father_name}
-      />
-      <Field
-        label="Mother's name"
-        value={fields.mother_name ?? ''}
-        onChangeText={set('mother_name')}
-        errors={fieldErrors.mother_name}
-      />
-      <Field
-        label="BCS batch"
-        value={fields.bcs_batch ?? ''}
-        onChangeText={set('bcs_batch')}
-        errors={fieldErrors.bcs_batch}
-      />
+        <Form maxWidth={null}>
+          <InputField
+            label="Name"
+            required
+            value={fields.name}
+            onChangeText={set('name')}
+            error={fieldErrors.name?.[0]}
+          />
+          <InputField
+            label="Mobile"
+            required
+            value={fields.mobile}
+            onChangeText={set('mobile')}
+            keyboardType="phone-pad"
+            error={fieldErrors.mobile?.[0]}
+          />
+          <InputField
+            label="Email"
+            value={fields.email ?? ''}
+            onChangeText={set('email')}
+            keyboardType="email-address"
+            error={fieldErrors.email?.[0]}
+          />
+          <InputField
+            label="Father's name"
+            value={fields.father_name ?? ''}
+            onChangeText={set('father_name')}
+            error={fieldErrors.father_name?.[0]}
+          />
+          <InputField
+            label="Mother's name"
+            value={fields.mother_name ?? ''}
+            onChangeText={set('mother_name')}
+            error={fieldErrors.mother_name?.[0]}
+          />
+          <InputField
+            label="BCS batch"
+            value={fields.bcs_batch ?? ''}
+            onChangeText={set('bcs_batch')}
+            error={fieldErrors.bcs_batch?.[0]}
+          />
 
-      {/*
-        Text inputs rather than a picker: HeroUI Native ships no date picker
-        (R-1), and a hand-rolled calendar is not worth building for two optional
-        fields. The hint carries the format the API expects; the server
-        validates it, so a wrong entry is refused rather than silently stored.
-      */}
-      <Field
-        label="Joining date"
-        hint="YYYY-MM-DD"
-        value={fields.joining_date ?? ''}
-        onChangeText={set('joining_date')}
-        errors={fieldErrors.joining_date}
-      />
-      <Field
-        label="Date of birth"
-        hint="YYYY-MM-DD"
-        value={fields.birth_date ?? ''}
-        onChangeText={set('birth_date')}
-        errors={fieldErrors.birth_date}
-      />
+          {/*
+            Text inputs rather than a picker: HeroUI Native ships no date picker
+            (R-1), and a hand-rolled calendar is not worth building for two
+            optional fields. The placeholder carries the format the API expects;
+            the server validates it, so a wrong entry is refused rather than
+            silently stored.
+          */}
+          <InputField
+            label="Joining date"
+            placeholder="YYYY-MM-DD"
+            value={fields.joining_date ?? ''}
+            onChangeText={set('joining_date')}
+            error={fieldErrors.joining_date?.[0]}
+          />
+          <InputField
+            label="Date of birth"
+            placeholder="YYYY-MM-DD"
+            value={fields.birth_date ?? ''}
+            onChangeText={set('birth_date')}
+            error={fieldErrors.birth_date?.[0]}
+          />
 
-      <View style={{ gap: space.sm, marginTop: space.md }}>
-        <Text tone="muted" style={type.rowMeta}>Gender</Text>
-        <View style={{ flexDirection: 'row', gap: space.sm }}>
-          {/* Chip is pressable itself; no wrapper needed. */}
-          {(['male', 'female', 'other'] as const).map((option) => (
-            <Chip
-              size="sm"
-              key={option}
-              variant={fields.gender === option ? 'primary' : 'secondary'}
-              onPress={() => set('gender')(option)}
-            >
-              <Chip.Label>{option}</Chip.Label>
-            </Chip>
-          ))}
-        </View>
-      </View>
+          <View style={{ gap: space.sm }}>
+            <Text tone="muted" style={type.rowMeta}>Gender</Text>
+            <View style={{ flexDirection: 'row', gap: space.sm }}>
+              {/* Chip is pressable itself; no wrapper needed. */}
+              {(['male', 'female', 'other'] as const).map((option) => (
+                <Chip
+                  size="sm"
+                  key={option}
+                  variant={fields.gender === option ? 'primary' : 'secondary'}
+                  onPress={() => set('gender')(option)}
+                >
+                  <Chip.Label>{option}</Chip.Label>
+                </Chip>
+              ))}
+            </View>
+          </View>
 
-      <Field
-        label="NID"
-        value={fields.nid ?? ''}
-        onChangeText={set('nid')}
-        errors={fieldErrors.nid}
-      />
-      <Field
-        label="Present address"
-        value={fields.present_address ?? ''}
-        onChangeText={set('present_address')}
-        errors={fieldErrors.present_address}
-      />
-      <Field
-        label="Permanent address"
-        value={fields.permanent_address ?? ''}
-        onChangeText={set('permanent_address')}
-        errors={fieldErrors.permanent_address}
-      />
-
+          <InputField
+            label="NID"
+            value={fields.nid ?? ''}
+            onChangeText={set('nid')}
+            error={fieldErrors.nid?.[0]}
+          />
+          <InputField
+            label="Present address"
+            value={fields.present_address ?? ''}
+            onChangeText={set('present_address')}
+            error={fieldErrors.present_address?.[0]}
+          />
+          <InputField
+            label="Permanent address"
+            value={fields.permanent_address ?? ''}
+            onChangeText={set('permanent_address')}
+            error={fieldErrors.permanent_address?.[0]}
+          />
+        </Form>
       </Section>
 
       <Actions>
@@ -211,62 +211,5 @@ export default function NewMemberScreen() {
         </Button>
       </Actions>
     </Screen>
-  );
-}
-
-function Field({
-  label,
-  value,
-  onChangeText,
-  keyboardType,
-  required = false,
-  hint,
-  errors,
-}: {
-  label: string;
-  value: string;
-  onChangeText: (value: string) => void;
-  keyboardType?: 'phone-pad' | 'email-address';
-  required?: boolean;
-  hint?: string;
-  errors?: string[];
-}) {
-  return (
-    // isRequired draws the asterisk itself; the label used to concatenate one.
-    // isInvalid propagates through TextField's form-item-state context, so Label,
-    // Input and FieldError all pick up the invalid styling without being told.
-    <TextField isRequired={required} isInvalid={Boolean(errors?.length)}>
-      <Label>{label}</Label>
-      <Input
-        value={value}
-        onChangeText={onChangeText}
-        keyboardType={keyboardType}
-        placeholder={hint}
-        autoCapitalize={keyboardType === 'email-address' ? 'none' : 'sentences'}
-      />
-      {/*
-        FieldError, not Description: this is what went wrong, not a hint.
-
-        TWO NON-OBVIOUS PROPS, BOTH LOAD-BEARING.
-
-        `isInvalid` explicitly, rather than relying on TextField's form-item
-        context: FieldError renders null unless it believes the field is
-        invalid, and not depending on ambient state is the safer call for the
-        one component whose whole job is to appear when something is wrong.
-
-        `animation={false}` because the default entering animation leaves the
-        element at `visibility: hidden` on React Native Web and never reveals
-        it. The message was in the DOM, 20pt tall, full opacity, and completely
-        invisible - after the 422 had already arrived. Disabled on every
-        platform rather than just web: an animation is a nicety, a permanently
-        invisible validation error is a defect, and native cannot be verified
-        from here. Worth revisiting when there is a device to test on.
-      */}
-      {errors?.length ? (
-        <FieldError isInvalid animation={false}>
-          {errors[0]}
-        </FieldError>
-      ) : null}
-    </TextField>
   );
 }

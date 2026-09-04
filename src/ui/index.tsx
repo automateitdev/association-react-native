@@ -66,6 +66,10 @@ export { SearchField } from './SearchField';
 export { Toolbar } from './Toolbar';
 export { Picker, PickerField, type PickerOption } from './Picker';
 
+// The shared form chrome. One label/hint/error implementation, so a text input
+// and a dropdown in the same form cannot drift apart. See Form.tsx.
+export { Form, FormField, FormActions, InputField } from './Form';
+
 // Ours, not HeroUI's: its Select popover does not anchor on React Native Web.
 // See FilterSelect.tsx for the measurements.
 export { FilterSelect, type FilterOption } from './FilterSelect';

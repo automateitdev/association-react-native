@@ -14,8 +14,10 @@ import {
   Button,
   Checkbox,
   Divider,
+  Form,
+  FormActions,
   Icon,
-  Input,
+  InputField,
   Panel,
   Row,
   Screen,
@@ -23,7 +25,6 @@ import {
   Section,
   StateView,
   Text,
-  TextField,
   space,
   type,
 } from '@/ui';
@@ -215,17 +216,16 @@ function RoleEditor({
   return (
     <View style={{ gap: space.lg }}>
       {role ? null : (
-        <View style={{ maxWidth: 380 }}>
-          <Text style={{ ...type.rowMeta, marginBottom: 4 }}>Name</Text>
-          <TextField>
-            <Input
-              value={name}
-              onChangeText={setName}
-              placeholder="e.g. cashier"
-              autoCapitalize="none"
-            />
-          </TextField>
-        </View>
+        <Form maxWidth={380}>
+          <InputField
+            label="Name"
+            required
+            value={name}
+            onChangeText={setName}
+            placeholder="e.g. cashier"
+            autoCapitalize="none"
+          />
+        </Form>
       )}
 
       {grouped.map(([group, permissions]) => (
@@ -257,7 +257,7 @@ function RoleEditor({
         </View>
       ))}
 
-      <View style={{ flexDirection: 'row', gap: space.sm }}>
+      <FormActions>
         <Button variant="secondary" onPress={onCancel}>
           <Button.Label>Cancel</Button.Label>
         </Button>
@@ -270,7 +270,7 @@ function RoleEditor({
             {pending ? 'Saving…' : role ? 'Save permissions' : 'Create role'}
           </Button.Label>
         </Button>
-      </View>
+      </FormActions>
     </View>
   );
 }

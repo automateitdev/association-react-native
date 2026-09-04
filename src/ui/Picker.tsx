@@ -1,6 +1,5 @@
 import { AnchoredSelect, type SelectOption } from './AnchoredSelect';
-import { Text } from './Text';
-import { type } from './tokens';
+import { FormField } from './Form';
 
 export type PickerOption = SelectOption;
 
@@ -43,26 +42,29 @@ export function Picker({
   );
 }
 
-/** A picker with a label above it and an optional error beneath. */
+/**
+ * A picker wearing the same chrome as every other form field.
+ *
+ * It used to draw its own label and error with Text and rowMeta, which meant a
+ * form containing both a text input and a picker showed two different label
+ * typographies one above the other - HeroUI's Label for the input, rowMeta for
+ * this. See ui/Form.
+ */
 export function PickerField({
   label,
+  required,
   hint,
   error,
   ...picker
-}: Parameters<typeof Picker>[0] & { label: string; hint?: string; error?: string }) {
+}: Parameters<typeof Picker>[0] & {
+  label: string;
+  required?: boolean;
+  hint?: string;
+  error?: string;
+}) {
   return (
-    <>
-      <Text style={{ ...type.rowMeta, marginBottom: 4 }}>{label}</Text>
+    <FormField label={label} required={required} hint={hint} error={error}>
       <Picker {...picker} />
-      {error ? (
-        <Text tone="danger" style={{ ...type.rowMeta, marginTop: 4 }}>
-          {error}
-        </Text>
-      ) : hint ? (
-        <Text tone="muted" style={{ ...type.rowMeta, marginTop: 4 }}>
-          {hint}
-        </Text>
-      ) : null}
-    </>
+    </FormField>
   );
 }
