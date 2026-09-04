@@ -1,5 +1,6 @@
 import { router } from 'expo-router';
 import { useMemo } from 'react';
+import { View } from 'react-native';
 import { formatMoney } from '@/api/money';
 import { useSession } from '@/features/auth/session';
 import { ExportButtons } from '@/features/staff/ExportButtons';
@@ -142,12 +143,21 @@ export default function FeeSetupsScreen() {
         */}
         <Toolbar
           filters={
-            can('fee-assigns.create') && active > 0 ? (
-              <Button variant="secondary" onPress={() => router.push('/staff/fees/assign')}>
-                <Icon name="members" size={15} />
-                <Button.Label>Assign to members</Button.Label>
-              </Button>
-            ) : null
+            <View style={{ flexDirection: 'row', gap: space.sm }}>
+              {can('fee-assigns.create') && active > 0 ? (
+                <Button variant="secondary" onPress={() => router.push('/staff/fees/assign')}>
+                  <Icon name="members" size={15} />
+                  <Button.Label>Assign to members</Button.Label>
+                </Button>
+              ) : null}
+
+              {can('fines.adjust') ? (
+                <Button variant="secondary" onPress={() => router.push('/staff/fees/fines')}>
+                  <Icon name="fees" size={15} />
+                  <Button.Label>Adjust fines</Button.Label>
+                </Button>
+              ) : null}
+            </View>
           }
           actions={
             can('reports.export') ? (

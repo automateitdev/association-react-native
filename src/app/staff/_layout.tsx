@@ -267,7 +267,8 @@ export default function StaffLayout() {
             tab('users.view') ??
             tab('roles.view') ??
             tab('settings.view') ??
-            tab('ledgers.view'),
+            tab('ledgers.view') ??
+            tab('associator.view'),
         }}
       />
 
@@ -279,6 +280,9 @@ export default function StaffLayout() {
       <Tabs.Screen name="admin/roles" options={{ href: null }} />
       <Tabs.Screen name="admin/settings" options={{ href: null }} />
       <Tabs.Screen name="admin/ledgers" options={{ href: null }} />
+      <Tabs.Screen name="admin/register" options={{ href: null }} />
+      <Tabs.Screen name="members/nominees" options={{ href: null }} />
+      <Tabs.Screen name="fees/fines" options={{ href: null }} />
       <Tabs.Screen name="members/[id]" options={{ href: null }} />
       <Tabs.Screen name="members/new" options={{ href: null }} />
       <Tabs.Screen name="fees/[id]" options={{ href: null }} />

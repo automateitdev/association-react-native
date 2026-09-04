@@ -19,6 +19,7 @@ import {
   Button,
   Field,
   FieldError,
+  Icon,
   Input,
   Label,
   Panel,
@@ -299,6 +300,22 @@ function SocietyRecord({ member, editable }: { member: MemberDetail; editable: b
         <Text tone="muted" style={type.rowMeta}>
           Office use. The number must be unique within this association.
         </Text>
+
+        {/*
+          Nominees live on their own screen rather than in this form. They are
+          a list of people with their own fields and a percentage split, and
+          folding that into a panel of single-line inputs would bury it.
+        */}
+        <View style={{ marginTop: space.sm, alignItems: 'flex-start' }}>
+          <Button
+            size="sm"
+            variant="secondary"
+            onPress={() => router.push(`/staff/members/nominees?member=${member.id}`)}
+          >
+            <Icon name="members" size={15} tone="muted" />
+            <Button.Label>Nominees</Button.Label>
+          </Button>
+        </View>
 
         <FormField
           label="Membership no."

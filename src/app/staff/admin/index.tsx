@@ -75,6 +75,15 @@ export default function AdminScreen() {
             />
           ) : null}
 
+          {can('associator.view') ? (
+            <Tile
+              title="Membership register"
+              description="Numbers, join dates, batches and employers"
+              icon="members"
+              onPress={() => router.push('/staff/admin/register')}
+            />
+          ) : null}
+
           {can('ledgers.view') ? (
             <Tile
               title="Chart of accounts"
@@ -98,7 +107,7 @@ export default function AdminScreen() {
         */}
         <Text tone="muted" style={type.body}>
           Association details and the signature used on generated documents are not
-          editable here yet, and ledgers can be read but not created or changed.
+          editable here yet.
         </Text>
       </Section>
     </Screen>
