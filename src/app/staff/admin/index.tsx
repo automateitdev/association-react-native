@@ -84,6 +84,15 @@ export default function AdminScreen() {
             />
           ) : null}
 
+          {can('vouchers.view') ? (
+            <Tile
+              title="Vouchers"
+              description="Payments, receipts and journals the association writes by hand"
+              icon="fees"
+              onPress={() => router.push('/staff/vouchers')}
+            />
+          ) : null}
+
           {can('ledgers.view') ? (
             <Tile
               title="Chart of accounts"

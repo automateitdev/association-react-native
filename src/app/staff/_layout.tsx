@@ -276,7 +276,8 @@ export default function StaffLayout() {
             tab('roles.view') ??
             tab('settings.view') ??
             tab('ledgers.view') ??
-            tab('associator.view'),
+            tab('associator.view') ??
+            tab('vouchers.view'),
         }}
       />
 
@@ -293,6 +294,7 @@ export default function StaffLayout() {
       <Tabs.Screen name="members/shares" options={{ href: null }} />
       <Tabs.Screen name="members/profile-updates" options={{ href: null }} />
       <Tabs.Screen name="fees/fines" options={{ href: null }} />
+      <Tabs.Screen name="vouchers" options={{ href: null }} />
       <Tabs.Screen name="members/[id]" options={{ href: null }} />
       <Tabs.Screen name="members/new" options={{ href: null }} />
       <Tabs.Screen name="fees/[id]" options={{ href: null }} />
