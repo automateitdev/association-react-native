@@ -55,8 +55,16 @@ export type PaymentInstructions = {
     };
   };
   online: {
+    /**
+     * True only when the association has switched it on, a gateway is actually
+     * configured, and the deployment is not forcing the fake. Any one of the
+     * three missing means a "Pay now" button whose only outcome is a refusal
+     * three screens later, so the server answers all three as one question.
+     */
     available: boolean;
     provider: string;
+    /** The BANK's name, not the middleware's. Members have not heard of ours. */
+    label: string;
   };
 };
 
