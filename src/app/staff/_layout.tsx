@@ -237,7 +237,15 @@ export default function StaffLayout() {
       />
       <Tabs.Screen
         name="members/index"
-        options={{ tabBarIcon: tabIcon('members'), title: 'Members', href: tab('members.view') }}
+        options={{
+          tabBarIcon: tabIcon('members'),
+          title: 'Members',
+          /*
+            Also the way in to share transfers and the requested-changes queue,
+            so an account holding only those must still see the tab.
+          */
+          href: tab('members.view') ?? tab('shares.view') ?? tab('profile-updates.view'),
+        }}
       />
       <Tabs.Screen
         name="fees/index"
@@ -282,6 +290,8 @@ export default function StaffLayout() {
       <Tabs.Screen name="admin/ledgers" options={{ href: null }} />
       <Tabs.Screen name="admin/register" options={{ href: null }} />
       <Tabs.Screen name="members/nominees" options={{ href: null }} />
+      <Tabs.Screen name="members/shares" options={{ href: null }} />
+      <Tabs.Screen name="members/profile-updates" options={{ href: null }} />
       <Tabs.Screen name="fees/fines" options={{ href: null }} />
       <Tabs.Screen name="members/[id]" options={{ href: null }} />
       <Tabs.Screen name="members/new" options={{ href: null }} />

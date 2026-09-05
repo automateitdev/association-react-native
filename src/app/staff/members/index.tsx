@@ -1,5 +1,6 @@
 import { router } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
+import { View } from 'react-native';
 import { useSession } from '@/features/auth/session';
 import { ExportButtons } from '@/features/staff/ExportButtons';
 import { useMembers, type MemberStatus, type MemberSummary } from '@/features/staff/members';
@@ -21,6 +22,7 @@ import {
   type Column,
   type DateRange,
   type SortState,
+  space,
 } from '@/ui';
 
 /**
@@ -227,7 +229,30 @@ export default function MembersScreen() {
             </>
           }
           actions={
-            can('reports.export') ? (
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm }}>
+              {can('profile-updates.view') ? (
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onPress={() => router.push('/staff/members/profile-updates')}
+                >
+                  <Icon name="approvals" size={15} tone="muted" />
+                  <Button.Label>Requested changes</Button.Label>
+                </Button>
+              ) : null}
+
+              {can('shares.view') ? (
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onPress={() => router.push('/staff/members/shares')}
+                >
+                  <Icon name="fees" size={15} tone="muted" />
+                  <Button.Label>Shares</Button.Label>
+                </Button>
+              ) : null}
+
+              {can('reports.export') ? (
               <ExportButtons
                 path="/staff/members/export"
                 name="members"
@@ -241,7 +266,8 @@ export default function MembersScreen() {
                 }}
                 disabled={members.isLoading || rows.length === 0}
               />
-            ) : undefined
+              ) : null}
+            </View>
           }
         />
 
