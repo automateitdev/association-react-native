@@ -12,7 +12,8 @@ import {
   Button,
   Checkbox,
   Form,
-  FormActions,
+  Divider,
+  FormRow,
   FormField,
   Icon,
   Input,
@@ -119,39 +120,70 @@ function SavingSection({
   first?: boolean;
 }) {
   return (
-    <Section title={title} first={first}>
-      {description ? (
-        <Text tone="muted" style={{ ...type.body, marginBottom: space.md }}>
-          {description}
-        </Text>
-      ) : null}
+    <>
+      {/*
+        A hairline above each group but the first.
 
-      {error ? (
-        <View style={{ marginBottom: space.md }}>
-          <Panel tone="danger">
-            <Text style={type.body}>{error}</Text>
-          </Panel>
+        Three forms stacked with only their headings between them read as one
+        long list of fields - the headings are small, muted and letterspaced on
+        purpose, which makes them findable when scanning and invisible when
+        reading. That is right for a section inside one form and wrong for the
+        boundary between two separate ones, each with its own Save.
+
+        A rule rather than three filled cards: Panel is the design system's rare
+        surface, and three on a screen is how this page would go back to looking
+        blocky.
+      */}
+      {first ? null : (
+        <View style={{ marginTop: space.xl }}>
+          <Divider />
         </View>
-      ) : null}
+      )}
 
-      <Form>
-        {children}
-
-        {editable ? (
-          <FormActions>
-            {/*
-              Disabled until something changed. A save button that is always
-              live invites re-submitting untouched values, and the fine rate is
-              audited - an unchanged value saved again is a change with a name
-              and a date on it.
-            */}
-            <Button isDisabled={! dirty || pending} onPress={onSave}>
+      <Section
+        title={title}
+        first={first}
+        /*
+          The Save button lives in the heading, not at the foot of the fields.
+          Floating between two groups it was ambiguous - it looked as likely to
+          belong to the group below as the one above - and on a long screen the
+          button for the group you are editing was often off-screen.
+        */
+        action={
+          editable ? (
+            <Button size="sm" isDisabled={! dirty || pending} onPress={onSave}>
               <Button.Label>{pending ? 'Saving…' : 'Save'}</Button.Label>
             </Button>
-          </FormActions>
+          ) : undefined
+        }
+      >
+        {description ? (
+          <Text tone="muted" style={{ ...type.body, marginBottom: space.md }}>
+            {description}
+          </Text>
         ) : null}
-      </Form>
-    </Section>
+
+        {error ? (
+          <View style={{ marginBottom: space.md }}>
+            <Panel tone="danger">
+              <Text style={type.body}>{error}</Text>
+            </Panel>
+          </View>
+        ) : null}
+
+        {/*
+          The Save button is in the heading above, and is disabled until
+          something changed. A save that is always live invites re-submitting
+          untouched values, and the fine rate is audited - an unchanged value
+          saved again is a change with a name and a date on it.
+        */}
+        {/*
+          `dense`: these are admin forms read on a desktop, not a payment tapped
+          one-handed. See FormDensity in ui/Form.
+        */}
+        <Form dense>{children}</Form>
+      </Section>
+    </>
   );
 }
 
@@ -203,6 +235,13 @@ function FineSection({ settings, editable }: { settings: Settings; editable: boo
       error={error}
       first
     >
+      {/*
+        Three short numbers, side by side. Each on its own full-width line
+        turned "100, 0, 3" into a column of large boxes - which is most of why
+        this screen read as heavy. Not the height of any one field, but how many
+        lines it took to ask for very little.
+      */}
+      <FormRow>
       <InputField
         label="Fine per missed month"
         value={rate}
@@ -226,6 +265,7 @@ function FineSection({ settings, editable }: { settings: Settings; editable: boo
         keyboardType="phone-pad"
         hint="Unpaid instalments before a member is suspended."
       />
+      </FormRow>
     </SavingSection>
   );
 }
@@ -282,6 +322,7 @@ function PaymentSection({ settings, editable }: { settings: Settings; editable: 
         </View>
       </View>
 
+      <FormRow>
       <InputField
         label="Payment window (minutes)"
         value={ttl}
@@ -297,6 +338,7 @@ function PaymentSection({ settings, editable }: { settings: Settings; editable: 
         autoCapitalize="none"
         hint="The pattern new invoice numbers follow."
       />
+      </FormRow>
     </SavingSection>
   );
 }
@@ -380,8 +422,15 @@ function BankSection({ settings, editable }: { settings: Settings; editable: boo
         onChangeText={set('account_number')}
         autoCapitalize="none"
       />
-      <InputField label="Bank" value={form.bank_name} onChangeText={set('bank_name')} />
-      <InputField label="Branch" value={form.branch} onChangeText={set('branch')} />
+      {/*
+        Bank and branch together. A label like "Branch" needs no hint, and a
+        hint under every field is the other half of why this page felt like a
+        wall.
+      */}
+      <FormRow>
+        <InputField label="Bank" value={form.bank_name} onChangeText={set('bank_name')} />
+        <InputField label="Branch" value={form.branch} onChangeText={set('branch')} />
+      </FormRow>
       <InputField
         label="Routing number"
         value={form.routing_number}

@@ -1,3 +1,4 @@
+import React from 'react';
 import { View } from 'react-native';
 import { Description, FieldError, Input, Label, TextField } from 'heroui-native';
 import { space } from './tokens';
@@ -29,6 +30,24 @@ import { space } from './tokens';
  * message says "here is a hint" in the place the reader is looking for "here is
  * what went wrong".
  */
+/**
+ * How tall the controls in this form are.
+ *
+ * DENSITY BELONGS TO THE FORM, not to each field - the same reasoning as the
+ * gap below. A settings screen is eleven fields read on a desktop by staff; a
+ * payment screen is three fields tapped one-handed on a phone. HeroUI's default
+ * 48pt control is right for the second and a wall for the first, and asking
+ * eleven call sites to each remember `dense` is how one of them gets forgotten
+ * and sits a third taller than its neighbours.
+ *
+ * There is no size prop on the library's Input - customisation is className -
+ * so this is the one place that knows the class.
+ */
+const FormDensity = React.createContext(false);
+
+/** 40, against HeroUI's 48. Below about this a 16pt value starts to feel cramped. */
+const DENSE_HEIGHT = 40;
+
 export function FormField({
   label,
   required = false,
@@ -107,9 +126,21 @@ export function InputField({
   hint?: string;
   error?: string;
 }) {
+  const dense = React.useContext(FormDensity);
+
   return (
     <FormField label={label} required={required} hint={hint} error={error}>
       <Input
+        /*
+          `minHeight`, and that is the whole trick.
+          
+          HeroUI's input.css sets `min-height: calc(var(--spacing) * 12)` - 48pt
+          - so neither nativewind's `h-10` nor an inline `height` can shorten it:
+          a min-height beats both no matter who wins specificity. Overriding the
+          property that is actually set is the only thing that works, and it
+          took reading the library's stylesheet to see it.
+        */
+        style={dense ? { minHeight: DENSE_HEIGHT, height: DENSE_HEIGHT } : undefined}
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}
@@ -139,12 +170,41 @@ export function Form({
   children,
   maxWidth = 460,
   gap = space.md,
+  dense = false,
 }: {
   children: React.ReactNode;
   maxWidth?: number | null;
   gap?: number;
+  /** Shorter controls, for admin forms read on a desktop. See FormDensity. */
+  dense?: boolean;
 }) {
-  return <View style={{ gap, ...(maxWidth === null ? {} : { maxWidth }) }}>{children}</View>;
+  return (
+    <FormDensity.Provider value={dense}>
+      <View style={{ gap, ...(maxWidth === null ? {} : { maxWidth }) }}>{children}</View>
+    </FormDensity.Provider>
+  );
+}
+
+/**
+ * Fields side by side, wrapping when there is no room.
+ *
+ * A fine rate, a grace period and a suspension threshold are all two or three
+ * characters wide, and giving each its own full-width line turns three small
+ * numbers into a column of large boxes. That is most of why a settings screen
+ * reads as heavy: not the height of any one field, but how many lines it takes
+ * to ask for very little.
+ *
+ * `minWidth` rather than a column count, so the same markup is two-up on a
+ * desktop and stacked on a phone with nothing to configure.
+ */
+export function FormRow({ children, minWidth = 150 }: { children: React.ReactNode; minWidth?: number }) {
+  return (
+    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space.md }}>
+      {React.Children.map(children, (child) => (
+        <View style={{ flexGrow: 1, flexBasis: minWidth, minWidth }}>{child}</View>
+      ))}
+    </View>
+  );
 }
 
 /**
