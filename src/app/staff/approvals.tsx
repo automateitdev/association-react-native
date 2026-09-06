@@ -336,7 +336,13 @@ export default function PaymentApprovalsScreen() {
           error={pending.error}
           empty={payments.length === 0}
           emptyTitle="Nothing waiting"
-          emptyMessage="No payments are awaiting approval right now."
+          /*
+            Says what is NOT here as well as what is. A clerk who knows a member
+            paid online this morning and cannot find it needs to know it was
+            never coming to this screen - otherwise the next move is to look for
+            a bug, or to create the payment a second time by hand.
+          */
+          emptyMessage="No payments are awaiting approval right now. Online payments are not approved here - the bank confirms those."
           onRetry={() => void pending.refetch()}
         >
           <DataTable
