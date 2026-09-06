@@ -48,6 +48,16 @@ const FormDensity = React.createContext(false);
 /** 40, against HeroUI's 48. Below about this a 16pt value starts to feel cramped. */
 const DENSE_HEIGHT = 40;
 
+/**
+ * The same height, for a screen that builds its own `Input`.
+ *
+ * `FormField` takes its control as a child, so a screen passing a raw `Input` -
+ * sign-in does, because it carries autofill props InputField does not forward -
+ * creates that element outside the Form's provider and cannot read the context.
+ * Exported rather than left as a magic 40 in two files.
+ */
+export const DENSE_INPUT_STYLE = { minHeight: DENSE_HEIGHT, height: DENSE_HEIGHT };
+
 export function FormField({
   label,
   required = false,

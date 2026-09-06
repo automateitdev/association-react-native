@@ -9,6 +9,7 @@ import { useSession } from '@/features/auth/session';
 import {
   Actions,
   Button,
+  DENSE_INPUT_STYLE,
   Icon,
   Form,
   FormField,
@@ -71,7 +72,7 @@ export default function SignInScreen() {
   const error = attempt.error instanceof ApiError ? attempt.error : null;
 
   return (
-    <Screen width="reading">
+    <Screen width="reading" center>
       {/*
         CENTRED, AND CAPPED. The form used to run the full width of the reading
         column - 720pt inputs on a desktop - with everything pinned to the top
@@ -154,9 +155,16 @@ export default function SignInScreen() {
               case worse to read, and the chrome - which is what has to match the
               rest of the app - is the same either way.
             */}
-            <Form maxWidth={null}>
+            {/*
+              `dense`. 48pt is HeroUI's touch target and the right default, but
+              two fields in a 380pt card read as slabs at that height - the
+              control ends up wider than it is tall by a factor that makes the
+              card look like a placeholder. 40 still clears a thumb.
+            */}
+            <Form maxWidth={null} dense>
               <FormField label="Mobile number or email" required>
                 <Input
+                  style={DENSE_INPUT_STYLE}
                   value={login}
                   onChangeText={setLogin}
                   autoCapitalize="none"
@@ -168,6 +176,7 @@ export default function SignInScreen() {
 
               <FormField label="Password" required>
                 <Input
+                  style={DENSE_INPUT_STYLE}
                   value={password}
                   onChangeText={setPassword}
                   secureTextEntry

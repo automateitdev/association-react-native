@@ -25,6 +25,7 @@ export function Screen({
   onRefresh,
   refreshing = false,
   width = 'wide',
+  center = false,
 }: {
   children: ReactNode;
   scroll?: boolean;
@@ -36,6 +37,16 @@ export function Screen({
    * where more visible at once is the whole point of a desktop.
    */
   width?: 'reading' | 'wide';
+  /**
+   * Centre the column on desktop too.
+   *
+   * For the screens with NO SIDEBAR - sign-in, the association code, the MFA
+   * step. The left alignment below exists because content belongs against the
+   * sidebar that forms the left edge of the layout; where there is no sidebar
+   * there is nothing to align to, and a form pinned to the left edge of a wide
+   * window just looks like it was never placed.
+   */
+  center?: boolean;
 }) {
   const insets = useSafeAreaInsets();
   const maxWidth = useContentWidth(width);
@@ -65,7 +76,7 @@ export function Screen({
   const measure = {
     width: '100%' as const,
     maxWidth,
-    alignSelf: (isDesktop ? 'flex-start' : 'center') as 'flex-start' | 'center',
+    alignSelf: (isDesktop && ! center ? 'flex-start' : 'center') as 'flex-start' | 'center',
   };
 
   /*

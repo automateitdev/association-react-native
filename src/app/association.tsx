@@ -63,7 +63,7 @@ export default function AssociationScreen() {
   const error = lookup.error instanceof ApiError ? lookup.error : null;
 
   return (
-    <Screen width="reading">
+    <Screen width="reading" center>
       <View style={{ gap: 8, paddingTop: 24 }}>
         <Text style={{ fontSize: 24, fontWeight: '700' }}>Find your association</Text>
         <Text>
