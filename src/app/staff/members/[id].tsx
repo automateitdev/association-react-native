@@ -18,10 +18,9 @@ import {
   useActionButtonStyle,
   Button,
   Field,
-  FieldError,
+  Form,
   Icon,
-  Input,
-  Label,
+  InputField,
   Panel,
   Screen,
   ScreenHeader,
@@ -30,7 +29,6 @@ import {
   StatusBadge,
   Text,
   TextArea,
-  TextField,
   space,
   type,
 } from '@/ui';
@@ -317,31 +315,40 @@ function SocietyRecord({ member, editable }: { member: MemberDetail; editable: b
           </Button>
         </View>
 
-        <FormField
+        {/*
+          A Form, so the gap between fields belongs to the form rather than to
+          each field - and so these pick up the density every other staff screen
+          uses. They were a bare stack of a PRIVATE FormField, a copy of the
+          shared InputField living in this file under a shadowing name. That is
+          the drift the real component's docblock was written about.
+        */}
+        <Form maxWidth={null} dense>
+        <InputField
           label="Membership no."
           value={fields.membership_no}
           onChangeText={set('membership_no')}
-          errors={fieldErrors.membership_no}
+          error={fieldErrors.membership_no?.[0]}
         />
-        <FormField
+        <InputField
           label="Joined"
-          hint="YYYY-MM-DD"
+          placeholder="YYYY-MM-DD"
           value={fields.join_date ?? ''}
           onChangeText={set('join_date')}
-          errors={fieldErrors.join_date}
+          error={fieldErrors.join_date?.[0]}
         />
-        <FormField
+        <InputField
           label="Share no."
           value={fields.share_no ?? ''}
           onChangeText={set('share_no')}
-          errors={fieldErrors.share_no}
+          error={fieldErrors.share_no?.[0]}
         />
-        <FormField label="Employer" value={fields.company ?? ''} onChangeText={set('company')} />
-        <FormField
+        <InputField label="Employer" value={fields.company ?? ''} onChangeText={set('company')} />
+        <InputField
           label="Designation"
           value={fields.designation ?? ''}
           onChangeText={set('designation')}
         />
+        </Form>
 
         <View style={{ flexDirection: 'row', gap: space.sm }}>
           <Button variant="secondary" style={actionStyle} onPress={() => setOpen(false)}>
@@ -407,34 +414,36 @@ function PersonalDetails({ member, editable }: { member: MemberDetail; editable:
             <Text style={type.body}>Those changes were not saved. The member is unchanged.</Text>
           ) : null}
 
-          <FormField label="Name" value={fields.name ?? ''} onChangeText={set('name')} />
-          <FormField
+          <Form maxWidth={null} dense>
+          <InputField label="Name" value={fields.name ?? ''} onChangeText={set('name')} />
+          <InputField
             label="Mobile"
             value={fields.mobile ?? ''}
             onChangeText={set('mobile')}
             keyboardType="phone-pad"
           />
-          <FormField
+          <InputField
             label="Email"
             value={fields.email ?? ''}
             onChangeText={set('email')}
             keyboardType="email-address"
           />
-          <FormField
+          <InputField
             label="Father's name"
             value={fields.father_name ?? ''}
             onChangeText={set('father_name')}
           />
-          <FormField
+          <InputField
             label="Present address"
             value={fields.present_address ?? ''}
             onChangeText={set('present_address')}
           />
-          <FormField
+          <InputField
             label="Permanent address"
             value={fields.permanent_address ?? ''}
             onChangeText={set('permanent_address')}
           />
+          </Form>
 
           <View style={{ flexDirection: 'row', gap: space.sm }}>
             <Button variant="secondary" style={actionStyle} onPress={() => setOpen(false)}>
@@ -498,56 +507,3 @@ function PersonalDetails({ member, editable }: { member: MemberDetail; editable:
   );
 }
 
-function FormField({
-  label,
-  value,
-  onChangeText,
-  keyboardType,
-  hint,
-  errors,
-}: {
-  label: string;
-  value: string;
-  onChangeText: (value: string) => void;
-  keyboardType?: 'phone-pad' | 'email-address';
-  hint?: string;
-  errors?: string[];
-}) {
-  return (
-    // isInvalid propagates through TextField's form-item-state context, so Label,
-    // Input and FieldError pick up the invalid styling without being told.
-    <TextField isInvalid={Boolean(errors?.length)}>
-      <Label>{label}</Label>
-      <Input
-        value={value}
-        onChangeText={onChangeText}
-        keyboardType={keyboardType}
-        placeholder={hint}
-        autoCapitalize={keyboardType === 'email-address' ? 'none' : 'sentences'}
-      />
-      {/*
-        FieldError, not Description: this is what went wrong, not a hint.
-
-        TWO NON-OBVIOUS PROPS, BOTH LOAD-BEARING.
-
-        `isInvalid` explicitly, rather than relying on TextField's form-item
-        context: FieldError renders null unless it believes the field is
-        invalid, and not depending on ambient state is the safer call for the
-        one component whose whole job is to appear when something is wrong.
-
-        `animation={false}` because the default entering animation leaves the
-        element at `visibility: hidden` on React Native Web and never reveals
-        it. The message was in the DOM, 20pt tall, full opacity, and completely
-        invisible - after the 422 had already arrived. Disabled on every
-        platform rather than just web: an animation is a nicety, a permanently
-        invisible validation error is a defect, and native cannot be verified
-        from here. Worth revisiting when there is a device to test on.
-      */}
-      {errors?.length ? (
-        <FieldError isInvalid animation={false}>
-          {errors[0]}
-        </FieldError>
-      ) : null}
-    </TextField>
-  );
-}

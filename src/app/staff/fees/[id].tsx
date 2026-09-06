@@ -8,9 +8,8 @@ import {
   useActionButtonStyle,
   Button,
   Field,
-  FieldError,
   Input,
-  Label,
+  InputField,
   Panel,
   Form,
   PickerField,
@@ -19,7 +18,6 @@ import {
   Section,
   StateView,
   Text,
-  TextField,
   space,
   type,
 } from '@/ui';
@@ -120,25 +118,28 @@ export default function EditFeeSetupScreen() {
             {open ? (
               <Section title="Edit" first>
                 <Panel>
-                  <TextField isInvalid={Boolean(fieldErrors.fee_head?.length)}>
-                    <Label>Name</Label>
-                    <Input value={feeHead} onChangeText={setFeeHead} />
-                    {fieldErrors.fee_head?.length ? (
-                      <FieldError isInvalid animation={false}>
-                        {fieldErrors.fee_head[0]}
-                      </FieldError>
-                    ) : null}
-                  </TextField>
+                  {/*
+                    InputField, not a hand-rolled TextField/Label/Input. Same
+                    conversion as fees/new: built by hand these could not pick
+                    up the density the pickers below already use, so one edit
+                    form had 48pt text fields above 40pt pickers.
+                  */}
+                  <Form maxWidth={null} dense>
+                    <InputField
+                      label="Name"
+                      value={feeHead}
+                      onChangeText={setFeeHead}
+                      error={fieldErrors.fee_head?.[0]}
+                    />
 
-                  <TextField isInvalid={Boolean(fieldErrors.amount?.length)}>
-                    <Label>Amount</Label>
-                    <Input value={amount} onChangeText={setAmount} keyboardType="decimal-pad" />
-                    {fieldErrors.amount?.length ? (
-                      <FieldError isInvalid animation={false}>
-                        {fieldErrors.amount[0]}
-                      </FieldError>
-                    ) : null}
-                  </TextField>
+                    <InputField
+                      label="Amount"
+                      value={amount}
+                      onChangeText={setAmount}
+                      keyboardType="decimal-pad"
+                      error={fieldErrors.amount?.[0]}
+                    />
+                  </Form>
 
                   {/*
                     The warning belongs here, next to the field it is about,
