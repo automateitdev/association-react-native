@@ -1,7 +1,8 @@
 import React from 'react';
 import { View } from 'react-native';
 import { Description, FieldError, Input, Label, TextField } from 'heroui-native';
-import { space } from './tokens';
+import { Text } from './Text';
+import { space, type } from './tokens';
 
 /**
  * The chrome every form field wears: a label, the control, and either a hint or
@@ -80,7 +81,29 @@ export function FormField({
       told individually.
     */
     <TextField isRequired={required} isInvalid={Boolean(error)}>
-      <Label>{label}</Label>
+      {/*
+        The app's type scale, not the library's.
+
+        HeroUI sets `font-size: var(--text-base)` on its Label - 16pt - and
+        `--text-sm` on its Description. Left alone that made every field label
+        LARGER than the body text around it (13.5) and only four points below
+        the page title, so a settings screen read as thirteen headings with
+        values underneath them.
+
+        PASSED AS AN ELEMENT, not a string. Label wraps a string child in its
+        own LabelText, which carries that font size; give it an element and it
+        renders that instead. `style` would not do it - Label's style prop
+        targets the root View, not the text inside.
+
+        The one thing that costs us is Label's invalid colouring, which lives in
+        LabelText. Restored here from `error`, which this component already
+        knows about.
+      */}
+      <Label>
+        <Text style={type.label} tone={error ? 'danger' : undefined}>
+          {label}
+        </Text>
+      </Label>
 
       {children}
 
@@ -103,10 +126,16 @@ export function FormField({
           test on.
         */
         <FieldError isInvalid animation={false}>
-          {error}
+          <Text style={type.rowMeta} tone="danger">
+            {error}
+          </Text>
         </FieldError>
       ) : hint ? (
-        <Description>{hint}</Description>
+        <Description>
+          <Text style={type.rowMeta} tone="muted">
+            {hint}
+          </Text>
+        </Description>
       ) : null}
     </TextField>
   );

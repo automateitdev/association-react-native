@@ -103,6 +103,20 @@ export const type = {
     letterSpacing: 0.7,
   },
 
+  /**
+   * A form field's label.
+   *
+   * ITS OWN TOKEN because HeroUI's Label is 16pt and its Description 14pt -
+   * the library's scale, which was never reconciled with this one. On a
+   * settings screen that made every field label LARGER than the body text
+   * (13.5), larger than a row title, and only four points below the page
+   * title itself. Thirteen labels shouting over the values they describe.
+   *
+   * Semibold and below body: a label is signposting, and the value is the
+   * thing being read.
+   */
+  label: { fontFamily: font.semibold, fontSize: 12.5, lineHeight: 16, fontWeight: '600' as const },
+
   /** The primary line of a row: a member's name, a fee head. */
   rowTitle: { fontFamily: font.semibold, fontSize: 13.5, lineHeight: 18, fontWeight: '600' as const },
 
