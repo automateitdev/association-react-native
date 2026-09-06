@@ -216,7 +216,7 @@ function RoleEditor({
   return (
     <View style={{ gap: space.lg }}>
       {role ? null : (
-        <Form maxWidth={380}>
+        <Form maxWidth={380} dense>
           <InputField
             label="Name"
             required

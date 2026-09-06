@@ -290,7 +290,7 @@ function AccountForm({
   const complete = name.trim() && email.trim() && role && (user || password.length >= 8);
 
   return (
-    <Form>
+    <Form dense>
       <InputField
         label="Name"
         required

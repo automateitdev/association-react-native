@@ -287,7 +287,7 @@ function LedgerForm({
   }));
 
   return (
-    <Form>
+    <Form dense>
       <InputField
         label="Name"
         value={name}
