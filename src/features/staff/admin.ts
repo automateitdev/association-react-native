@@ -74,12 +74,22 @@ export function usePermissionCatalogue() {
   });
 }
 
+/**
+ * `meta.notice` is why these two return the whole envelope.
+ *
+ * Saving an account can succeed AND still have something worth saying - that
+ * this email already belongs to a member, so the same password on both means
+ * being asked which account at every sign-in. It is not an error, so it cannot
+ * be thrown; it is not part of the account, so it is not in `data`.
+ */
+export type StaffUserSaved = { data: StaffUser; meta: { notice: string | null } };
+
 export function useCreateStaffUser() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (input: { name: string; email: string; password: string; role: string }) =>
-      (await request<{ data: StaffUser }>('/staff/users', { method: 'POST', body: input })).data,
+      await request<StaffUserSaved>('/staff/users', { method: 'POST', body: input }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: adminKeys.users });
       // A role's holder count changed, which is what makes it deletable or not.
@@ -101,7 +111,7 @@ export function useUpdateStaffUser() {
       email?: string;
       password?: string;
       role?: string;
-    }) => (await request<{ data: StaffUser }>(`/staff/users/${id}`, { method: 'PUT', body })).data,
+    }) => await request<StaffUserSaved>(`/staff/users/${id}`, { method: 'PUT', body }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: adminKeys.users });
       void queryClient.invalidateQueries({ queryKey: adminKeys.roles });

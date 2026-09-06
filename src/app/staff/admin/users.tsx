@@ -46,6 +46,14 @@ import {
  *
  * The distinction matters if anybody is tempted to "simplify" by removing a
  * server guard because the UI already prevents it.
+ *
+ * WHY AN EMAIL THAT IS ALREADY A MEMBER'S IS ONLY A NOTICE
+ * -------------------------------------------------------
+ * Because it is usually right: the treasurer is a member of the association she
+ * keeps the books for, and the two are separate records by design. What she
+ * needs to know is what it costs - one password on both accounts means being
+ * asked which one she means at every sign-in - and the only moment she can act
+ * on that is while choosing the password, which is this screen.
  */
 export default function StaffUsersScreen() {
   const { can, session } = useSession();
@@ -59,6 +67,10 @@ export default function StaffUsersScreen() {
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState<StaffUser | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // Survives the form closing: the account WAS saved, and the notice is about
+  // the account rather than about the form it was typed into.
+  const [notice, setNotice] = useState<string | null>(null);
 
   const rows = users.data?.data ?? [];
   const roleOptions = (roles.data ?? []).map((r) => ({ value: r.name, label: r.name }));
@@ -118,10 +130,13 @@ export default function StaffUsersScreen() {
     role: string;
   }) => {
     setError(null);
+    setNotice(null);
 
     try {
+      let saved;
+
       if (values.id) {
-        await update.mutateAsync({
+        saved = await update.mutateAsync({
           id: values.id,
           name: values.name,
           email: values.email,
@@ -131,9 +146,10 @@ export default function StaffUsersScreen() {
           ...(values.password ? { password: values.password } : {}),
         });
       } else {
-        await create.mutateAsync(values);
+        saved = await create.mutateAsync(values);
       }
 
+      setNotice(saved.meta.notice);
       setAdding(false);
       setEditing(null);
     } catch (e) {
@@ -143,6 +159,7 @@ export default function StaffUsersScreen() {
 
   const destroy = async (user: StaffUser) => {
     setError(null);
+    setNotice(null);
 
     try {
       await remove.mutateAsync(user.id);
@@ -172,6 +189,22 @@ export default function StaffUsersScreen() {
         </View>
       ) : null}
 
+      {/*
+        Neutral, not danger. The account saved; nothing went wrong. Red here
+        would read as "that failed" on a screen where it plainly did not, and
+        the person would go looking for the account that was in fact created.
+      */}
+      {notice ? (
+        <View style={{ marginTop: space.lg }}>
+          <Panel>
+            <Text style={type.rowTitle}>This person is also a member</Text>
+            <Text tone="muted" style={type.body}>
+              {notice}
+            </Text>
+          </Panel>
+        </View>
+      ) : null}
+
       {adding || editing ? (
         <Section title={editing ? 'Edit account' : 'New account'} first>
           <AccountForm
@@ -182,6 +215,7 @@ export default function StaffUsersScreen() {
               setAdding(false);
               setEditing(null);
               setError(null);
+              setNotice(null);
             }}
             onSubmit={submit}
           />
