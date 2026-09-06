@@ -27,6 +27,13 @@ export const ErrorCode = {
 
   // Authentication
   INVALID_CREDENTIALS: 'INVALID_CREDENTIALS',
+  /**
+   * One password opened both a staff and a member account (SRS OD-4).
+   *
+   * Only ever returned AFTER the password is proved, so it discloses nothing to
+   * somebody guessing at an address. `details.roles` says which to offer.
+   */
+  ACCOUNT_AMBIGUOUS: 'ACCOUNT_AMBIGUOUS',
   TOKEN_EXPIRED: 'TOKEN_EXPIRED',
 
   /**

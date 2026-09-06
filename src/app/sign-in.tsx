@@ -41,9 +41,17 @@ export default function SignInScreen() {
   const [login, setLogin] = useState('');
   const [password, setPassword] = useState('');
 
+  /*
+   * Which account, when one password opens both (SRS OD-4). Null until the
+   * server says there is a question - it is never guessed and never asked
+   * up front, because almost nobody holds two accounts.
+   */
+  const [askingWhich, setAskingWhich] = useState(false);
+
   const attempt = useMutation({
-    mutationFn: () => signIn(login.trim(), password),
+    mutationFn: (as?: 'staff' | 'member') => signIn(login.trim(), password, as),
     onSuccess: () => router.replace('/'),
+    onError: (e) => setAskingWhich(e instanceof ApiError && e.code === ErrorCode.ACCOUNT_AMBIGUOUS),
   });
 
   /*
@@ -182,7 +190,7 @@ export default function SignInScreen() {
                   secureTextEntry
                   textContentType="password"
                   returnKeyType="go"
-                  onSubmitEditing={() => attempt.mutate()}
+                  onSubmitEditing={() => attempt.mutate(undefined)}
                 />
               </FormField>
             </Form>
@@ -193,13 +201,37 @@ export default function SignInScreen() {
               </View>
             ) : null}
 
-            <View style={{ marginTop: space.lg }}>
-              <Button
-                isDisabled={!login.trim() || !password || attempt.isPending}
-                onPress={() => attempt.mutate()}
-              >
-                <Button.Label>{attempt.isPending ? 'Signing in…' : 'Sign in'}</Button.Label>
-              </Button>
+            <View style={{ marginTop: space.lg, gap: space.sm }}>
+              {askingWhich ? (
+                <>
+                  {/*
+                    Two buttons rather than a picker plus a submit. There are
+                    exactly two answers, the person already typed their
+                    password, and one more tap should finish it.
+                  */}
+                  <Button
+                    isDisabled={attempt.isPending}
+                    onPress={() => attempt.mutate('staff')}
+                  >
+                    <Button.Label>Sign in as staff</Button.Label>
+                  </Button>
+
+                  <Button
+                    variant="secondary"
+                    isDisabled={attempt.isPending}
+                    onPress={() => attempt.mutate('member')}
+                  >
+                    <Button.Label>Sign in as a member</Button.Label>
+                  </Button>
+                </>
+              ) : (
+                <Button
+                  isDisabled={!login.trim() || !password || attempt.isPending}
+                  onPress={() => attempt.mutate(undefined)}
+                >
+                  <Button.Label>{attempt.isPending ? 'Signing in…' : 'Sign in'}</Button.Label>
+                </Button>
+              )}
             </View>
           </Panel>
 
@@ -236,6 +268,14 @@ const CARD_WIDTH = 380;
  * One screen, several genuinely different answers.
  */
 function SignInError({ error }: { error: ApiError }) {
+  /*
+   * A QUESTION, NOT A FAILURE. Nothing went wrong when one password opens two
+   * accounts - the password was right, and the person is being asked which of
+   * their own accounts they meant. Painting it red would tell them they had
+   * made a mistake at the moment they had not.
+   */
+  const asking = error.code === ErrorCode.ACCOUNT_AMBIGUOUS;
+
   const guidance = (() => {
     switch (error.code) {
       case ErrorCode.MEMBER_INACTIVE:
@@ -255,6 +295,9 @@ function SignInError({ error }: { error: ApiError }) {
       case ErrorCode.RATE_LIMITED:
         return 'Too many attempts. Wait a moment before trying again.';
 
+      case ErrorCode.ACCOUNT_AMBIGUOUS:
+        return "Staff sees the association's records; a member sees their own dues and payments.";
+
       case ErrorCode.INVALID_CREDENTIALS:
         // Deliberately does not say which of the two was wrong.
         return null;
@@ -272,11 +315,11 @@ function SignInError({ error }: { error: ApiError }) {
       the pay screen and left here.
     */
     <View style={{ gap: 4 }}>
-      <Text tone="danger" style={{ ...type.body, fontWeight: '600' }}>
+      <Text tone={asking ? 'default' : 'danger'} style={{ ...type.body, fontWeight: '600' }}>
         {error.message}
       </Text>
       {guidance ? (
-        <Text tone="danger" style={type.body}>
+        <Text tone={asking ? 'muted' : 'danger'} style={type.body}>
           {guidance}
         </Text>
       ) : null}

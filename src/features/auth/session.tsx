@@ -56,7 +56,7 @@ type SessionContextValue = {
   tenantSlug: string | null;
   session: Session | null;
   chooseTenant: (slug: string) => Promise<void>;
-  signIn: (login: string, password: string) => Promise<void>;
+  signIn: (login: string, password: string, as?: 'staff' | 'member') => Promise<void>;
   signOut: () => Promise<void>;
   /** True when the signed-in account is association staff, not a member. */
   isStaff: boolean;
@@ -140,10 +140,17 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     [queryClient],
   );
 
-  const signIn = useCallback(async (login: string, password: string) => {
+  /**
+   * `as` names which account, when one person holds both (SRS OD-4).
+   *
+   * Sent only on a SECOND attempt, after the first came back
+   * ACCOUNT_AMBIGUOUS. It names which account to try; it does not vouch for
+   * anything - the password is still checked against that account alone.
+   */
+  const signIn = useCallback(async (login: string, password: string, as?: 'staff' | 'member') => {
     const response = await request<{ data: LoginResult }>('/auth/login', {
       method: 'POST',
-      body: { login, password, device_name: 'mobile' },
+      body: { login, password, device_name: 'mobile', ...(as ? { as } : {}) },
     });
 
     const { token, ...rest } = response.data;
