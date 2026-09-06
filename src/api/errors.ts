@@ -50,7 +50,11 @@ export const ErrorCode = {
   ASSIGN_ALREADY_PENDING: 'ASSIGN_ALREADY_PENDING',
   PAYMENT_NOT_PENDING: 'PAYMENT_NOT_PENDING',
   PAYMENT_REFUSED: 'PAYMENT_REFUSED',
+
+  /** The gateway could not be reached at all. Transient; nothing was charged. */
+  GATEWAY_UNREACHABLE: 'GATEWAY_UNREACHABLE',
   DOCUMENT_REJECTED: 'DOCUMENT_REJECTED',
+  /** The gateway answered and said no. Retrying will not change its mind. */
   GATEWAY_SESSION_REFUSED: 'GATEWAY_SESSION_REFUSED',
 
   // Generic
@@ -119,10 +123,22 @@ export class ApiError extends Error {
 
   /** Worth offering a retry button for; the others are not the user's fault to fix. */
   get isRetryable(): boolean {
+    /*
+     * A gateway that ANSWERED and refused is not worth retrying, even though it
+     * arrives as a 5xx. Its mind will not change on the second attempt - an AR
+     * account it does not recognise is still unrecognised - and "try again"
+     * sends a member round a loop instead of to the office. Checked before the
+     * status, which would otherwise sweep it up.
+     */
+    if (this.code === ErrorCode.GATEWAY_SESSION_REFUSED) {
+      return false;
+    }
+
     return (
       this.code === ErrorCode.NETWORK_UNAVAILABLE ||
       this.code === ErrorCode.RATE_LIMITED ||
       this.code === ErrorCode.TENANT_UNAVAILABLE ||
+      this.code === ErrorCode.GATEWAY_UNREACHABLE ||
       this.status >= 500
     );
   }
@@ -145,6 +161,10 @@ export function fallbackMessage(code: string): string {
       return 'Your session has ended. Please sign in again.';
     case ErrorCode.UNSUPPORTED:
       return 'That is not available on this device yet.';
+    case ErrorCode.GATEWAY_UNREACHABLE:
+      return 'We could not reach the payment gateway. Nothing has been charged.';
+    case ErrorCode.GATEWAY_SESSION_REFUSED:
+      return 'The payment gateway would not start this payment. Nothing has been charged.';
     default:
       return 'Something went wrong. Please try again.';
   }

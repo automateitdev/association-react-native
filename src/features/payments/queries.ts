@@ -24,6 +24,14 @@ export type Payment = {
   invoice_no: string;
   status: 'pending' | 'completed' | 'suspended' | 'expired';
   payment_type: 'manual' | 'online';
+  /**
+   * Whether this payment ever reached the gateway.
+   *
+   * False on an online payment means the session call failed — the row exists,
+   * nothing was sent, and nobody is waiting on a bank. The two look identical
+   * to a member and are not.
+   */
+  gateway_started?: boolean;
   /** Instalments ONLY. Never includes a fine. */
   payable_amount: Money;
   fine_amount: Money;

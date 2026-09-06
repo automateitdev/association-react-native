@@ -155,9 +155,19 @@ export default function PayScreen() {
             }
           } catch {
             /*
-             * Swallowed on purpose. The payment exists either way, and its own
-             * screen is the honest place to find out what happened to it — an
-             * alert here would be the app guessing.
+             * Not swallowed any more, and this is why.
+             *
+             * The first version caught this and said nothing, on the reasoning
+             * that the payment exists either way and its own screen is the
+             * honest place to find out. That was wrong: the payment screen said
+             * "waiting for the bank to confirm" — about a payment the bank had
+             * never been sent, because the session call failed. A member reads
+             * that, waits, and eventually pays twice.
+             *
+             * The screen now distinguishes the two states through
+             * `gateway_started` and offers a retry, so landing there is
+             * informative rather than misleading. Nothing is needed here beyond
+             * letting that happen.
              */
           }
 

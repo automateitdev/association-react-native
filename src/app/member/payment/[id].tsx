@@ -1,6 +1,10 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { View } from 'react-native';
-import { usePayment } from '@/features/payments/queries';
+import * as Linking from 'expo-linking';
+import { useState } from 'react';
+import { Platform, View } from 'react-native';
+import * as WebBrowser from 'expo-web-browser';
+import { ApiError } from '@/api/errors';
+import { usePayment, useGatewaySession } from '@/features/payments/queries';
 import {
   AmountBreakdown,
   Button,
@@ -34,6 +38,32 @@ import {
 export default function PaymentDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const payment = usePayment(Number(id), { poll: true });
+  const session = useGatewaySession();
+  const [sessionError, setSessionError] = useState<string | null>(null);
+
+  /** Ask for a hosted page again for THIS payment. See the button below. */
+  const retry = async () => {
+    setSessionError(null);
+
+    try {
+      const created = await session.mutateAsync(Number(id));
+
+      if (Platform.OS === 'web') {
+        await Linking.openURL(created.url);
+      } else {
+        await WebBrowser.openAuthSessionAsync(created.url, 'bcsapprn://payment');
+      }
+
+      await payment.refetch();
+    } catch (e) {
+      // Shown, not swallowed. A silent failure here is what put this screen in
+      // front of somebody claiming a bank was confirming a payment it had
+      // never been sent.
+      setSessionError(
+        e instanceof ApiError ? e.message : 'The payment page could not be opened.',
+      );
+    }
+  };
 
   return (
     <Screen onRefresh={payment.refetch} refreshing={payment.isRefetching}>
@@ -62,10 +92,39 @@ export default function PaymentDetailScreen() {
                     made goes looking for a slip they never had.
                   */}
                   <Text style={type.body}>
-                    {payment.data.payment_type === 'online'
-                      ? 'Waiting for the bank to confirm. This page updates itself — you do not need to pay again.'
-                      : 'Your association will check this against your slip and confirm it. You do not need to pay again.'}
+                    {payment.data.payment_type !== 'online'
+                      ? 'Your association will check this against your slip and confirm it. You do not need to pay again.'
+                      : payment.data.gateway_started === false
+                        ? 'This payment never reached the bank — the payment page could not be opened. Nothing has been charged. You can try again below, or pay at the bank instead.'
+                        : 'Waiting for the bank to confirm. This page updates itself — you do not need to pay again.'}
                   </Text>
+
+                  {/*
+                    A retry, because the alternative is a member sitting on a
+                    page that will never change. The SAME payment is reused
+                    rather than a new one started: the instalments are already
+                    held against this invoice, and creating a second would leave
+                    the first stranded until the expiry sweep.
+                  */}
+                  {payment.data.payment_type === 'online' &&
+                  payment.data.gateway_started === false ? (
+                    <View style={{ marginTop: space.md }}>
+                      <Button
+                        isDisabled={session.isPending}
+                        onPress={() => void retry()}
+                      >
+                        <Button.Label>
+                          {session.isPending ? 'Opening…' : 'Try the payment page again'}
+                        </Button.Label>
+                      </Button>
+
+                      {sessionError ? (
+                        <Text tone="danger" style={{ ...type.rowMeta, marginTop: space.sm }}>
+                          {sessionError}
+                        </Text>
+                      ) : null}
+                    </View>
+                  ) : null}
                 </Panel>
               </View>
             ) : null}
