@@ -33,6 +33,12 @@ export type Profile = {
   status?: string;
   membership_no?: string | null;
   shares?: number;
+  /**
+   * The fields a member may ask to have changed (FR-MEM-8), as currently on
+   * file. Keyed by the server's own ALLOWED list so the change form can show
+   * what is held before somebody asks to change it.
+   */
+  editable?: Record<string, string | null>;
 };
 
 export type Session = {
