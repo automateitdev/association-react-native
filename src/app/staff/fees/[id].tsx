@@ -151,7 +151,7 @@ export default function EditFeeSetupScreen() {
                     with.
                   </Text>
 
-                  <Form maxWidth={null}>
+                  <Form maxWidth={null} dense>
                     <PickerField
                       label="Instalment income"
                       required

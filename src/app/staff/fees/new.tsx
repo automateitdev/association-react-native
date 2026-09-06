@@ -7,17 +7,14 @@ import {
   Actions,
   Button,
   Checkbox,
-  FieldError,
-  Input,
-  Label,
-  Panel,
   Form,
+  InputField,
+  Panel,
   PickerField,
   Screen,
   ScreenHeader,
   Section,
   Text,
-  TextField,
   space,
   type,
 } from '@/ui';
@@ -108,36 +105,36 @@ export default function NewFeeSetupScreen() {
       ) : null}
 
       <Section title="What is charged" first>
-        <TextField isRequired isInvalid={Boolean(fieldErrors.fee_head?.length)}>
-          <Label>Name</Label>
-          <Input
+        {/*
+          InputField, not a hand-rolled TextField/Label/Input.
+          
+          These two were built by hand, outside any Form - which is the exact
+          drift FormField's own docblock was written about: four screens, four
+          answers, and labels that no longer match each other. It also meant the
+          second field carried its own `marginTop` because there was no Form to
+          own the gap, and neither field could pick up the density every other
+          staff form now uses.
+        */}
+        <Form maxWidth={null} dense>
+          <InputField
+            label="Name"
+            required
             value={feeHead}
             onChangeText={setFeeHead}
             placeholder="e.g. Monthly Subscription"
+            error={fieldErrors.fee_head?.[0]}
           />
-          {fieldErrors.fee_head?.length ? (
-            <FieldError isInvalid animation={false}>
-              {fieldErrors.fee_head[0]}
-            </FieldError>
-          ) : null}
-        </TextField>
 
-        <View style={{ marginTop: space.md }}>
-          <TextField isRequired isInvalid={Boolean(fieldErrors.amount?.length)}>
-            <Label>Amount</Label>
-            <Input
-              value={amount}
-              onChangeText={setAmount}
-              placeholder="1000.00"
-              keyboardType="decimal-pad"
-            />
-            {fieldErrors.amount?.length ? (
-              <FieldError isInvalid animation={false}>
-                {fieldErrors.amount[0]}
-              </FieldError>
-            ) : null}
-          </TextField>
-        </View>
+          <InputField
+            label="Amount"
+            required
+            value={amount}
+            onChangeText={setAmount}
+            placeholder="1000.00"
+            keyboardType="decimal-pad"
+            error={fieldErrors.amount?.[0]}
+          />
+        </Form>
 
         {/*
           Both of these are create-only. Saying so here is cheaper than a support
@@ -171,7 +168,7 @@ export default function NewFeeSetupScreen() {
         </Text>
 
         {/* The gap belongs to Form, not to a marginTop on the second field. */}
-        <Form maxWidth={null}>
+        <Form maxWidth={null} dense>
           <PickerField
             label="Instalment income"
             required

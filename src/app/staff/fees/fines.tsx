@@ -227,7 +227,7 @@ function AdjustForm({
   const changed = amount.trim() !== '' && amount !== assign.fine_amount;
 
   return (
-    <Form>
+    <Form dense>
       <Panel>
         <Text style={type.body}>
           Currently {assign.fine_amount} on top of an instalment of {assign.instalment_amount}.

@@ -215,7 +215,7 @@ function NomineeForm({
   const free = subtract('100.00', allocatedElsewhere);
 
   return (
-    <Form>
+    <Form dense>
       <InputField label="Name" value={name} onChangeText={setName} required />
 
       <InputField

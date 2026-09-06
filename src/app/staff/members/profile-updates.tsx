@@ -242,7 +242,7 @@ function RejectForm({
   const [reason, setReason] = useState('');
 
   return (
-    <Form>
+    <Form dense>
       <Panel>
         <Text style={type.body}>
           {update.member_name} asked to change{' '}

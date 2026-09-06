@@ -103,7 +103,7 @@ export default function NewMemberScreen() {
       ) : null}
 
       <Section title="Who they are">
-        <Form maxWidth={null}>
+        <Form maxWidth={null} dense>
           <InputField
             label="Name"
             required

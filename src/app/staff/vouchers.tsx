@@ -463,7 +463,7 @@ function VoucherForm({
   };
 
   return (
-    <Form maxWidth={null}>
+    <Form maxWidth={null} dense>
       <PickerField
         label="Type"
         options={[
@@ -586,7 +586,7 @@ function ReverseForm({
   const [reason, setReason] = useState('');
 
   return (
-    <Form>
+    <Form dense>
       <Panel>
         <Text style={type.body}>
           {voucher.voucher_no} posted {voucher.total_debit} on {voucher.voucher_date}.

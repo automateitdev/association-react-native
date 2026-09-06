@@ -129,7 +129,11 @@ export function InputField({
   value: string;
   onChangeText: (value: string) => void;
   placeholder?: string;
-  keyboardType?: 'phone-pad' | 'email-address';
+  /**
+   * `decimal-pad` for money: it offers a decimal separator where `phone-pad`
+   * offers a plus sign and a hash, which is the wrong keyboard for an amount.
+   */
+  keyboardType?: 'phone-pad' | 'decimal-pad' | 'email-address';
   secureTextEntry?: boolean;
   autoCapitalize?: 'none' | 'sentences';
   required?: boolean;

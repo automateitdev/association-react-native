@@ -260,7 +260,7 @@ function TransferForm({
   };
 
   return (
-    <Form>
+    <Form dense>
       <PickerField
         label="From"
         options={memberOptions}
