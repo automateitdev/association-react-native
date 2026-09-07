@@ -54,7 +54,14 @@ export type Settings = {
 };
 
 export type GatewaySummary = {
-  provider: string;
+  /**
+   * Which of the two routes to the bank this association is on - `spg` direct
+   * or `payflex_spg` - and null when none is configured. An association uses
+   * one, never both; the server refuses a second active one.
+   */
+  provider: string | null;
+  /** The same thing said in words. `payflex_spg` is a routing key, not a name. */
+  label: string | null;
   configured: boolean;
   is_active: boolean;
   /** Enough to confirm which account, never enough to use it. */

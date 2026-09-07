@@ -473,7 +473,9 @@ function GatewaySection({ settings, editable }: { settings: Settings; editable: 
       <Panel tone={gateway.configured ? undefined : 'danger'}>
         <Text style={type.body}>
           {gateway.configured
-            ? `Configured for ${gateway.provider.toUpperCase()}${
+            ? // The label, not the key: this rendered PAYFLEX_SPG at an
+              // association that had never heard the word.
+              `Configured for ${gateway.label ?? gateway.provider ?? 'a gateway'}${
                 gateway.ar_account_last4 ? `, account ending ${gateway.ar_account_last4}` : ''
               }. ${gateway.is_active ? 'Active.' : 'Not active.'}`
             : 'No gateway is configured, so online payment cannot be taken.'}
