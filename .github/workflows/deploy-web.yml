@@ -1,0 +1,83 @@
+# Build the app for the browser and put it on the test server.
+#
+# WHY WEB AT ALL. Testers should not need an APK, a TestFlight invitation or a
+# cable. `expo export --platform web` produces plain static files from the same
+# source the phone builds run from, so what they try in a browser is the app,
+# not a stand-in for it.
+#
+# NOT A RELEASE PIPELINE. There is no signing, no store, no EAS here - this is
+# the test server and nothing else. Installable builds are still a deliberate
+# manual act.
+name: Deploy web (test)
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-web-test
+  # Never cancel a deploy that is already writing to the server.
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: test
+
+    env:
+      # Where the built site lands. The API is a different vhost on the same box.
+      WEB_ROOT: ${{ vars.WEB_ROOT || '/var/www/bcs-app' }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - run: npm ci
+
+      # The only check this repo has. There is no JS test runner yet, so a
+      # green typecheck is the whole gate - worth knowing when reading a
+      # passing badge.
+      - run: npx tsc --noEmit
+
+      - name: Export for the browser
+        env:
+          # Read by app.config.js. Without it the build points at localhost and
+          # every request from the test server fails in a way that looks like
+          # the API is down.
+          BCS_API_URL: ${{ vars.BCS_API_URL }}
+          BCS_TENANT_HOST_SUFFIX: ${{ vars.BCS_TENANT_HOST_SUFFIX }}
+        run: |
+          test -n "$BCS_API_URL" || { echo "Set the BCS_API_URL repository variable, e.g. https://test.example.org/api/v1"; exit 1; }
+          npx expo export --platform web --output-dir dist
+
+      - name: SSH key and host pin
+        env:
+          SSH_KEY: ${{ secrets.SSH_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/id_deploy
+          chmod 600 ~/.ssh/id_deploy
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+
+      - name: Upload
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+        # --delete because a stale route file from a previous export is worse
+        # than a missing one: it serves an old screen that still half-works.
+        run: |
+          rsync -az --delete \
+            -e "ssh -i ~/.ssh/id_deploy -o IdentitiesOnly=yes" \
+            dist/ "$SSH_USER@$SSH_HOST:$WEB_ROOT/"
+
+      - name: Forget the key
+        if: always()
+        run: rm -f ~/.ssh/id_deploy
