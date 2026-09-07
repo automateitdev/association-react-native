@@ -67,16 +67,35 @@ jobs:
           printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
           chmod 600 ~/.ssh/known_hosts
 
+      # BUILT ASIDE, THEN SWAPPED, rather than written over the live directory.
+      #
+      # A stale route file from a previous export is worse than a missing one -
+      # it serves an old screen that still half-works - so the old tree has to
+      # go, not merely be overwritten. Doing that in place would leave the site
+      # half-deleted for as long as the upload takes; `mv` on one filesystem is
+      # atomic, so a visitor gets the whole old site or the whole new one.
+      #
+      # tar rather than rsync for the same reason as the API deploy: rsync must
+      # exist on both ends and is not on a minimal Ubuntu.
       - name: Upload
         env:
           SSH_HOST: ${{ secrets.SSH_HOST }}
           SSH_USER: ${{ secrets.SSH_USER }}
-        # --delete because a stale route file from a previous export is worse
-        # than a missing one: it serves an old screen that still half-works.
         run: |
-          rsync -az --delete \
-            -e "ssh -i ~/.ssh/id_deploy -o IdentitiesOnly=yes" \
-            dist/ "$SSH_USER@$SSH_HOST:$WEB_ROOT/"
+          set -o pipefail
+
+          tar -czf - -C dist . \
+          | ssh -i ~/.ssh/id_deploy -o IdentitiesOnly=yes "$SSH_USER@$SSH_HOST" "
+              set -e
+              rm -rf '$WEB_ROOT.incoming'
+              mkdir -p '$WEB_ROOT.incoming'
+              tar -xzf - -C '$WEB_ROOT.incoming'
+
+              # The previous one is kept, so a bad build is one mv from undone.
+              rm -rf '$WEB_ROOT.previous'
+              if [ -d '$WEB_ROOT' ]; then mv '$WEB_ROOT' '$WEB_ROOT.previous'; fi
+              mv '$WEB_ROOT.incoming' '$WEB_ROOT'
+            "
 
       - name: Forget the key
         if: always()
