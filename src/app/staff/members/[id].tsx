@@ -2,7 +2,9 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { View } from 'react-native';
 import { ApiError } from '@/api/errors';
+import { formatMoney } from '@/api/money';
 import { useSession } from '@/features/auth/session';
+import { DocumentsSection } from '@/features/DocumentsSection';
 import {
   TRANSITIONS,
   useAssignAssociatorInfo,
@@ -14,6 +16,7 @@ import {
   type MemberTransition,
   type UpdatableMemberFields,
 } from '@/features/staff/members';
+import { useMemberTransfers } from '@/features/staff/shares';
 import {
   useActionButtonStyle,
   Button,
@@ -22,6 +25,7 @@ import {
   Icon,
   InputField,
   Panel,
+  Row,
   Screen,
   ScreenHeader,
   Section,
@@ -29,6 +33,7 @@ import {
   StatusBadge,
   Text,
   TextArea,
+  humanDate,
   space,
   type,
 } from '@/ui';
@@ -81,7 +86,30 @@ export default function MemberDetailScreen() {
 
             <Transitions member={member.data} can={can} />
             <SocietyRecord member={member.data} editable={can('members.edit')} />
+
+            {/*
+              Instalment transfers, on the record of the member they happened
+              to. The legacy system printed these on the member's statement and
+              the rewrite showed them nowhere, so instalments could leave a
+              member's holding leaving no trace anywhere a member is looked up.
+            */}
+            {can('shares.view') ? <TransferHistory member={member.data} /> : null}
+
             <PersonalDetails member={member.data} editable={can('members.edit')} />
+
+            {/*
+              Identity documents (parity P-10). Reading is members.view - which
+              this screen already required to open - and filing is members.edit,
+              because the photograph and the NID are how the association proves
+              who somebody is.
+            */}
+            {can('members.view') ? (
+              <DocumentsSection
+                owner={{ kind: 'member', id: member.data.id }}
+                editable={can('members.edit')}
+                title="Identity documents"
+              />
+            ) : null}
           </>
         ) : null}
       </StateView>
@@ -322,7 +350,7 @@ function SocietyRecord({ member, editable }: { member: MemberDetail; editable: b
           shared InputField living in this file under a shadowing name. That is
           the drift the real component's docblock was written about.
         */}
-        <Form maxWidth={null} dense>
+        <Form maxWidth={null} dense columns={2}>
         <InputField
           label="Membership no."
           value={fields.membership_no}
@@ -414,7 +442,7 @@ function PersonalDetails({ member, editable }: { member: MemberDetail; editable:
             <Text style={type.body}>Those changes were not saved. The member is unchanged.</Text>
           ) : null}
 
-          <Form maxWidth={null} dense>
+          <Form maxWidth={null} dense columns={2}>
           <InputField label="Name" value={fields.name ?? ''} onChangeText={set('name')} />
           <InputField
             label="Mobile"
@@ -507,3 +535,70 @@ function PersonalDetails({ member, editable }: { member: MemberDetail; editable:
   );
 }
 
+/**
+ * Every instalment that moved into or out of this member's holding.
+ *
+ * SENT AND RECEIVED IN ONE LIST, not two tables like the legacy statement.
+ * They are the same event seen from two sides and they interleave in time; the
+ * question being asked here is "what happened to this member's instalments",
+ * and splitting the answer by direction makes the reader reassemble the
+ * chronology in their head. The direction is on each row instead, which is
+ * where it changes.
+ *
+ * Silent when a member has never been party to one, which is nearly all of
+ * them - an empty panel headed "Instalment transfers" on 300 member records
+ * teaches staff to scroll past the section on the one record that has any.
+ */
+function TransferHistory({ member }: { member: MemberDetail }) {
+  const transfers = useMemberTransfers(member.id);
+  const rows = transfers.data?.data ?? [];
+
+  if (! transfers.isLoading && rows.length === 0) return null;
+
+  return (
+    <Section title="Instalment transfers">
+      <StateView
+        loading={transfers.isLoading}
+        error={transfers.error}
+        onRetry={() => void transfers.refetch()}
+      >
+        {rows.map((transfer, index) => {
+          const received = transfer.direction === 'received';
+          const counterparty = received ? transfer.seller_name : transfer.buyer_name;
+
+          return (
+            <Row
+              key={transfer.id}
+              title={`${received ? 'Received from' : 'Sent to'} ${counterparty ?? 'a former member'}`}
+              meta={[
+                transfer.fee_head,
+                `${transfer.shares} instalment${transfer.shares === 1 ? '' : 's'}`,
+                transfer.transferred_on ? humanDate(transfer.transferred_on) : null,
+              ]
+                .filter(Boolean)
+                .join(' · ')}
+              /*
+                The amount is what the two members settled between themselves,
+                so it is shown plainly rather than as a credit or a debit to
+                this association. Nothing here reached its accounts.
+              */
+              trailing={
+                <Text tone="muted" style={type.rowMeta}>
+                  {transfer.amount === '0.00' ? 'No money' : formatMoney(transfer.amount)}
+                </Text>
+              }
+              footer={
+                transfer.note ? (
+                  <Text tone="muted" style={{ ...type.rowMeta, marginTop: space.xs }}>
+                    {transfer.note}
+                  </Text>
+                ) : null
+              }
+              divider={index < rows.length - 1}
+            />
+          );
+        })}
+      </StateView>
+    </Section>
+  );
+}

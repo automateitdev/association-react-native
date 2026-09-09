@@ -38,6 +38,17 @@ export type PaidRow = {
   instalments_paid_amount: Money;
   fines_paid_amount: Money;
   total_paid: Money;
+  /**
+   * Instalments that arrived by transfer from another member.
+   *
+   * OUTSIDE `total_paid`, on purpose. The legacy report adds them in, which
+   * states that this member paid money the association never received. They
+   * are reported because a member holding instalments somebody handed them is
+   * a real fact about their standing - and kept separate because it is not a
+   * collection.
+   */
+  transfers_in_count: number;
+  transfers_in_amount: Money;
 };
 
 export type PaidMeta = {
@@ -46,6 +57,8 @@ export type PaidMeta = {
   instalments_paid_amount: Money;
   fines_paid_amount: Money;
   total_paid: Money;
+  transfers_in_count: number;
+  transfers_in_amount: Money;
 };
 
 export type DueRow = {

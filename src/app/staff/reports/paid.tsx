@@ -153,6 +153,37 @@ export default function PaidReportScreen() {
         sortType: 'decimal',
         total: meta ? <NumberCell bold>{formatMoney(meta.total_paid)}</NumberCell> : undefined,
       },
+      {
+        /*
+          AFTER the total, and never inside it.
+
+          These instalments reached the member from another member, not from
+          their own pocket - the association took no money for them. The legacy
+          report folds them into the paid total, which is how a member can be
+          shown as having paid an amount nobody ever collected. Placing the
+          column before the total would say the same thing more quietly.
+        */
+        key: 'transferred_count',
+        header: 'Instalments received',
+        width: 160,
+        align: 'right',
+        render: (row) => <NumberCell>{String(row.transfers_in_count)}</NumberCell>,
+        sort: (row) => row.transfers_in_count,
+        total: meta ? <NumberCell bold>{String(meta.transfers_in_count)}</NumberCell> : undefined,
+      },
+      {
+        key: 'transferred_amount',
+        header: 'Received by transfer',
+        width: 165,
+        align: 'right',
+        render: (row) => <NumberCell>{formatMoney(row.transfers_in_amount)}</NumberCell>,
+        // The raw value, not the formatted one - see the dues report.
+        sort: (row) => row.transfers_in_amount,
+        sortType: 'decimal',
+        total: meta ? (
+          <NumberCell bold>{formatMoney(meta.transfers_in_amount)}</NumberCell>
+        ) : undefined,
+      },
     ],
     [meta],
   );
@@ -185,7 +216,9 @@ export default function PaidReportScreen() {
         }
       />
 
-      <Section title="Report">
+      {/* No heading: "Report" names nothing the page header has not, and it is
+          the only section here. `first` because it now sits under that header. */}
+      <Section first>
         {/*
           The toolbar sits OUTSIDE the StateView below it, and that is not a
           layout preference.

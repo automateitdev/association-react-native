@@ -20,6 +20,9 @@ export function Picker({
   options,
   value,
   onChange,
+  search,
+  onSearchChange,
+  searchPlaceholder,
   placeholder = 'Choose…',
   isDisabled = false,
 }: {
@@ -29,6 +32,10 @@ export function Picker({
   onChange: (value: string) => void;
   placeholder?: string;
   isDisabled?: boolean;
+  /** See ui/AnchoredSelect - a search box at the top of the menu, for long lists. */
+  search?: string;
+  onSearchChange?: (text: string) => void;
+  searchPlaceholder?: string;
 }) {
   return (
     <AnchoredSelect
@@ -38,6 +45,9 @@ export function Picker({
       onChange={onChange}
       placeholder={placeholder}
       isDisabled={isDisabled}
+      search={search}
+      onSearchChange={onSearchChange}
+      searchPlaceholder={searchPlaceholder}
     />
   );
 }

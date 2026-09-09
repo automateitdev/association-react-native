@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { Pressable, ScrollView, TextInput, View } from 'react-native';
+import { useThemeColor } from 'heroui-native';
 import { Icon, type IconName } from './Icon';
 import { Text } from './Text';
 import { useIsDesktop } from './breakpoint';
@@ -64,6 +65,9 @@ export function AnchoredSelect({
   icon,
   width,
   variant = 'field',
+  search,
+  onSearchChange,
+  searchPlaceholder = 'Type to search…',
 }: {
   options: SelectOption[];
   /** Null shows the placeholder. A filter always has a value; a form may not. */
@@ -74,8 +78,39 @@ export function AnchoredSelect({
   icon?: IconName;
   width?: number;
   variant?: 'compact' | 'field';
+  /**
+   * Turns the menu into a searchable one, with the box at the top.
+   *
+   * Pass the current text AND a handler and the caller does the matching -
+   * which is what a list too long to send in full needs: the picker asks the
+   * server as somebody types. Pass `search` alone and it filters the options
+   * it already holds.
+   *
+   * A menu of three does not need this. A menu of three hundred is unusable
+   * without it - and one showing 25 of the three hundred with no way to reach
+   * the rest is worse than either, because nothing on screen says the other
+   * 275 exist.
+   */
+  search?: string;
+  onSearchChange?: (text: string) => void;
+  searchPlaceholder?: string;
 }) {
   const [open, setOpen] = useState(false);
+  const placeholderColor = useThemeColor('field-placeholder');
+  const searchable = search !== undefined;
+
+  /*
+   * A SERVER-SEARCHED MENU MUST NOT FILTER AGAIN HERE.
+   *
+   * The caller already asked for the matches. Filtering its answer by the same
+   * text a second time drops every row that matched on something the label
+   * does not show - a member found by their membership number, say, whose
+   * label is their name.
+   */
+  const shown =
+    searchable && onSearchChange === undefined && search.trim() !== ''
+      ? options.filter((o) => o.label.toLowerCase().includes(search.trim().toLowerCase()))
+      : options;
   const isDesktop = useIsDesktop();
 
   const selected = options.find((o) => o.value === value);
@@ -88,7 +123,7 @@ export function AnchoredSelect({
   // Groups in first-seen order, so the caller controls precedence by sorting
   // rather than by an extra prop.
   const groups: string[] = [];
-  for (const option of options) {
+  for (const option of shown) {
     const key = option.group ?? '';
     if (!groups.includes(key)) groups.push(key);
   }
@@ -173,7 +208,34 @@ export function AnchoredSelect({
               ledgers, and a menu taller than the window cannot be reached at
               its far end.
             */}
-            <ScrollView style={{ maxHeight: 260 }}>
+            {searchable ? (
+              <View style={{ paddingHorizontal: space.sm, paddingBottom: space.xs }}>
+                <TextInput
+                  value={search}
+                  onChangeText={(text) => onSearchChange?.(text)}
+                  placeholder={searchPlaceholder}
+                  placeholderTextColor={placeholderColor}
+                  autoFocus
+                  className="bg-field-background border border-field-border rounded-lg text-field-foreground"
+                  style={{ height: 38, paddingHorizontal: space.md, ...type.body }}
+                />
+              </View>
+            ) : null}
+
+            <ScrollView style={{ maxHeight: 260 }} keyboardShouldPersistTaps="handled">
+              {/*
+                Said, rather than left blank. An empty menu after typing looks
+                exactly like one that is still loading.
+              */}
+              {shown.length === 0 ? (
+                <Text
+                  tone="muted"
+                  style={{ ...type.rowMeta, paddingHorizontal: space.md, paddingVertical: space.sm }}
+                >
+                  Nothing matches.
+                </Text>
+              ) : null}
+
               {groups.map((group) => (
                 <View key={group || 'ungrouped'}>
                   {group ? (
@@ -191,7 +253,7 @@ export function AnchoredSelect({
                     </Text>
                   ) : null}
 
-                  {options
+                  {shown
                     .filter((o) => (o.group ?? '') === group)
                     .map((option) => {
                       const active = option.value === value;
