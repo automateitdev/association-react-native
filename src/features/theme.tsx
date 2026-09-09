@@ -1,4 +1,12 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  useSyncExternalStore,
+} from 'react';
 import { Platform, useColorScheme } from 'react-native';
 import { getItem, setItem } from '@/api/storage';
 
@@ -31,8 +39,62 @@ const KEY = 'bcs.theme';
  * worse than no control: the user has to keep re-making a decision they already
  * made.
  */
+/**
+ * Does the machine want dark? Asked of the BROWSER on web, not of React Native.
+ *
+ * WHY NOT useColorScheme
+ * ----------------------
+ * In a static export it answers `light` on a machine that is plainly in dark
+ * mode - measured on the deployed build: `matchMedia('(prefers-color-scheme:
+ * dark)').matches` was true, RN's hook said light. The page is prerendered at
+ * build time, where there is no `window`, and react-native-web's Appearance
+ * carries that answer into the browser.
+ *
+ * What made it a VISIBLE bug rather than a cosmetic one is that the app has two
+ * paths to the palette and this broke the agreement between them: ScopedTheme
+ * scopes CSS variables from `scheme`, while uniwind's own machinery marks
+ * <html> from the media query. So the wrapper said light and <html> said dark -
+ * cream surfaces carrying near-white text. Unreadable, and only for people
+ * whose system is in dark mode, which is why it survived development.
+ *
+ * useSyncExternalStore rather than useState + useEffect, because it is the one
+ * shape React hydrates correctly: the server snapshot is used for hydration, so
+ * the markup matches, and the real value is read immediately afterwards.
+ */
+function useSystemScheme(): 'light' | 'dark' {
+  const nativeScheme = useColorScheme();
+
+  const webScheme = useSyncExternalStore(
+    subscribeToColorScheme,
+    readColorScheme,
+    // Prerender has no window. `light` matches what the export bakes in.
+    () => 'light' as const,
+  );
+
+  return Platform.OS === 'web' ? webScheme : nativeScheme === 'dark' ? 'dark' : 'light';
+}
+
+function subscribeToColorScheme(onChange: () => void): () => void {
+  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+    return () => {};
+  }
+
+  const query = window.matchMedia('(prefers-color-scheme: dark)');
+  query.addEventListener('change', onChange);
+
+  return () => query.removeEventListener('change', onChange);
+}
+
+function readColorScheme(): 'light' | 'dark' {
+  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+    return 'light';
+  }
+
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+}
+
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const systemScheme = useColorScheme();
+  const systemScheme = useSystemScheme();
   const [preference, setPreferenceState] = useState<ThemePreference>('system');
 
   useEffect(() => {
@@ -66,8 +128,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     setPreference(preference === 'light' ? 'dark' : preference === 'dark' ? 'system' : 'light');
   }, [preference, setPreference]);
 
-  const scheme: 'light' | 'dark' =
-    preference === 'system' ? (systemScheme === 'dark' ? 'dark' : 'light') : preference;
+  const scheme: 'light' | 'dark' = preference === 'system' ? systemScheme : preference;
 
   /*
    * Mirror the choice onto <html> on web.
