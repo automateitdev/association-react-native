@@ -219,6 +219,86 @@ export async function download(
   }
 }
 
+/**
+ * An authenticated file, as a data URI something can display.
+ *
+ * WHY NOT JUST PUT THE URL IN AN <Image>. The endpoint authenticates with a
+ * bearer token in a HEADER, and an <img> tag sends none - the request would
+ * arrive unauthenticated and be refused. React Native's Image accepts custom
+ * headers; the browser's does not, and this app is both.
+ *
+ * So the bytes are fetched like any other request and turned into a data URI,
+ * which every platform can render from. Identity documents are small - a phone
+ * photograph of a card, capped at 5 MB by the server - so the memory cost is
+ * one image, and TanStack Query holds it no longer than any other cached
+ * answer.
+ *
+ * DELIBERATELY NOT createObjectURL: that exists only on web, and the object URL
+ * would have to be revoked by whoever rendered it or the blob is held for the
+ * life of the page. A data URI is garbage-collected with the string.
+ */
+export async function fetchDataUri(
+  path: string,
+  options: Pick<RequestOptions, 'query' | 'signal'> = {},
+): Promise<string> {
+  const headers: Record<string, string> = { Accept: '*/*' };
+
+  const slug = await getTenantSlug();
+
+  if (!slug) {
+    throw new ApiError(
+      ErrorCode.TENANT_NOT_RESOLVED,
+      fallbackMessage(ErrorCode.TENANT_NOT_RESOLVED),
+      0,
+    );
+  }
+
+  headers['X-Tenant'] = slug;
+
+  const token = await getToken();
+  if (token) headers.Authorization = `Bearer ${token}`;
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), UPLOAD_TIMEOUT_MS);
+  options.signal?.addEventListener('abort', () => controller.abort());
+
+  let response: Response;
+
+  try {
+    response = await fetch(`${BASE_URL}${path}${buildQuery(options.query)}`, {
+      method: 'GET',
+      headers,
+      signal: controller.signal,
+    });
+  } catch {
+    throw new ApiError(
+      ErrorCode.NETWORK_UNAVAILABLE,
+      fallbackMessage(ErrorCode.NETWORK_UNAVAILABLE),
+      0,
+    );
+  } finally {
+    clearTimeout(timeout);
+  }
+
+  // A failure here is JSON, not an image. Through the same parser, so it
+  // reaches the screen as an ApiError with the server's own words.
+  if (!response.ok) {
+    await parse<never>(response);
+  }
+
+  const blob = await response.blob();
+
+  return await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.onerror = () =>
+      reject(new ApiError(ErrorCode.UNKNOWN, fallbackMessage(ErrorCode.UNKNOWN), 0));
+
+    reader.onload = () => resolve(String(reader.result));
+    reader.readAsDataURL(blob);
+  });
+}
+
 /** The server's chosen filename, if it survived the trip. */
 function filenameFrom(response: Response): string | null {
   const disposition = response.headers.get('content-disposition');
