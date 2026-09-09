@@ -222,7 +222,12 @@ export default function StaffUsersScreen() {
         </Section>
       ) : null}
 
-      <Section title="Accounts" first={! adding && ! editing}>
+      {/* Headed only while a form is open above it; otherwise "Staff accounts"
+          in the page header is already the name of this list. */}
+      <Section
+        title={adding || editing ? 'Accounts' : undefined}
+        first={! adding && ! editing}
+      >
         <Toolbar
           filters={null}
           actions={

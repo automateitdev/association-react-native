@@ -111,7 +111,9 @@ export default function RolesScreen() {
           />
         </Section>
       ) : (
-        <Section title="Roles" first>
+        // No heading: this branch only renders when the editor is closed, so
+        // the page header above is the only thing naming the list.
+        <Section first>
           {can('roles.create') ? (
             <View style={{ marginBottom: space.md, alignItems: 'flex-start' }}>
               <Button size="sm" onPress={() => setCreating(true)}>

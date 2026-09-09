@@ -197,7 +197,9 @@ export default function DueReportScreen() {
         }
       />
 
-      <Section title="Report">
+      {/* No heading: "Report" names nothing the page header has not, and it is
+          the only section here. `first` because it now sits under that header. */}
+      <Section first>
         {/*
           The toolbar sits OUTSIDE the StateView below it, and that is not a
           layout preference.

@@ -103,7 +103,9 @@ export default function NewMemberScreen() {
       ) : null}
 
       <Section title="Who they are">
-        <Form maxWidth={null} dense>
+        {/* Eleven fields. One column is a very long scroll on the desktop
+            this screen is actually used from. */}
+        <Form maxWidth={null} dense columns={2}>
           <InputField
             label="Name"
             required

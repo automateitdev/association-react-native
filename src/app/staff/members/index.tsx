@@ -167,7 +167,19 @@ export default function MembersScreen() {
         }
       />
 
-      <Section title="Members" first>
+      {/*
+        WHERE THE OTHER MEMBER SCREENS LIVE.
+
+        These three were in the toolbar's actions, beside the download buttons,
+        which put five controls in a row that could not wrap - and they are not
+        actions on this list at all. Nothing here filters, sorts or exports
+        anything: each one leaves for another screen. Kept together, above the
+        list, they read as what they are.
+      */}
+      <RelatedScreens can={can} />
+
+      {/* No heading: the page header above already says Members, and how many. */}
+      <Section first>
         {/*
           The toolbar sits OUTSIDE the StateView below it, and that is not a
           layout preference.
@@ -230,28 +242,6 @@ export default function MembersScreen() {
           }
           actions={
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm }}>
-              {can('profile-updates.view') ? (
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  onPress={() => router.push('/staff/members/profile-updates')}
-                >
-                  <Icon name="approvals" size={15} tone="muted" />
-                  <Button.Label>Requested changes</Button.Label>
-                </Button>
-              ) : null}
-
-              {can('shares.view') ? (
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  onPress={() => router.push('/staff/members/shares')}
-                >
-                  <Icon name="fees" size={15} tone="muted" />
-                  <Button.Label>Shares</Button.Label>
-                </Button>
-              ) : null}
-
               {can('reports.export') ? (
               <ExportButtons
                 path="/staff/members/export"
@@ -327,4 +317,66 @@ function useDebounced<T>(value: T, delayMs: number): T {
   }, [value, delayMs]);
 
   return settled;
+}
+
+/**
+ * The other screens about members, as links rather than as toolbar actions.
+ *
+ * WHY THEY ARE NOT IN THE TOOLBAR. Everything else in that bar acts on the list
+ * underneath it - narrows it, sorts it, exports it. These three leave the
+ * screen. Sitting among the filters they read as things that might change what
+ * is shown, and they made the actions row five controls wide on a bar that
+ * could not wrap.
+ *
+ * Hidden entirely when an account may reach none of them, rather than left as
+ * an empty strip of whitespace nobody can explain.
+ */
+function RelatedScreens({ can }: { can: (permission: string) => boolean }) {
+  const links = [
+    {
+      permission: 'profile-updates.view',
+      icon: 'approvals' as const,
+      label: 'Requested changes',
+      href: '/staff/members/profile-updates',
+    },
+    {
+      // Same permission as deciding a profile change, because it is the same
+      // authority over the same record - one is read, the other is looked at.
+      permission: 'profile-updates.decide',
+      icon: 'approvals' as const,
+      label: 'Document reviews',
+      href: '/staff/members/document-reviews',
+    },
+    {
+      permission: 'shares.view',
+      icon: 'fees' as const,
+      label: 'Shares',
+      href: '/staff/members/shares',
+    },
+  ].filter((link) => can(link.permission));
+
+  if (links.length === 0) return null;
+
+  return (
+    <View
+      style={{
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: space.sm,
+        marginTop: space.md,
+      }}
+    >
+      {links.map((link) => (
+        <Button
+          key={link.href}
+          size="sm"
+          variant="secondary"
+          onPress={() => router.push(link.href as never)}
+        >
+          <Icon name={link.icon} size={15} tone="muted" />
+          <Button.Label>{link.label}</Button.Label>
+        </Button>
+      ))}
+    </View>
+  );
 }

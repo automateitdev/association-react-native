@@ -1,9 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
-import { View } from 'react-native';
+import { Image, View } from 'react-native';
 import { request } from '@/api/client';
 import { ApiError } from '@/api/errors';
 import { useSession } from '@/features/auth/session';
+import { DocumentsSection } from '@/features/DocumentsSection';
+import { useDocumentImage, useDocuments } from '@/features/documents';
 import {
   fieldLabel,
   useProfileUpdates,
@@ -15,10 +17,12 @@ import {
   Field,
   Form,
   InputField,
+  PickerField,
   Panel,
   Screen,
   ScreenHeader,
   Section,
+  StatusBadge,
   Text,
   space,
   type,
@@ -86,20 +90,23 @@ export default function ProfileScreen() {
 
       {pending ? <PendingRequest update={pending} /> : null}
 
-      <Section title="Membership" first={!pending}>
-        <Field label="Name" value={profile?.name} />
-        <Field label="Membership no." value={profile?.membership_no} />
-        <Field
-          label="Shares held"
-          value={profile?.shares != null ? String(profile.shares) : null}
+      {profile ? (
+        <MembershipCard
+          profile={profile}
+          association={association.data?.name ?? tenantSlug ?? ''}
+          first={!pending}
         />
-        <Field label="Association" value={association.data?.name ?? tenantSlug} />
-      </Section>
+      ) : null}
 
-      <Section title="Contact">
-        <Field label="Mobile" value={profile?.mobile} />
-        <Field label="Email" value={profile?.email} />
-      </Section>
+      {/*
+        SUBMIT, NOT REPLACE (FR-MEM-8).
+
+        A member can send a document; it waits for the office to decide, and
+        what the association holds is untouched until then. That ordering is the
+        whole point - the photograph and the NID are how a member is identified
+        at the counter, so a new one is a request, not a swap.
+      */}
+      <DocumentsSection owner={{ kind: 'me' }} editable mode="submit" title="Your documents" />
 
       {asking ? (
         <RequestForm
@@ -143,6 +150,153 @@ export default function ProfileScreen() {
         </Section>
       ) : null}
     </Screen>
+  );
+}
+
+const MEMBER_STATUSES = ['active', 'inactive', 'suspended'] as const;
+
+function isKnownStatus(value: string | undefined): value is (typeof MEMBER_STATUSES)[number] {
+  return MEMBER_STATUSES.includes(value as (typeof MEMBER_STATUSES)[number]);
+}
+
+/**
+ * The member's card: who they are, to this association.
+ *
+ * WHY A CARD AND NOT ROWS. These four facts - the association, the name, the
+ * membership number and the photograph - are what a member is asked for at a
+ * counter, and they are read together or not at all. As label-and-value rows
+ * they were four lines among ten, indistinguishable from the mobile number.
+ *
+ * WHAT IT IS NOT. It carries no claim to be an identity document and no expiry,
+ * because the association has not said it is one. It shows what the register
+ * holds; it does not certify it.
+ */
+function MembershipCard({
+  profile,
+  association,
+  first,
+}: {
+  profile: NonNullable<ReturnType<typeof useSession>['session']>['profile'];
+  association: string;
+  first: boolean;
+}) {
+  /*
+   * The photograph the office holds, if it holds one. Shares a query key with
+   * the documents section below, so this costs no extra request - and it is
+   * enabled only once the list says the slot is filled, rather than firing a
+   * request that 404s on every member who has not sent one.
+   */
+  const documents = useDocuments({ kind: 'me' });
+  const hasPhoto = (documents.data ?? []).some((slot) => slot.slot === 'image' && slot.uploaded);
+  const photo = useDocumentImage({ kind: 'me' }, 'image', hasPhoto);
+
+  const initials = profile.name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? '')
+    .join('');
+
+  return (
+    <View style={{ marginTop: first ? space.lg : space.md }}>
+      <View
+        className="bg-surface border border-border"
+        style={{ borderRadius: 16, overflow: 'hidden' }}
+      >
+        {/*
+          The association's name across the top, in the accent. A card belongs
+          to somebody: whose card this is matters as much as whose name is on
+          it, and a member of two societies should be able to tell at a glance.
+        */}
+        <View className="bg-accent" style={{ paddingHorizontal: space.lg, paddingVertical: space.sm }}>
+          <Text tone="inverse" style={type.section} numberOfLines={1}>
+            {association.toUpperCase()}
+          </Text>
+        </View>
+
+        <View style={{ flexDirection: 'row', gap: space.lg, padding: space.lg }}>
+          {/*
+            A photograph if there is one, initials if there is not - never an
+            empty grey box, which reads as a picture that failed to load rather
+            than one that was never sent.
+          */}
+          <View
+            className="bg-background-secondary border border-border"
+            style={{
+              width: 76,
+              height: 92,
+              borderRadius: 10,
+              overflow: 'hidden',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            {photo.data ? (
+              <Image
+                source={{ uri: photo.data }}
+                resizeMode="cover"
+                style={{ width: '100%', height: '100%' }}
+                accessibilityLabel={`Photograph of ${profile.name}`}
+              />
+            ) : (
+              <Text tone="muted" style={{ ...type.rowTitle, fontSize: 22 }}>
+                {initials || '—'}
+              </Text>
+            )}
+          </View>
+
+          <View style={{ flex: 1, justifyContent: 'center', gap: 2 }}>
+            <Text style={{ ...type.rowTitle, fontSize: 18 }} numberOfLines={2}>
+              {profile.name}
+            </Text>
+
+            {/*
+              The membership number is the thing an officer asks for, so it is
+              the second-loudest item here and not buried in a list.
+            */}
+            <Text tone="muted" style={type.rowMeta}>
+              {profile.membership_no ? `Member no. ${profile.membership_no}` : 'No number yet'}
+            </Text>
+
+            {profile.mobile ? (
+              <Text tone="muted" style={type.rowMeta}>
+                {profile.mobile}
+              </Text>
+            ) : null}
+          </View>
+
+          {/*
+            Narrowed rather than cast. `status` is a plain string on the wire,
+            and a value this build does not know about should show nothing at
+            all - a badge is a claim about standing, and guessing one is worse
+            than leaving it off.
+          */}
+          {isKnownStatus(profile.status) ? <StatusBadge status={profile.status} /> : null}
+        </View>
+
+        {/*
+          The footer carries what changes rather than what identifies: shares
+          move, an email address moves, a name does not.
+        */}
+        <View
+          className="bg-background-secondary border-t border-border"
+          style={{
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            paddingHorizontal: space.lg,
+            paddingVertical: space.sm,
+          }}
+        >
+          <Text tone="muted" style={type.rowMeta}>
+            Shares held {profile.shares ?? 0}
+          </Text>
+
+          <Text tone="muted" style={type.rowMeta} numberOfLines={1}>
+            {profile.email ?? 'No email on file'}
+          </Text>
+        </View>
+      </View>
+    </View>
   );
 }
 
@@ -193,6 +347,56 @@ function DecidedRequest({ update }: { update: ProfileUpdate }) {
   );
 }
 
+const GENDERS = [
+  { value: 'male', label: 'Male' },
+  { value: 'female', label: 'Female' },
+  { value: 'other', label: 'Other' },
+];
+
+/**
+ * The thirteen editable fields, in four groups.
+ *
+ * WHY GROUP THEM AT ALL. Rendered as one list they are thirteen identical
+ * boxes, and a member looking for "mobile" reads every label on the way down.
+ * Grouping costs four headings and turns a scroll into a scan.
+ *
+ * ANYTHING THE SERVER SENDS THAT IS NOT LISTED STILL RENDERS, under "Other".
+ * The field list comes from the API (`meta.editable_fields`), so a release that
+ * makes a new field editable must not have it silently vanish here because this
+ * map was not updated to match.
+ */
+type FieldGroup = { title: string; fields: string[]; stacked?: boolean };
+
+const GROUPS: FieldGroup[] = [
+  { title: 'Name and family', fields: ['name', 'father_name', 'mother_name', 'spouse_name'] },
+  { title: 'Personal', fields: ['birth_date', 'gender', 'nid'] },
+  { title: 'Contact', fields: ['mobile', 'email', 'emergency_contact'] },
+
+  /*
+   * ONE PER ROW, unlike the rest. An address is a long value, and two side by
+   * side give each half the width of the thing it has to hold - so every line
+   * wraps and the pair is harder to read than either would be alone.
+   */
+  {
+    title: 'Addresses',
+    fields: ['present_address', 'permanent_address', 'office_address'],
+    stacked: true,
+  },
+];
+
+function groupFields(fields: string[]): FieldGroup[] {
+  const grouped = GROUPS.map((group) => ({
+    ...group,
+    fields: group.fields.filter((field) => fields.includes(field)),
+  })).filter((group) => group.fields.length > 0);
+
+  const placed = new Set(grouped.flatMap((group) => group.fields));
+  const rest = fields.filter((field) => !placed.has(field));
+
+  // Unknown fields stack: nothing here knows how long their values run.
+  return rest.length > 0 ? [...grouped, { title: 'Other', fields: rest, stacked: true }] : grouped;
+}
+
 /**
  * The request form.
  *
@@ -228,6 +432,41 @@ function RequestForm({
     submit.mutate(Object.fromEntries(changed.map((f) => [f, values[f]])), { onSuccess: onDone });
   };
 
+  /** One field, whichever control it needs. Shared by both layouts. */
+  const renderField = (field: string) =>
+    field === 'gender' ? (
+      /*
+       * A PICKER, because gender is three values the server validates. As a
+       * text box it invited typing something the API would refuse after the
+       * member had filled in everything else.
+       */
+      <PickerField
+        key={field}
+        label={fieldLabel(field)}
+        options={GENDERS}
+        value={values[field] ?? ''}
+        onChange={(value) => setValues((v) => ({ ...v, [field]: value }))}
+        placeholder="Choose"
+      />
+    ) : (
+      <InputField
+        key={field}
+        label={fieldLabel(field)}
+        value={values[field] ?? ''}
+        onChangeText={(value) => setValues((v) => ({ ...v, [field]: value }))}
+        keyboardType={
+          field === 'mobile' || field === 'emergency_contact'
+            ? 'phone-pad'
+            : field === 'email'
+              ? 'email-address'
+              : undefined
+        }
+        // A date with no stated shape is a support call. Said once, on the only
+        // field whose format is not obvious.
+        hint={field === 'birth_date' ? 'As 1990-04-23 - year, month, day.' : undefined}
+      />
+    );
+
   return (
     <Section title="Ask for a change" first>
       <Text tone="muted" style={{ ...type.body, marginBottom: space.md }}>
@@ -242,23 +481,42 @@ function RequestForm({
         </View>
       ) : null}
 
-      <Form>
-        {fields.map((field) => (
-          <InputField
-            key={field}
-            label={fieldLabel(field)}
-            value={values[field] ?? ''}
-            onChangeText={(value) => setValues((v) => ({ ...v, [field]: value }))}
-            keyboardType={
-              field === 'mobile' || field === 'emergency_contact'
-                ? 'phone-pad'
-                : field === 'email'
-                  ? 'email-address'
-                  : undefined
-            }
-          />
-        ))}
-      </Form>
+      {groupFields(fields).map((group, index) => (
+        <View key={group.title} style={{ marginTop: index === 0 ? 0 : space.lg }}>
+          <Text tone="muted" style={{ ...type.section, marginBottom: space.sm }}>
+            {group.title.toUpperCase()}
+          </Text>
+
+          {/*
+            TWO COLUMNS WHERE THERE IS ROOM, one where there is not.
+
+            FormRow flex-wraps on a basis, so this needs no breakpoint check: on
+            a handset every field takes the full width, on a wider screen they
+            pair up. Thirteen fields in a single column is right on a phone and
+            a very long scroll on anything else.
+          */}
+          {/*
+            `maxWidth={null}`, so the form is as wide as everything else on the
+            page. Form caps itself at 460 by default, which is right for a
+            single column - a 760pt text input is unpleasant to fill - and wrong
+            here: it left the fields huddled at 460 while the rows above them
+            ran to 760, which reads as two pages stacked.
+          */}
+          {/*
+            `maxWidth={null}`, so the form is as wide as everything else on the
+            page. Form caps itself at 460 by default, which is right for a
+            single column - a 760pt text input is unpleasant to fill - and wrong
+            here: it left the fields huddled at 460 while the rows above them
+            ran to 760, which reads as two pages stacked.
+
+            The addresses stay one per row: they hold long values, and half a
+            column means every line wraps.
+          */}
+          <Form maxWidth={null} columns={group.stacked ? 1 : 2}>
+            {group.fields.map((field) => renderField(field))}
+          </Form>
+        </View>
+      ))}
 
       <View style={{ flexDirection: 'row', gap: space.sm, marginTop: space.lg }}>
         <Button variant="secondary" onPress={onCancel}>

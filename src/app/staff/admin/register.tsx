@@ -119,7 +119,8 @@ export default function RegisterScreen() {
         }
       />
 
-      <Section title="Register" first>
+      {/* No heading: "Membership register" in the page header is this list. */}
+      <Section first>
         <Toolbar
           filters={
             <SearchField

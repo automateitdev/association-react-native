@@ -111,7 +111,24 @@
     --field-background: oklch(0.995 0.008 95);
     --field-foreground: oklch(0.26 0.025 75);
     --field-placeholder: oklch(0.58 0.025 88);
-    --field-border: oklch(0.86 0.022 95);
+    --field-border: oklch(0.78 0.03 95);
+
+    /*
+     * EVERY INPUT IN THE APP HAD NO BORDER, and this one line is why.
+     *
+     * HeroUI's input.css sets `border-width: var(--border-width-field-width)`,
+     * which its theme defines as
+     *   var(--field-border-width, var(--border-width))
+     * and defines NEITHER fallback. Nor does Tailwind: `--border-width` is not
+     * one of its tokens. So the property resolved to nothing and computed to
+     * 0px - measured on a real screen: `border: 0px solid lab(21.19...)`, a
+     * border colour faithfully carried onto a border that was not drawn.
+     *
+     * What that leaves is a field defined only by being about five points
+     * lighter than the page behind it. It reads exactly as flat, because it is:
+     * there was nothing marking where the field began or ended.
+     */
+    --field-border-width: 1px;
 
     --overlay: oklch(0.99 0.008 95);
     --overlay-foreground: oklch(0.26 0.025 75);
@@ -152,7 +169,15 @@
     --field-background: oklch(0.235 0.014 90);
     --field-foreground: oklch(0.945 0.018 95);
     --field-placeholder: oklch(0.6 0.02 90);
-    --field-border: oklch(0.32 0.016 90);
+
+    /*
+     * Lifted from 0.32. On dark, a border is the ONLY thing separating a field
+     * from the ground - there is no shadow to fall back on and the fill is
+     * within a few points of the page - so it has to be seen rather than
+     * merely present. Still well short of a hard outline: the field should
+     * read as an inset, not as a box drawn around the text.
+     */
+    --field-border: oklch(0.42 0.018 90);
 
     --overlay: oklch(0.235 0.016 90);
     --overlay-foreground: oklch(0.945 0.018 95);

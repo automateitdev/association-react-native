@@ -101,7 +101,9 @@ export default function ProfileUpdatesScreen() {
         </Section>
       ) : null}
 
-      <Section title="Requests" first={! rejecting}>
+      {/* Headed only while the refusal form is open above it; otherwise the page
+          header has already said Requested changes. */}
+      <Section title={rejecting ? 'Requests' : undefined} first={! rejecting}>
         <Toolbar
           filters={
             <FilterSelect

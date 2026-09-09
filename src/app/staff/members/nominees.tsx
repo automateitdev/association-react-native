@@ -10,6 +10,7 @@ import {
   type Nominee,
   type NomineeInput,
 } from '@/features/staff/nominees';
+import { DocumentsSection } from '@/features/DocumentsSection';
 import {
   Button,
   Form,
@@ -125,7 +126,26 @@ export default function NomineesScreen() {
         </Section>
       ) : null}
 
-      <Section title="Nominated" first={! editing && ! adding}>
+      {/*
+        A nominee's own documents, and only for one that already exists - there
+        is nothing to attach them to until the record is saved.
+
+        Here rather than on the row, because it is the same decision as editing:
+        you open a nominee, and everything about that nominee is in front of
+        you. The legacy carries applicant AND nominee NID images through its
+        approval queue, and this is the half of that which needs no queue.
+      */}
+      {editing ? (
+        <DocumentsSection
+          owner={{ kind: 'nominee', id: editing.id }}
+          editable
+          title={`${editing.name}'s documents`}
+        />
+      ) : null}
+
+      {/* Headed only while a form is open above it; otherwise the page header
+          has already said Nominees. */}
+      <Section title={editing || adding ? 'Nominated' : undefined} first={! editing && ! adding}>
         <Panel>
           <Text style={type.body}>
             {allocated === '0.00'
@@ -215,7 +235,7 @@ function NomineeForm({
   const free = subtract('100.00', allocatedElsewhere);
 
   return (
-    <Form dense>
+    <Form dense maxWidth={null} columns={2}>
       <InputField label="Name" value={name} onChangeText={setName} required />
 
       <InputField

@@ -417,6 +417,8 @@ function MethodChoice({
       meta={detail}
       leading={<Checkbox isSelected={selected} onSelectedChange={onPress} />}
       onPress={onPress}
+      // Selects, does not navigate. The checkbox already says what tapping does.
+      chevron={false}
       divider={divider}
     />
   );
@@ -445,6 +447,8 @@ function SelectableDue({
         />
       }
       onPress={onToggle}
+      // Selects, does not navigate. The checkbox already says what tapping does.
+      chevron={false}
       divider={divider}
     />
   );

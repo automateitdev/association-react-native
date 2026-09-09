@@ -123,7 +123,15 @@ export default function VouchersScreen() {
         </Section>
       ) : null}
 
-      <Section title="Vouchers" first={! writing && ! reversing}>
+      {/*
+        Headed only while a form is open above it - the same condition as
+        `first`, inverted. With "New voucher" on screen the list needs telling
+        apart from it; without one, the page header has already said Vouchers.
+      */}
+      <Section
+        title={writing || reversing ? 'Vouchers' : undefined}
+        first={! writing && ! reversing}
+      >
         <Toolbar
           filters={
             <FilterSelect

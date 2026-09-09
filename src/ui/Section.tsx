@@ -23,6 +23,21 @@ export function Section({
   children,
   first = false,
 }: {
+  /**
+   * The heading, and it is optional on purpose.
+   *
+   * A section takes a heading when it needs telling apart from something else
+   * on the screen - another section above it, a form the list must not be
+   * confused with. It does NOT take one just because it is a section. The
+   * commonest mistake here was repeating the page title over the only list on
+   * the page ("Members" under "Members"): a second label for the same thing,
+   * which fills a line, marks nothing, and teaches people to read past
+   * headings on the screens where one does carry meaning.
+   *
+   * Where a heading is worth having, prefer one that ADDS something -
+   * "Awaiting a decision", "Who is paying" - over one that names the noun
+   * again.
+   */
   title?: string;
   /**
    * A glyph beside the heading.

@@ -2,6 +2,7 @@ import React from 'react';
 import { View } from 'react-native';
 import { Description, FieldError, Input, Label, TextField } from 'heroui-native';
 import { Text } from './Text';
+import { useIsDesktop } from './breakpoint';
 import { space, type } from './tokens';
 
 /**
@@ -214,17 +215,94 @@ export function Form({
   maxWidth = 460,
   gap = space.md,
   dense = false,
+  columns = 1,
 }: {
   children: React.ReactNode;
   maxWidth?: number | null;
   gap?: number;
   /** Shorter controls, for admin forms read on a desktop. See FormDensity. */
   dense?: boolean;
+  /**
+   * How many fields sit side by side on a DESKTOP. One everywhere else.
+   *
+   * Worth using on any form past about six fields: eleven boxes in a single
+   * column is right on a handset and a very long scroll on anything wider.
+   * Pass `maxWidth={null}` with it, or the columns share 460 between them.
+   */
+  columns?: number;
 }) {
+  /*
+   * A BREAKPOINT, NOT FLEX-WRAP, and that is deliberate.
+   *
+   * The obvious implementation is a wrapping row with a flex basis, which needs
+   * no breakpoint at all - and it was tried. It puts as many fields on a line
+   * as fit and lets the LAST one grow to fill whatever is left, so a group of
+   * three renders as two narrow boxes with one stretched across the full width
+   * beneath them. Measured: 247, 247, then 760. That reads worse than either
+   * layout on its own.
+   *
+   * An explicit grid keeps every field the same width and lets an odd one out
+   * keep its column rather than filling the row.
+   */
+  const wide = useIsDesktop();
+  const across = wide ? Math.max(1, columns) : 1;
+
+  const content =
+    across === 1 ? (
+      children
+    ) : (
+      <FormColumns columns={across} gap={gap}>
+        {children}
+      </FormColumns>
+    );
+
   return (
     <FormDensity.Provider value={dense}>
-      <View style={{ gap, ...(maxWidth === null ? {} : { maxWidth }) }}>{children}</View>
+      <View style={{ gap, ...(maxWidth === null ? {} : { maxWidth }) }}>{content}</View>
     </FormDensity.Provider>
+  );
+}
+
+/** The grid itself. Separate only so Form stays readable. */
+function FormColumns({
+  children,
+  columns,
+  gap,
+}: {
+  children: React.ReactNode;
+  columns: number;
+  gap: number;
+}) {
+  // `toArray` drops nulls and flattens, so a screen mapping over fields and
+  // returning null for one gets a grid without a hole in it.
+  const items = React.Children.toArray(children);
+  const rows: React.ReactNode[][] = [];
+
+  for (let i = 0; i < items.length; i += columns) {
+    rows.push(items.slice(i, i + columns));
+  }
+
+  return (
+    <View style={{ gap }}>
+      {rows.map((row, index) => (
+        <View key={index} style={{ flexDirection: 'row', gap }}>
+          {row.map((child, position) => (
+            <View key={position} style={{ flex: 1 }}>
+              {child}
+            </View>
+          ))}
+
+          {/*
+            The empty columns of a short last row. Without them the single field
+            on that row stretches across the whole width and stops matching the
+            ones above it - which is the exact fault this grid replaced.
+          */}
+          {Array.from({ length: columns - row.length }, (_, position) => (
+            <View key={`pad-${position}`} style={{ flex: 1 }} />
+          ))}
+        </View>
+      ))}
+    </View>
   );
 }
 

@@ -62,7 +62,25 @@ export function Toolbar({ filters, actions }: { filters: ReactNode; actions?: Re
       </View>
 
       {actions ? (
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm }}>{actions}</View>
+        /*
+          WRAPS, like the filters beside it.
+
+          Without this the actions were a single unbreakable row: on a narrow
+          screen four or five controls could only overflow the bar or squash
+          below their legible width. The filters had wrapped since they were
+          written; this side was simply forgotten, and it only showed once a
+          screen carried more than two.
+        */
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: space.sm,
+          }}
+        >
+          {actions}
+        </View>
       ) : null}
     </View>
   );

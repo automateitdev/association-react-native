@@ -293,6 +293,7 @@ export default function StaffLayout() {
       <Tabs.Screen name="members/nominees" options={{ href: null }} />
       <Tabs.Screen name="members/shares" options={{ href: null }} />
       <Tabs.Screen name="members/profile-updates" options={{ href: null }} />
+      <Tabs.Screen name="members/document-reviews" options={{ href: null }} />
       <Tabs.Screen name="fees/fines" options={{ href: null }} />
       <Tabs.Screen name="vouchers" options={{ href: null }} />
       <Tabs.Screen name="members/[id]" options={{ href: null }} />

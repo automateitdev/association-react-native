@@ -227,6 +227,8 @@ export default function AssignFeesScreen() {
                 />
               }
               onPress={() => toggleMember(member.id)}
+              // Selects, does not navigate. The checkbox says what tapping does.
+              chevron={false}
               divider={index < rows.length - 1}
             />
           ))}

@@ -195,7 +195,15 @@ export default function LedgersScreen() {
         </Section>
       ) : null}
 
-      <Section title="Ledgers" first={! editing && ! creating}>
+      {/*
+        Headed only while a form is open above it. On its own the heading was
+        the page's own subject named a second time - a chart of accounts IS
+        the ledgers, and the subtitle already counts them.
+      */}
+      <Section
+        title={editing || creating ? 'Ledgers' : undefined}
+        first={! editing && ! creating}
+      >
         <Toolbar
           filters={
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.md }}>

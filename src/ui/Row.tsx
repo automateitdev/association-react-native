@@ -24,6 +24,7 @@ export function Row({
   leading,
   footer,
   onPress,
+  chevron,
   divider = true,
 }: {
   title: string;
@@ -36,8 +37,19 @@ export function Row({
   /** A warning or extra line below - used sparingly. */
   footer?: ReactNode;
   onPress?: () => void;
+  /**
+   * Whether pressing the row GOES somewhere.
+   *
+   * Defaults to "yes, if it is pressable at all", which is right for most
+   * lists. Pass false when the press does something in place - selecting the
+   * row, toggling a checkbox - because then the chevron promises a destination
+   * that does not exist, and on a row that already carries a checkbox it
+   * contradicts the control beside it.
+   */
+  chevron?: boolean;
   divider?: boolean;
 }) {
+  const showChevron = chevron ?? Boolean(onPress);
   const body = (
     // ~38pt rows rather than ~66. A desktop list is scanned, not tapped through,
     // and density is what makes scanning possible.
@@ -59,9 +71,10 @@ export function Row({
         {/*
           A chevron only when the row actually leads somewhere. Without it a
           pressable row is indistinguishable from a static one, and people stop
-          trying rows that would have worked.
+          trying rows that would have worked - and with it on a row that only
+          selects, they tap expecting a screen and get a tick.
         */}
-        {onPress ? <Icon name="chevron" size={18} tone="muted" /> : null}
+        {showChevron ? <Icon name="chevron" size={18} tone="muted" /> : null}
       </View>
 
       {footer}
