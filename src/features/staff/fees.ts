@@ -201,7 +201,7 @@ export function useUpdateFeeSetup(id: number) {
 export type MemberCoverage = {
   /** Every instalment they hold, across all fee heads. */
   total: number;
-  heads: { fee_head: string; count: number; from: string; to: string }[];
+  heads: { fee_head: string; count: number; periods: string[] }[];
   /**
    * How many of the PROPOSED periods they already have.
    *
@@ -343,6 +343,37 @@ export function fineDayNote(periods: string[], day: number | null): string | nul
     `The ${ordinal(day)} is past the end of ${short.length} of the ${periods.length} months chosen. ` +
     `Those are fined from their last day instead — ${named.join(', ')}${rest > 0 ? ` and ${rest} more` : ''}.`
   );
+}
+
+/**
+ * `2026-01` as `Jan 2026`, which is how a period gets spoken aloud.
+ *
+ * The API stores and compares periods as YYYY-MM because that sorts and
+ * matches correctly. Nobody says "two thousand twenty six dash oh one", and a
+ * column of them is a column nobody reads.
+ */
+export function periodName(period: string): string {
+  const [year, month] = period.split('-').map(Number);
+
+  return `${MONTH_NAMES[month - 1] ?? period} ${year}`;
+}
+
+/**
+ * A run of periods, named and shortened to what a table cell can hold.
+ *
+ * NAMES FIRST, COUNT AFTER. The legacy prints every month against every
+ * member; the useful half of that is seeing WHICH months, and the tail past
+ * the first few is what makes its rows four lines deep. Three names and "+9"
+ * fits a line and still answers the question a count cannot: instalments have
+ * gaps, and January, March and July is not January to March.
+ */
+export function periodSummary(periods: string[], show = 3): string {
+  if (periods.length === 0) return '';
+
+  const named = periods.slice(0, show).map(periodName);
+  const rest = periods.length - named.length;
+
+  return rest > 0 ? `${named.join(', ')} +${rest}` : named.join(', ');
 }
 
 /** Month numbers as the office says them, not as the API stores them. */

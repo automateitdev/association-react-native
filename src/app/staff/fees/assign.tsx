@@ -8,6 +8,7 @@ import {
   fineDayOptions,
   MONTH_NAMES,
   periodsFor,
+  periodSummary,
   useAssignCoverage,
   useAssignFees,
   useFeeSetups,
@@ -139,6 +140,13 @@ export default function AssignFeesScreen() {
   );
 
   const periods = useMemo(() => periodsFor(years, months), [years, months]);
+
+  // Which head the overlap below is about. The coverage response is keyed by
+  // fee head name, and only the chosen one's periods are being compared.
+  const chosenHeadName = useMemo(
+    () => (setups.data ?? []).find((s) => String(s.id) === feeSetupId)?.fee_head ?? null,
+    [setups.data, feeSetupId],
+  );
   /*
    * What this assignment would duplicate, for the page in front of you. Asked
    * per page rather than for every match, because the answer is only shown
@@ -281,34 +289,44 @@ export default function AssignFeesScreen() {
       {
         key: 'assigned',
         header: 'Already assigned',
-        width: 210,
+        // Wide, because it carries names rather than a number.
+        width: 300,
         render: (row: (typeof rows)[number]) => {
           const held = coverage.data?.[String(row.id)];
 
           if (coverage.isLoading && held === undefined) return <Cell>…</Cell>;
           if (! held || held.total === 0) return <Cell>—</Cell>;
 
-          // A proposal is on screen: answer about it.
+          /*
+            A proposal is on screen: say how much of it they have, and WHICH.
+            The count alone leaves the next question unanswered - "five of
+            twelve, but which seven am I about to create?"
+          */
           if (held.matching !== null && periods.length > 0) {
+            const chosen = new Set(periods);
+            const overlap = held.heads
+              .find((h) => h.fee_head === chosenHeadName)
+              ?.periods.filter((p) => chosen.has(p)) ?? [];
+
             return (
               <Cell bold={held.matching === periods.length}>
                 {held.matching === 0
-                  ? `None of ${periods.length} · holds ${held.total}`
+                  ? `None of these ${periods.length}`
                   : held.matching === periods.length
                     ? `All ${periods.length} already`
-                    : `${held.matching} of ${periods.length}`}
+                    : `${held.matching} of ${periods.length}: ${periodSummary(overlap)}`}
               </Cell>
             );
           }
 
-          // Nothing proposed: say what they hold, naming the head when there
-          // is only one, because "15" alone does not say fifteen of what.
+          // Nothing proposed: what they hold, named. The head is named too
+          // when there is only one, because months alone do not say of what.
           const [first, ...rest] = held.heads;
 
           return (
             <Cell>
               {rest.length === 0
-                ? `${first.fee_head} · ${first.count}`
+                ? `${first.fee_head}: ${periodSummary(first.periods)}`
                 : `${held.total} across ${held.heads.length} fee heads`}
             </Cell>
           );
@@ -316,7 +334,7 @@ export default function AssignFeesScreen() {
       },
     ],
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [memberIds, periods, feeSetupId, coverage.data, coverage.isLoading],
+    [memberIds, periods, feeSetupId, coverage.data, coverage.isLoading, chosenHeadName],
   );
 
   const toggleMember = (id: number) =>
