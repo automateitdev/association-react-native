@@ -179,6 +179,12 @@ export function useAssignFees() {
       feeSetupId: number;
       memberIds: number[];
       periods: string[];
+      /**
+       * Day of the month the fine starts, overriding the association's grace
+       * period for this assignment only. Omitted means "use the setting",
+       * which is the ordinary case.
+       */
+      fineDay?: number;
     }) =>
       (
         await request<{ data: AssignSummary }>('/staff/fee-assigns', {
@@ -187,6 +193,7 @@ export function useAssignFees() {
             fee_setup_id: input.feeSetupId,
             member_ids: input.memberIds,
             periods: input.periods,
+            ...(input.fineDay === undefined ? {} : { fine_day: input.fineDay }),
           },
         })
       ).data,
@@ -198,6 +205,28 @@ export function useAssignFees() {
       void queryClient.invalidateQueries({ queryKey: ['staff'] });
     },
   });
+}
+
+/**
+ * Days of the month, for choosing when a fine starts.
+ *
+ * Ordinals because that is how the rule is spoken - "the fine starts on the
+ * 21st" - and 31 is offered even though not every month has one: the server
+ * clamps it to the last day of a short month, which is what somebody choosing
+ * it means. The legacy dropdown stops at 30 and pastes its date together as a
+ * string, so 30 in February silently becomes the 2nd of March.
+ */
+export function fineDayOptions(): { value: string; label: string }[] {
+  const ordinal = (n: number) => {
+    if (n % 100 >= 11 && n % 100 <= 13) return `${n}th`;
+
+    return `${n}${({ 1: 'st', 2: 'nd', 3: 'rd' } as Record<number, string>)[n % 10] ?? 'th'}`;
+  };
+
+  return Array.from({ length: 31 }, (_, i) => ({
+    value: String(i + 1),
+    label: ordinal(i + 1),
+  }));
 }
 
 /** Month numbers as the office says them, not as the API stores them. */

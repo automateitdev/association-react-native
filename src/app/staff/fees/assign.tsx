@@ -4,6 +4,7 @@ import { View } from 'react-native';
 import { ApiError } from '@/api/errors';
 import { useMembers } from '@/features/staff/members';
 import {
+  fineDayOptions,
   MONTH_NAMES,
   periodsFor,
   useAssignFees,
@@ -71,6 +72,13 @@ export default function AssignFeesScreen() {
   const [years, setYears] = useState<number[]>([new Date().getFullYear()]);
 
   const [page, setPage] = useState(1);
+
+  /*
+   * Empty means "whatever the association's grace period says", which is the
+   * ordinary case and the reason this is a dropdown with a default rather than
+   * a question every assignment has to answer.
+   */
+  const [fineDay, setFineDay] = useState('');
   const [search, setSearch] = useState('');
   const [memberIds, setMemberIds] = useState<Set<number>>(new Set());
   const [summary, setSummary] = useState<AssignSummary | null>(null);
@@ -239,6 +247,7 @@ export default function AssignFeesScreen() {
         feeSetupId: Number(feeSetupId),
         memberIds: [...memberIds],
         periods,
+        fineDay: fineDay === '' ? undefined : Number(fineDay),
       });
 
       setSummary(result);
@@ -364,6 +373,26 @@ export default function AssignFeesScreen() {
               values={years.map(String)}
               onToggleValue={toggleYear}
               placeholder="Choose a year"
+            />
+
+            {/*
+              WHEN THE FINE STARTS, which the legacy asks on every assignment
+              and the rewrite had removed entirely.
+
+              Its form carries a fine-day dropdown defaulting to the 21st, and
+              associations use it - a fee agreed on different terms, a month
+              where the committee allowed longer, a correction re-entered as it
+              originally stood. Taking it away gave nothing back.
+
+              It is an override rather than a required answer: left alone, the
+              association's grace period decides, which is right nearly always.
+            */}
+            <PickerField
+              label="Fine starts on"
+              options={[{ value: '', label: 'The association’s usual grace period' }, ...fineDayOptions()]}
+              value={fineDay}
+              onChange={setFineDay}
+              hint="Only for this assignment. Change the usual one in Admin → Settings."
             />
           </Form>
         </View>
