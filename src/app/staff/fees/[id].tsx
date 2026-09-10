@@ -56,6 +56,8 @@ export default function EditFeeSetupScreen() {
   const [amount, setAmount] = useState('');
   const [ledgerId, setLedgerId] = useState<string | null>(null);
   const [fineLedgerId, setFineLedgerId] = useState<string | null>(null);
+  // '' the association's rate, '0' never fines, otherwise this head's own.
+  const [fineRate, setFineRate] = useState('');
 
   const beginEdit = () => {
     if (!setup) return;
@@ -63,6 +65,7 @@ export default function EditFeeSetupScreen() {
     setAmount(setup.amount);
     setLedgerId(setup.ledger.id != null ? String(setup.ledger.id) : null);
     setFineLedgerId(setup.fine_ledger.id != null ? String(setup.fine_ledger.id) : null);
+    setFineRate(setup.fine_rate ?? '');
     setOpen(true);
   };
 
@@ -72,6 +75,7 @@ export default function EditFeeSetupScreen() {
       : {};
 
   const sameLedger = Boolean(ledgerId && ledgerId === fineLedgerId);
+  const neverFines = fineRate.trim() === '0';
 
   const save = async () => {
     try {
@@ -79,7 +83,8 @@ export default function EditFeeSetupScreen() {
         fee_head: feeHead.trim(),
         amount: amount.trim(),
         ledger_id: Number(ledgerId),
-        fine_ledger_id: Number(fineLedgerId),
+        fine_rate: fineRate.trim() === '' ? null : fineRate.trim(),
+        fine_ledger_id: neverFines || fineLedgerId === null ? null : Number(fineLedgerId),
       });
       setOpen(false);
     } catch {
@@ -162,18 +167,34 @@ export default function EditFeeSetupScreen() {
                       error={fieldErrors.ledger_id?.[0]}
                     />
 
-                    <PickerField
-                      label="Fine income"
-                      required
-                      value={fineLedgerId}
-                      onChange={setFineLedgerId}
-                      options={options}
-                      error={
-                        sameLedger
-                          ? 'Fine income must post to a different account from instalments.'
-                          : fieldErrors.fine_ledger_id?.[0]
+                    <InputField
+                      label="Fine per overdue month"
+                      value={fineRate}
+                      onChangeText={setFineRate}
+                      keyboardType="decimal-pad"
+                      placeholder="The association’s usual rate"
+                      hint={
+                        neverFines
+                          ? 'This fee head will never charge a fine.'
+                          : 'Blank uses the association’s rate. 0 means this head never fines.'
                       }
+                      error={fieldErrors.fine_rate?.[0]}
                     />
+
+                    {neverFines ? null : (
+                      <PickerField
+                        label="Fine income"
+                        required
+                        value={fineLedgerId}
+                        onChange={setFineLedgerId}
+                        options={options}
+                        error={
+                          sameLedger
+                            ? 'Fine income must post to a different account from instalments.'
+                            : fieldErrors.fine_ledger_id?.[0]
+                        }
+                      />
+                    )}
                   </Form>
 
                   <View style={{ flexDirection: 'row', gap: space.sm }}>
@@ -206,7 +227,27 @@ export default function EditFeeSetupScreen() {
                 <Field label="Charged" value={setup.monthly ? 'Every month' : 'One-off'} />
                 <Field label="Buys shares" value={setup.is_share ? 'Yes' : 'No'} />
                 <Field label="Instalment income" value={setup.ledger.name} />
-                <Field label="Fine income" value={setup.fine_ledger.name} />
+
+                {/*
+                  Stated in words rather than as a number, because "0.00" and
+                  a blank both read as "nothing here" while meaning opposite
+                  things - never fines, and fines at whatever the association
+                  charges.
+                */}
+                <Field
+                  label="Fine"
+                  value={
+                    setup.fine_rate === null
+                      ? 'The association’s usual rate'
+                      : Number(setup.fine_rate) === 0
+                        ? 'Never fined'
+                        : `${setup.fine_rate} per overdue month`
+                  }
+                />
+
+                {setup.fine_rate !== null && Number(setup.fine_rate) === 0 ? null : (
+                  <Field label="Fine income" value={setup.fine_ledger.name} />
+                )}
               </Section>
             )}
 

@@ -48,6 +48,13 @@ export default function NewFeeSetupScreen() {
   const [ledgerId, setLedgerId] = useState<string | null>(null);
   const [fineLedgerId, setFineLedgerId] = useState<string | null>(null);
 
+  /*
+   * '' is the association's rate, '0' is a head that never fines, anything
+   * else is this head's own. Three states, because null and zero are
+   * different answers - see FeeSetup.fine_rate.
+   */
+  const [fineRate, setFineRate] = useState('');
+
   const options = useLedgerOptions(ledgers.data);
 
   const fieldErrors =
@@ -57,12 +64,15 @@ export default function NewFeeSetupScreen() {
 
   const sameLedger = Boolean(ledgerId && ledgerId === fineLedgerId);
 
+  // A head that never fines produces no fine income, so it needs nowhere to
+  // post it - asking would be asking where nothing goes.
+  const neverFines = fineRate.trim() === '0';
+
   const canSubmit =
     feeHead.trim().length > 0 &&
     amount.trim().length > 0 &&
     ledgerId !== null &&
-    fineLedgerId !== null &&
-    !sameLedger;
+    (neverFines || (fineLedgerId !== null && !sameLedger));
 
   const submit = async () => {
     try {
@@ -72,7 +82,10 @@ export default function NewFeeSetupScreen() {
         monthly,
         is_share: isShare,
         ledger_id: Number(ledgerId),
-        fine_ledger_id: Number(fineLedgerId),
+        fine_rate: fineRate.trim() === '' ? null : fineRate.trim(),
+        ...(neverFines || fineLedgerId === null
+          ? {}
+          : { fine_ledger_id: Number(fineLedgerId) }),
       });
 
       router.replace('/staff/fees');
@@ -180,22 +193,54 @@ export default function NewFeeSetupScreen() {
             error={fieldErrors.ledger_id?.[0]}
           />
 
-          <PickerField
-            label="Fine income"
-            required
-            value={fineLedgerId}
-            onChange={setFineLedgerId}
-            options={options}
-            placeholder={ledgers.isLoading ? 'Loading accounts…' : 'Choose a different account'}
-            isDisabled={ledgers.isLoading}
-            // Caught here as well as by the server, because the server's message
-            // for `different:ledger_id` is not one anybody would want to read.
-            error={
-              sameLedger
-                ? 'Fine income must post to a different account from instalments.'
-                : fieldErrors.fine_ledger_id?.[0]
+          {/*
+            WHETHER THIS HEAD FINES AT ALL, and how much.
+
+            Left blank it charges whatever the association charges, which is
+            what every fee head did before this field existed. Zero means it
+            never fines - an admission fee, a building levy or a voluntary
+            contribution should not accrue a monthly penalty, and the only way
+            to stop one used to be switching fines off for everybody.
+          */}
+          <InputField
+            label="Fine per overdue month"
+            value={fineRate}
+            onChangeText={setFineRate}
+            keyboardType="decimal-pad"
+            placeholder="The association’s usual rate"
+            hint={
+              neverFines
+                ? 'This fee head will never charge a fine.'
+                : fineRate.trim() === ''
+                  ? 'Leave blank to use the association’s rate. Enter 0 for a fee head that never fines.'
+                  : `Overdue instalments of this fee head are fined ${fineRate.trim()} a month.`
             }
+            error={fieldErrors.fine_rate?.[0]}
           />
+
+          {/*
+            Hidden when the head never fines: there is no fine income to post,
+            so asking where it goes is asking about nothing.
+          */}
+          {neverFines ? null : (
+            <PickerField
+              label="Fine income"
+              required
+              value={fineLedgerId}
+              onChange={setFineLedgerId}
+              options={options}
+              placeholder={ledgers.isLoading ? 'Loading accounts…' : 'Choose a different account'}
+              isDisabled={ledgers.isLoading}
+              // Caught here as well as by the server, because the server's
+              // message for `different:ledger_id` is not one anybody would
+              // want to read.
+              error={
+                sameLedger
+                  ? 'Fine income must post to a different account from instalments.'
+                  : fieldErrors.fine_ledger_id?.[0]
+              }
+            />
+          )}
         </Form>
       </Section>
 

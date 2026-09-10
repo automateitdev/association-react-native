@@ -48,6 +48,14 @@ export type FeeSetup = {
 
   /** Never the same account as `ledger`. See rule 1. */
   fine_ledger: { id: number | null; name: string | null };
+  /**
+   * What one overdue month costs on this fee head.
+   *
+   * NULL IS NOT ZERO. Null means "whatever the association charges" and is
+   * what every fee head did before the column existed; zero means this head
+   * never fines, whatever the association's rate becomes.
+   */
+  fine_rate: string | null;
 };
 
 /**
@@ -63,7 +71,10 @@ export type NewFeeSetupFields = {
   amount: string;
   is_share?: boolean;
   ledger_id: number;
-  fine_ledger_id: number;
+  /** Omitted when the head never fines - there is no fine income to post. */
+  fine_ledger_id?: number;
+  /** Null for the association's rate, 0 for a head that never fines. */
+  fine_rate?: string | null;
 };
 
 /** Exactly what `PUT /staff/fee-setups/{id}` will act on. */
@@ -71,7 +82,8 @@ export type UpdatableFeeSetupFields = {
   fee_head?: string;
   amount?: string;
   ledger_id?: number;
-  fine_ledger_id?: number;
+  fine_ledger_id?: number | null;
+  fine_rate?: string | null;
   is_active?: boolean;
 };
 
