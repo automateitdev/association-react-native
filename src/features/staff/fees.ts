@@ -198,25 +198,40 @@ export function useUpdateFeeSetup(id: number) {
  * period are needed before "already assigned" means anything, and the member
  * ids come from the page in front of you.
  */
+export type MemberCoverage = {
+  /** Every instalment they hold, across all fee heads. */
+  total: number;
+  heads: { fee_head: string; count: number; from: string; to: string }[];
+  /**
+   * How many of the PROPOSED periods they already have.
+   *
+   * Null when nothing has been proposed yet, which is not the same as zero:
+   * "there is nothing to duplicate" and "it duplicates none of it" are
+   * different statements and the column says different things for each.
+   */
+  matching: number | null;
+};
+
 export function useAssignCoverage(
   feeSetupId: number | null,
   memberIds: number[],
   periods: string[],
 ) {
-  const enabled = feeSetupId !== null && memberIds.length > 0 && periods.length > 0;
-
   return useQuery({
     queryKey: ['staff', 'fee-assigns', 'coverage', feeSetupId, memberIds, periods] as const,
-    enabled,
+    // Only the members are required. What somebody already holds is a fact
+    // about them, not about the form, and the legacy screen shows it before
+    // anything is chosen.
+    enabled: memberIds.length > 0,
     queryFn: async () =>
       (
-        await request<{ data: Record<string, number>; meta: { periods: number } }>(
+        await request<{ data: Record<string, MemberCoverage>; meta: { periods: number } }>(
           '/staff/fee-assigns/coverage',
           {
             query: {
-              fee_setup_id: feeSetupId as number,
               member_ids: memberIds.join(','),
-              periods: periods.join(','),
+              ...(feeSetupId === null ? {} : { fee_setup_id: feeSetupId }),
+              ...(periods.length === 0 ? {} : { periods: periods.join(',') }),
             },
           },
         )

@@ -264,39 +264,56 @@ export default function AssignFeesScreen() {
       },
 
       /*
-       * ALREADY ASSIGNED, which the legacy screen shows and this one did not.
+       * ALREADY ASSIGNED - ALWAYS, which is the correction that matters here.
        *
-       * It prints every fee head a member holds with every date it was
-       * assigned on - a paragraph per row. Here the periods are already chosen
-       * a section above, so the useful answer is how many of THOSE they have:
-       * "3 of 12", or nothing to do at all.
+       * The legacy screen prints this against every member before anything is
+       * chosen, because what somebody already holds is a fact about them
+       * rather than about the form. This column was first written to appear
+       * only once a fee head and periods were picked, which made it absent
+       * exactly when somebody went looking for it.
        *
-       * The column only exists once there is a question. Before a fee head and
-       * a month are chosen, "already assigned" has no meaning to state.
+       * It answers whichever question is live. With a proposal on screen that
+       * is "how much of this do they already have"; without one it is "what do
+       * they hold at all" - the legacy's own column, summarised rather than
+       * spelled out. It lists every date, which is why its rows run four lines
+       * deep; "Monthly Subscription · 15" says the same in one.
        */
-      ...(periods.length > 0 && feeSetupId !== null
-        ? [
-            {
-              key: 'assigned',
-              header: 'Already assigned',
-              width: 150,
-              render: (row: (typeof rows)[number]) => {
-                const already = coverage.data?.[String(row.id)] ?? 0;
+      {
+        key: 'assigned',
+        header: 'Already assigned',
+        width: 210,
+        render: (row: (typeof rows)[number]) => {
+          const held = coverage.data?.[String(row.id)];
 
-                if (coverage.isLoading) return <Cell>…</Cell>;
-                if (already === 0) return <Cell>—</Cell>;
+          if (coverage.isLoading && held === undefined) return <Cell>…</Cell>;
+          if (! held || held.total === 0) return <Cell>—</Cell>;
 
-                return (
-                  <Cell bold={already === periods.length}>
-                    {already === periods.length
-                      ? `All ${periods.length}`
-                      : `${already} of ${periods.length}`}
-                  </Cell>
-                );
-              },
-            },
-          ]
-        : []),
+          // A proposal is on screen: answer about it.
+          if (held.matching !== null && periods.length > 0) {
+            return (
+              <Cell bold={held.matching === periods.length}>
+                {held.matching === 0
+                  ? `None of ${periods.length} · holds ${held.total}`
+                  : held.matching === periods.length
+                    ? `All ${periods.length} already`
+                    : `${held.matching} of ${periods.length}`}
+              </Cell>
+            );
+          }
+
+          // Nothing proposed: say what they hold, naming the head when there
+          // is only one, because "15" alone does not say fifteen of what.
+          const [first, ...rest] = held.heads;
+
+          return (
+            <Cell>
+              {rest.length === 0
+                ? `${first.fee_head} · ${first.count}`
+                : `${held.total} across ${held.heads.length} fee heads`}
+            </Cell>
+          );
+        },
+      },
     ],
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [memberIds, periods, feeSetupId, coverage.data, coverage.isLoading],
