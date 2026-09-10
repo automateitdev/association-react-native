@@ -2,7 +2,7 @@ import { router } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { View } from 'react-native';
 import { ApiError } from '@/api/errors';
-import { useMemberOptions } from '@/features/staff/members';
+import { useMembers } from '@/features/staff/members';
 import {
   MONTH_NAMES,
   periodsFor,
@@ -78,11 +78,21 @@ export default function AssignFeesScreen() {
    * bounding what can be CHOSEN is the mistake this screen just came from.
    */
   const [yearBase, setYearBase] = useState(new Date().getFullYear() - 2);
+  const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [memberIds, setMemberIds] = useState<Set<number>>(new Set());
   const [summary, setSummary] = useState<AssignSummary | null>(null);
 
   const query = useDebounced(search, 300);
+
+  /*
+   * A new search starts at page one. Without this, searching while on page
+   * three asks the server for page three of two results and the table comes
+   * back empty - which reads as "no matches" for a search that has plenty.
+   */
+  useEffect(() => {
+    setPage(1);
+  }, [query]);
 
   /*
    * Active members only.
@@ -92,14 +102,28 @@ export default function AssignFeesScreen() {
    * already the reason they are suspended. Both are decisions, not defaults, so
    * neither is offered here.
    */
-  const members = useMemberOptions(
+  /*
+   * PAGED, like every other table in the app.
+   *
+   * This used useMemberOptions - the infinite query built for pickers - whose
+   * own note argues against paging here, on the grounds that a control which
+   * reshuffles under a part-made selection is hostile. The concern is real and
+   * the conclusion was wrong: selection is a Set of member ids, so it survives
+   * paging untouched, and the legacy screen paginates too (its DataTables
+   * table pages client-side over every member at once).
+   *
+   * What was actually hostile was the result: the one table in the app with no
+   * pager and a "Load more" button instead, so a counter clerk could not tell
+   * how many members there were or jump to the end.
+   */
+  const members = useMembers(
     useMemo(() => ({ q: query || undefined, status: 'active' as const }), [query]),
+    page,
+    null,
   );
 
-  const rows = useMemo(
-    () => members.data?.pages.flatMap((page) => page.data) ?? [],
-    [members.data],
-  );
+  const rows = members.data?.data ?? [];
+  const meta = members.data?.meta;
 
   // Only active fee heads can be assigned; the server refuses the rest with
   // FEE_HEAD_INACTIVE, so they are not offered.
@@ -360,12 +384,22 @@ export default function AssignFeesScreen() {
               variant="tertiary"
               onPress={() =>
                 setMemberIds((current) =>
-                  current.size === rows.length ? new Set() : new Set(rows.map((m) => m.id)),
+                  rows.every((m) => current.has(m.id))
+                    ? new Set([...current].filter((id) => !rows.some((m) => m.id === id)))
+                    : new Set([...current, ...rows.map((m) => m.id)]),
                 )
               }
             >
+              {/*
+                THIS PAGE, not all matches - and it says so, because with a
+                pager "Select 25" beside a total of 45 invites exactly the
+                wrong assumption. Selecting every match would need the server
+                to answer with ids it has not been asked for.
+              */}
               <Button.Label>
-                {memberIds.size === rows.length ? 'Clear' : `Select ${rows.length}`}
+                {rows.every((m) => memberIds.has(m.id))
+                  ? 'Clear this page'
+                  : `Select these ${rows.length}`}
               </Button.Label>
             </Button>
           ) : undefined
@@ -404,27 +438,22 @@ export default function AssignFeesScreen() {
             columns={memberColumns}
             rows={rows}
             keyExtractor={(member) => member.id}
-            /*
-              Everything already loaded, rather than paged again. The query
-              below is an infinite one with its own "Load more"; a pager inside
-              the table would be paging a page.
-            */
-            pageSize={0}
+            server={
+              meta
+                ? {
+                    page: meta.current_page,
+                    pageCount: meta.last_page,
+                    total: meta.total,
+                    // What the hook asks the API for. See ServerPaging.pageSize.
+                    pageSize: 25,
+                    onPageChange: setPage,
+                    sort: null,
+                    onSortChange: () => {},
+                  }
+                : undefined
+            }
           />
 
-          {members.hasNextPage ? (
-            <View style={{ marginTop: space.md }}>
-              <Button
-                variant="secondary"
-                isDisabled={members.isFetchingNextPage}
-                onPress={() => void members.fetchNextPage()}
-              >
-                <Button.Label>
-                  {members.isFetchingNextPage ? 'Loading…' : 'Load more'}
-                </Button.Label>
-              </Button>
-            </View>
-          ) : null}
         </StateView>
       </Section>
 
