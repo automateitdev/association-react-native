@@ -161,10 +161,41 @@ export default function AssignFeesScreen() {
 
   // Which head the overlap below is about. The coverage response is keyed by
   // fee head name, and only the chosen one's periods are being compared.
-  const chosenHeadName = useMemo(
-    () => (setups.data ?? []).find((s) => String(s.id) === feeSetupId)?.fee_head ?? null,
+  const chosenHead = useMemo(
+    () => (setups.data ?? []).find((s) => String(s.id) === feeSetupId) ?? null,
     [setups.data, feeSetupId],
   );
+
+  const chosenHeadName = chosenHead?.fee_head ?? null;
+
+  /*
+   * A ONE-OFF IS CHARGED ONCE, so it gets one month rather than a set.
+   *
+   * The screen offered months and years for every head, and the server wrote a
+   * row per period - so an admission fee could be raised twelve times against
+   * one member. The legacy screen branches here too: its monthly arm requires
+   * months and loops member x year x month, its other arm ignores them and
+   * writes exactly one row.
+   *
+   * Nothing is chosen yet at first, and that is treated as monthly: the field
+   * has to render before a head is picked, and the multi-select is the shape it
+   * ends up in for the fee heads an association assigns most.
+   */
+  const oneOff = chosenHead !== null && !chosenHead.monthly;
+
+  /*
+   * Switching to a one-off head keeps the LAST month picked, not the first.
+   *
+   * Trimming to `months[0]` would silently answer a question the officer has
+   * not been asked again - they chose four months for a subscription, and the
+   * one that survives should be the one they touched most recently.
+   */
+  useEffect(() => {
+    if (!oneOff) return;
+
+    if (months.length > 1) setMonths((current) => current.slice(-1));
+    if (years.length > 1) setYears((current) => current.slice(-1));
+  }, [oneOff, months.length, years.length]);
   /*
    * What this assignment would duplicate, for the page in front of you. Asked
    * per page rather than for every match, because the answer is only shown
@@ -494,22 +525,29 @@ export default function AssignFeesScreen() {
           */}
             <Form dense>
               <PickerField
-                label="Months"
+                label={oneOff ? 'Month' : 'Months'}
                 options={[
-                  {
-                    value: 'all',
-                    label: months.length === 12 ? 'Clear all months' : 'All 12 months',
-                  },
+                  // The shortcut belongs to the multi-select. A one-off has
+                  // nothing for "all twelve" to mean.
+                  ...(oneOff
+                    ? []
+                    : [
+                        {
+                          value: 'all',
+                          label: months.length === 12 ? 'Clear all months' : 'All 12 months',
+                        },
+                      ]),
                   ...MONTH_NAMES.map((name, index) => ({
                     value: String(index + 1),
                     label: name,
                   })),
                 ]}
-                value={null}
-                onChange={() => {}}
-                values={months.map(String)}
-                onToggleValue={toggleMonthValue}
-                placeholder="Choose months"
+                value={oneOff ? (months[0] === undefined ? null : String(months[0])) : null}
+                onChange={(value) => setMonths([Number(value)])}
+                values={oneOff ? undefined : months.map(String)}
+                onToggleValue={oneOff ? undefined : toggleMonthValue}
+                placeholder={oneOff ? 'Choose a month' : 'Choose months'}
+                hint={oneOff ? `${chosenHeadName} is charged once, not every month.` : undefined}
               />
             </Form>
 
@@ -537,12 +575,15 @@ export default function AssignFeesScreen() {
             <Stack gap="md">
               <Form dense>
                 <PickerField
-                  label="Years"
+                  // Singular for a one-off, for the same reason as the month
+                  // beside it: two years of an admission fee is two admission
+                  // fees.
+                  label={oneOff ? 'Year' : 'Years'}
                   options={yearOptions}
-                  value={null}
-                  onChange={() => {}}
-                  values={years.map(String)}
-                  onToggleValue={toggleYear}
+                  value={oneOff ? (years[0] === undefined ? null : String(years[0])) : null}
+                  onChange={(value) => setYears([Number(value)])}
+                  values={oneOff ? undefined : years.map(String)}
+                  onToggleValue={oneOff ? undefined : toggleYear}
                   placeholder="Choose a year"
                 />
 
@@ -593,7 +634,10 @@ export default function AssignFeesScreen() {
             <Text tone="muted" style={type.rowMeta}>
               {periods.length === 0
                 ? 'Choose at least one month and one year.'
-                : `${periods.length} instalment${periods.length === 1 ? '' : 's'} per member — ${periods[0]} to ${periods[periods.length - 1]}`}
+                : periods.length === 1
+                  ? // "2026-04 to 2026-04" is a range of one, which reads as a fault.
+                    `1 instalment per member — ${periods[0]}`
+                  : `${periods.length} instalments per member — ${periods[0]} to ${periods[periods.length - 1]}`}
             </Text>
           </Section>
         </View>
