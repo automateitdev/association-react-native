@@ -200,20 +200,43 @@ export function useAssignFees() {
   });
 }
 
+/** Month numbers as the office says them, not as the API stores them. */
+export const MONTH_NAMES = [
+  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+] as const;
+
 /**
- * The months a bulk assignment will cover, newest first.
+ * Every period a choice of months and a choice of years describes.
  *
- * Generated here rather than typed, because the server validates `YYYY-MM`
- * strictly and a hand-typed "2026-6" is refused with a regex error that means
- * nothing to the person who typed it. HeroUI Native ships no date picker (R-1),
- * and for whole months a list of the last N is both simpler and more accurate.
+ * MONTHS TIMES YEARS, which is the legacy screen's shape and, it turns out,
+ * the only shape that covers what an association actually does. That screen
+ * offers twelve month checkboxes and a multi-select of years, and loops one
+ * inside the other. Three things fall out of it that a rolling window of
+ * recent months cannot express at all:
+ *
+ *   - Billing AHEAD. The rewrite offered the last eighteen months and nothing
+ *     else, so next month's subscription could not be assigned early. The API
+ *     never had that rule: `guardPeriod` checks the string is YYYY-MM and
+ *     stops there.
+ *   - A whole year at once. Twelve months x one year is how an annual
+ *     subscription is set up, and it is one action rather than twelve.
+ *   - The same months across several years, which is how a backdated
+ *     correction gets applied.
+ *
+ * Periods are still generated rather than typed. The server validates
+ * `YYYY-MM` strictly and a hand-typed "2026-6" comes back as a regex failure
+ * that means nothing to the person who typed it.
+ *
+ * Sorted oldest first, so a confirmation reads in the order a ledger does.
  */
-export function recentPeriods(from: Date, count = 18): string[] {
+export function periodsFor(years: number[], months: number[]): string[] {
   const periods: string[] = [];
 
-  for (let i = 0; i < count; i++) {
-    const d = new Date(from.getFullYear(), from.getMonth() - i, 1);
-    periods.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
+  for (const year of [...years].sort((a, b) => a - b)) {
+    for (const month of [...months].sort((a, b) => a - b)) {
+      periods.push(`${year}-${String(month).padStart(2, '0')}`);
+    }
   }
 
   return periods;

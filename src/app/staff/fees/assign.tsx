@@ -4,7 +4,8 @@ import { View } from 'react-native';
 import { ApiError } from '@/api/errors';
 import { useMemberOptions } from '@/features/staff/members';
 import {
-  recentPeriods,
+  MONTH_NAMES,
+  periodsFor,
   useAssignFees,
   useFeeSetups,
   type AssignSummary,
@@ -14,6 +15,7 @@ import {
   Button,
   Checkbox,
   Chip,
+  Icon,
   Panel,
   PickerField,
   Row,
@@ -37,17 +39,43 @@ import {
  * and a month that was quietly skipped - or quietly double-assigned - is not
  * discovered until someone disputes their balance.
  *
- * Periods are chosen from a list rather than typed. The server validates
- * `YYYY-MM` strictly, and a hand-typed "2026-6" comes back as a regex failure
- * that means nothing to the person who typed it. HeroUI Native ships no date
- * picker (R-1) - for whole months a list is simpler and cannot be got wrong.
+ * Periods are chosen as MONTHS TIMES YEARS rather than from a list of recent
+ * months, which is the legacy screen's model and the only one that covers the
+ * work: billing a month ahead, setting up a whole year at once, or applying
+ * the same months across several years. The rewrite offered the last eighteen
+ * months and nothing else, so none of those were possible - a limit the UI
+ * invented, since the API accepts any well-formed YYYY-MM.
+ *
+ * Still chosen rather than typed. The server validates `YYYY-MM` strictly, and
+ * a hand-typed "2026-6" comes back as a regex failure that means nothing to
+ * the person who typed it. HeroUI Native ships no date picker (R-1), and a
+ * calendar would be the wrong instrument anyway: it picks days and ranges,
+ * where a fee period is a whole month and the months wanted are often not
+ * next to each other.
  */
 export default function AssignFeesScreen() {
   const setups = useFeeSetups();
   const assign = useAssignFees();
 
   const [feeSetupId, setFeeSetupId] = useState<string | null>(null);
-  const [periods, setPeriods] = useState<string[]>([]);
+
+  /*
+   * Months and years are held apart and multiplied, rather than a flat list of
+   * periods. It is what makes "every month of next year" one gesture instead
+   * of twelve, and it is the legacy screen's own model - see periodsFor.
+   */
+  const [months, setMonths] = useState<number[]>([]);
+  const [years, setYears] = useState<number[]>([new Date().getFullYear()]);
+
+  /*
+   * The window of years OFFERED, not the years assignable.
+   *
+   * The legacy dropdown ran range(2022, 5000) - three thousand options to pick
+   * this year from. A five-year window covers ordinary work, and the arrows
+   * move it, so no year is out of reach. Bounding what is SHOWN is fine;
+   * bounding what can be CHOSEN is the mistake this screen just came from.
+   */
+  const [yearBase, setYearBase] = useState(new Date().getFullYear() - 2);
   const [search, setSearch] = useState('');
   const [memberIds, setMemberIds] = useState<Set<number>>(new Set());
   const [summary, setSummary] = useState<AssignSummary | null>(null);
@@ -81,11 +109,27 @@ export default function AssignFeesScreen() {
     [setups.data],
   );
 
-  const months = useMemo(() => recentPeriods(new Date()), []);
+  const periods = useMemo(() => periodsFor(years, months), [years, months]);
 
-  const togglePeriod = (period: string) =>
-    setPeriods((current) =>
-      current.includes(period) ? current.filter((p) => p !== period) : [...current, period],
+  /*
+   * The offered years, plus any already chosen that the window has since moved
+   * away from - a selection must never become invisible because the thing that
+   * shows it scrolled.
+   */
+  const yearChips = useMemo(() => {
+    const window = [0, 1, 2, 3, 4].map((i) => yearBase + i);
+
+    return [...new Set([...window, ...years])].sort((a, b) => a - b);
+  }, [yearBase, years]);
+
+  const toggleMonth = (month: number) =>
+    setMonths((current) =>
+      current.includes(month) ? current.filter((m) => m !== month) : [...current, month],
+    );
+
+  const toggleYear = (year: number) =>
+    setYears((current) =>
+      current.includes(year) ? current.filter((y) => y !== year) : [...current, year],
     );
 
   const toggleMember = (id: number) =>
@@ -109,7 +153,7 @@ export default function AssignFeesScreen() {
 
       setSummary(result);
       setMemberIds(new Set());
-      setPeriods([]);
+      setMonths([]);
     } catch {
       // Surfaced inline.
     }
@@ -156,19 +200,93 @@ export default function AssignFeesScreen() {
         />
       </Section>
 
-      <Section title="2 · Which months">
+      <Section
+        title="2 · Which months"
+        action={
+          <Button
+            variant="tertiary"
+            onPress={() =>
+              setMonths((current) =>
+                current.length === 12 ? [] : [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+              )
+            }
+          >
+            <Button.Label>{months.length === 12 ? 'Clear' : 'All 12'}</Button.Label>
+          </Button>
+        }
+      >
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space.sm }}>
-          {months.map((period) => (
+          {MONTH_NAMES.map((name, index) => {
+            const month = index + 1;
+
+            return (
+              <Chip
+                size="sm"
+                key={name}
+                variant={months.includes(month) ? 'primary' : 'secondary'}
+                onPress={() => toggleMonth(month)}
+              >
+                <Chip.Label>{name}</Chip.Label>
+              </Chip>
+            );
+          })}
+        </View>
+
+        {/*
+          YEARS ARE A SECOND AXIS, not a prefix on each month. Twelve months
+          times three years is thirty-six chips as one list and twelve plus
+          three as two.
+        */}
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: space.sm,
+            marginTop: space.md,
+          }}
+        >
+          <Button
+            size="sm"
+            variant="tertiary"
+            onPress={() => setYearBase((y) => y - 1)}
+            accessibilityLabel="Show earlier years"
+          >
+            <Icon name="back" size={14} tone="muted" />
+          </Button>
+
+          {yearChips.map((year) => (
             <Chip
               size="sm"
-              key={period}
-              variant={periods.includes(period) ? 'primary' : 'secondary'}
-              onPress={() => togglePeriod(period)}
+              key={year}
+              variant={years.includes(year) ? 'primary' : 'secondary'}
+              onPress={() => toggleYear(year)}
             >
-              <Chip.Label>{period}</Chip.Label>
+              <Chip.Label>{String(year)}</Chip.Label>
             </Chip>
           ))}
+
+          <Button
+            size="sm"
+            variant="tertiary"
+            onPress={() => setYearBase((y) => y + 1)}
+            accessibilityLabel="Show later years"
+          >
+            <Icon name="chevron" size={14} tone="muted" />
+          </Button>
         </View>
+
+        {/*
+          A cross product multiplies quietly. Six months across two years is
+          twelve instalments per member, and with forty selected members that
+          is four hundred and eighty rows from one press of a button - which
+          nothing on the screen would otherwise say before it happened.
+        */}
+        <Text tone="muted" style={{ ...type.rowMeta, marginTop: space.md }}>
+          {periods.length === 0
+            ? 'Choose at least one month and one year.'
+            : `${periods.length} instalment${periods.length === 1 ? '' : 's'} per member — ${periods[0]} to ${periods[periods.length - 1]}`}
+        </Text>
       </Section>
 
       <Section
@@ -260,7 +378,7 @@ export default function AssignFeesScreen() {
             {assign.isPending
               ? 'Assigning…'
               : canSubmit
-                ? `Assign to ${memberIds.size} member${memberIds.size === 1 ? '' : 's'} · ${periods.length} month${periods.length === 1 ? '' : 's'}`
+                ? `Assign to ${memberIds.size} member${memberIds.size === 1 ? '' : 's'} · ${periods.length} instalment${periods.length === 1 ? '' : 's'} each`
                 : 'Assign'}
           </Button.Label>
         </Button>
