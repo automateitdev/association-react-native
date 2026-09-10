@@ -29,6 +29,7 @@ import {
   ScreenHeader,
   Section,
   SearchField,
+  useIsDesktop,
   StateView,
   Text,
   type Column,
@@ -75,6 +76,7 @@ export default function AssignFeesScreen() {
   const [years, setYears] = useState<number[]>([new Date().getFullYear()]);
 
   const [page, setPage] = useState(1);
+  const isDesktop = useIsDesktop();
 
   /*
    * Empty means "whatever the association's grace period says", which is the
@@ -394,6 +396,26 @@ export default function AssignFeesScreen() {
         </View>
       ) : null}
 
+      {/*
+        THE TWO SETUP STEPS SIDE BY SIDE ON A DESKTOP.
+
+        Stacked, they used 460pt of a 1177pt column and left 717 empty -
+        61% of the width, down the whole height of the form - while pushing
+        the member table below the fold. Measured on a 1440 window.
+
+        A form field stays 460 wide because that is what ui/Form says a
+        field should be; the fix is not a wider field but a second column
+        beside the first. On a phone they stack again, where stacking is
+        the only thing that fits.
+      */}
+      <View
+        style={{
+          flexDirection: isDesktop ? 'row' : 'column',
+          gap: isDesktop ? space.xxl : 0,
+          alignItems: 'flex-start',
+        }}
+      >
+        <View style={{ flex: 1, width: '100%' }}>
       <Section title="1 · Which fee" first>
         {/*
           IN A Form, like every other labelled field in the app.
@@ -416,8 +438,10 @@ export default function AssignFeesScreen() {
           />
         </Form>
       </Section>
+        </View>
 
-      <Section title="2 · When it applies">
+        <View style={{ flex: 1, width: '100%' }}>
+      <Section title="2 · When it applies" first>
         {/*
           "All months" SITS WITH THE MONTHS. It was "All 12" at the far right
           of the section heading - two words that named a quantity rather than
@@ -532,6 +556,8 @@ export default function AssignFeesScreen() {
             : `${periods.length} instalment${periods.length === 1 ? '' : 's'} per member — ${periods[0]} to ${periods[periods.length - 1]}`}
         </Text>
       </Section>
+        </View>
+      </View>
 
       <Section title="3 · Which members">
         <Text tone="muted" style={{ ...type.rowMeta, marginBottom: space.sm }}>
