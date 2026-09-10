@@ -19,7 +19,6 @@ import {
   Button,
   Cell,
   Checkbox,
-  Chip,
   DataTable,
   Form,
   Icon,
@@ -160,10 +159,27 @@ export default function AssignFeesScreen() {
     periods,
   );
 
-  const toggleMonth = (month: number) =>
+  /*
+   * 'all' is a shortcut rather than a month, and it toggles the whole set -
+   * on when anything is missing, off when everything is already chosen. It
+   * lives in the menu because twelve presses is the wrong price for the
+   * commonest choice on this screen.
+   */
+  const toggleMonthValue = (value: string) => {
+    if (value === 'all') {
+      setMonths((current) => (current.length === 12 ? [] : [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]));
+
+      return;
+    }
+
+    const month = Number(value);
+
     setMonths((current) =>
-      current.includes(month) ? current.filter((m) => m !== month) : [...current, month],
+      current.includes(month)
+        ? current.filter((m) => m !== month)
+        : [...current, month].sort((a, b) => a - b),
     );
+  };
 
   /*
    * The years offered, as the legacy screen offers them - a dropdown you tick.
@@ -443,41 +459,33 @@ export default function AssignFeesScreen() {
         <View style={{ flex: 1, width: '100%' }}>
       <Section title="2 · When it applies" first>
         {/*
-          "All months" SITS WITH THE MONTHS. It was "All 12" at the far right
-          of the section heading - two words that named a quantity rather than
-          an action, as far from the chips as the row is wide. Beside them it
+          MONTHS AS A DROPDOWN, matching the years beside them.
+
+          They were twelve chips and a button, which put a row of small
+          targets and one control that looked nothing like the two fields
+          under it. Three questions asked three ways in one section - a chip
+          row, a multi-select, a single select - is what made the section read
+          as improvised.
+
+          "All 12 months" is the FIRST ENTRY IN THE MENU rather than a button
+          outside it. Twelve presses is the wrong price for the commonest
+          choice on this screen, and a shortcut inside the control it affects
           needs no explaining.
         */}
-        <View
-          style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: space.sm }}
-        >
-          {MONTH_NAMES.map((name, index) => {
-            const month = index + 1;
-
-            return (
-              <Chip
-                size="sm"
-                key={name}
-                variant={months.includes(month) ? 'primary' : 'secondary'}
-                onPress={() => toggleMonth(month)}
-              >
-                <Chip.Label>{name}</Chip.Label>
-              </Chip>
-            );
-          })}
-
-          <Button
-            size="sm"
-            variant="tertiary"
-            onPress={() =>
-              setMonths((current) =>
-                current.length === 12 ? [] : [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
-              )
-            }
-          >
-            <Button.Label>{months.length === 12 ? 'Clear' : 'All months'}</Button.Label>
-          </Button>
-        </View>
+        <Form dense>
+          <PickerField
+            label="Months"
+            options={[
+              { value: 'all', label: months.length === 12 ? 'Clear all months' : 'All 12 months' },
+              ...MONTH_NAMES.map((name, index) => ({ value: String(index + 1), label: name })),
+            ]}
+            value={null}
+            onChange={() => {}}
+            values={months.map(String)}
+            onToggleValue={toggleMonthValue}
+            placeholder="Choose months"
+          />
+        </Form>
 
         {/*
           YEARS ARE A SECOND AXIS, not a prefix on each month. Twelve months
