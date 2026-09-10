@@ -3,7 +3,8 @@ import { Pressable, ScrollView, TextInput, View } from 'react-native';
 import { useThemeColor } from 'heroui-native';
 import { Icon, type IconName } from './Icon';
 import { Text } from './Text';
-import { useIsDesktop } from './breakpoint';
+import { useControlHeight } from './breakpoint';
+import { useFormDensity } from './Form';
 import { useReveal } from './reveal';
 import { space, type } from './tokens';
 
@@ -117,6 +118,8 @@ export function AnchoredSelect({
   // ui/reveal, which also says why this is not a flip-up.
   const reveal = useReveal(open);
   const placeholderColor = useThemeColor('field-placeholder');
+  const dense = useFormDensity();
+  const controlHeight = useControlHeight();
   const searchable = search !== undefined;
   const multiple = values !== undefined;
 
@@ -132,14 +135,20 @@ export function AnchoredSelect({
     searchable && onSearchChange === undefined && search.trim() !== ''
       ? options.filter((o) => o.label.toLowerCase().includes(search.trim().toLowerCase()))
       : options;
-  const isDesktop = useIsDesktop();
 
   const selected = options.find((o) => o.value === value);
   const compact = variant === 'compact';
 
-  // Toolbar controls match the search box beside them; form fields match the
-  // text inputs above and below them.
-  const height = compact ? (isDesktop ? 34 : 40) : 48;
+  /*
+   * Toolbar controls match the search box beside them; form fields match the
+   * text inputs above and below them - INCLUDING when those are dense.
+   *
+   * The field variant used to be a flat 48, which is right beside a full-height
+   * input and a third too tall beside a dense one. Measured on the new-fee
+   * form: two inputs at 40 and a picker at 48 in the same column, which reads
+   * as one field having gone wrong rather than as a size anybody chose.
+   */
+  const height = compact ? controlHeight : dense ? 40 : 48;
 
   // Groups in first-seen order, so the caller controls precedence by sorting
   // rather than by an extra prop.
@@ -160,7 +169,7 @@ export function AnchoredSelect({
         // date field and ui/Icon. Both, or a screen reader is told nothing.
         aria-expanded={open}
         accessibilityLabel={`${selected?.label ?? placeholder}. Choose an option.`}
-        className="bg-field-background border border-field-border rounded-lg"
+        className="bg-field border border-field-border rounded-lg"
         style={{
           flexDirection: 'row',
           alignItems: 'center',
@@ -240,7 +249,7 @@ export function AnchoredSelect({
                   placeholder={searchPlaceholder}
                   placeholderTextColor={placeholderColor}
                   autoFocus
-                  className="bg-field-background border border-field-border rounded-lg text-field-foreground"
+                  className="bg-field border border-field-border rounded-lg text-field-foreground"
                   style={{ height: 38, paddingHorizontal: space.md, ...type.body }}
                 />
               </View>

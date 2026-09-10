@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { Calendar, humanDate, todayIso, type DateRange, type IsoDate } from './Calendar';
 import { Icon } from './Icon';
+import { useControlHeight } from './breakpoint';
 import { Text } from './Text';
 import { useReveal } from './reveal';
 import { space, type } from './tokens';
@@ -50,6 +51,7 @@ export function DateField({
   // A calendar is 300pt tall, so opening one low on a page put it off the
   // bottom edge. See ui/reveal - the page comes to it.
   const reveal = useReveal(open);
+  const controlHeight = useControlHeight();
 
   const handle = (next: DateRange) => {
     onChange(next);
@@ -76,13 +78,18 @@ export function DateField({
           accessibilityState={{ expanded: open }}
           aria-expanded={open}
           accessibilityLabel={`${describe(value, placeholder)}. Choose a date range.`}
-          className="border border-field-border bg-field-background rounded-lg"
+          className="border border-field-border bg-field rounded-lg"
           style={{
             flexDirection: 'row',
             alignItems: 'center',
             gap: space.sm,
             paddingHorizontal: space.md,
-            paddingVertical: space.sm,
+            /*
+              A HEIGHT, not padding. Sized by its own padding this came out at
+              34 on every width, so on a phone it sat 6pt shorter than the
+              filter beside it in the same bar. See useControlHeight.
+            */
+            height: controlHeight,
           }}
         >
           <Icon name="calendar" size={15} tone="muted" />

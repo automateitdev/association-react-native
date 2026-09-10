@@ -47,6 +47,17 @@ import { space, type } from './tokens';
  */
 const FormDensity = React.createContext(false);
 
+/**
+ * Whether the surrounding Form is dense, for a control that is not an `Input`.
+ *
+ * ui/AnchoredSelect is the case: a picker sat at HeroUI's 48 inside a dense
+ * form of 40pt inputs, so the fee form had a 40, a 40 and a 48 in one column -
+ * which reads as one field being broken rather than as a deliberate size.
+ */
+export function useFormDensity() {
+  return React.useContext(FormDensity);
+}
+
 /** 40, against HeroUI's 48. Below about this a 16pt value starts to feel cramped. */
 const DENSE_HEIGHT = 40;
 

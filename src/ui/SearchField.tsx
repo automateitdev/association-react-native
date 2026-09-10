@@ -1,7 +1,7 @@
 import { Pressable, TextInput, View } from 'react-native';
 import { useThemeColor } from 'heroui-native';
 import { Icon } from './Icon';
-import { useIsDesktop } from './breakpoint';
+import { useControlHeight } from './breakpoint';
 import { font, space, type } from './tokens';
 
 /**
@@ -38,7 +38,7 @@ export function SearchField({
   /** Capped, not stretched: no search box needs the width of the page. */
   width?: number;
 }) {
-  const isDesktop = useIsDesktop();
+  const controlHeight = useControlHeight();
 
   // Resolved rather than classed: TextInput's placeholder colour is a prop, and
   // a Tailwind utility cannot reach it.
@@ -47,16 +47,15 @@ export function SearchField({
 
   return (
     <View
-      className="bg-field-background border border-field-border rounded-lg"
+      className="bg-field border border-field-border rounded-lg"
       style={{
         flexDirection: 'row',
         alignItems: 'center',
         gap: space.sm,
         paddingHorizontal: space.md,
-        // 34 beside a 32pt button reads as the same family of control. On a
-        // phone it stays at the touch-target height for the same reason the
-        // buttons do.
-        height: isDesktop ? 34 : 40,
+        // See useControlHeight: the same height as every other control in a
+        // toolbar, which is not the same as a form field's.
+        height: controlHeight,
         width,
         maxWidth: '100%',
       }}

@@ -84,3 +84,23 @@ export function useContentWidth(kind: 'reading' | 'wide'): number {
 
   return kind === 'reading' ? 760 : 1280;
 }
+
+/**
+ * How tall a control in a TOOLBAR is - a filter, a search box, a date field.
+ *
+ * WRITTEN OUT THREE TIMES BEFORE THIS EXISTED, as `isDesktop ? 34 : 40` in
+ * ui/SearchField and ui/AnchoredSelect - and not at all in ui/DateField, which
+ * had padding instead and came out at 34 on every width. On a phone that put a
+ * 40pt filter beside a 34pt date field in the same bar, which is the kind of
+ * difference nobody can name and everybody can see.
+ *
+ * 34 on a desktop, because beside a 32pt button it reads as the same family of
+ * control. 40 on a phone, because below that a thumb starts missing it - the
+ * touch target wins over the family resemblance.
+ *
+ * A FORM field is not this. Those match the text inputs above and below them:
+ * 48, or 40 in a dense form. See ui/Form.
+ */
+export function useControlHeight(): number {
+  return useIsDesktop() ? 34 : 40;
+}
