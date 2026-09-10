@@ -2,7 +2,7 @@ import { Pressable, TextInput, View } from 'react-native';
 import { useThemeColor } from 'heroui-native';
 import { Icon } from './Icon';
 import { useControlHeight } from './breakpoint';
-import { font, space, type } from './tokens';
+import { font, fieldPadding, space, type } from './tokens';
 
 /**
  * A search box, sized like a control rather than like a form field.
@@ -47,12 +47,12 @@ export function SearchField({
 
   return (
     <View
-      className="bg-field border border-field-border rounded-lg"
+      className="bg-field border border-field-border rounded-field"
       style={{
         flexDirection: 'row',
         alignItems: 'center',
         gap: space.sm,
-        paddingHorizontal: space.md,
+        paddingHorizontal: fieldPadding,
         // See useControlHeight: the same height as every other control in a
         // toolbar, which is not the same as a form field's.
         height: controlHeight,

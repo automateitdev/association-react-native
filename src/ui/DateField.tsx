@@ -5,7 +5,7 @@ import { Icon } from './Icon';
 import { useControlHeight } from './breakpoint';
 import { Text } from './Text';
 import { useReveal } from './reveal';
-import { space, type } from './tokens';
+import { fieldPadding, space, type } from './tokens';
 
 /**
  * A date, or a range of dates, chosen from a calendar.
@@ -78,12 +78,12 @@ export function DateField({
           accessibilityState={{ expanded: open }}
           aria-expanded={open}
           accessibilityLabel={`${describe(value, placeholder)}. Choose a date range.`}
-          className="border border-field-border bg-field rounded-lg"
+          className="border border-field-border bg-field rounded-field"
           style={{
             flexDirection: 'row',
             alignItems: 'center',
             gap: space.sm,
-            paddingHorizontal: space.md,
+            paddingHorizontal: fieldPadding,
             /*
               A HEIGHT, not padding. Sized by its own padding this came out at
               34 on every width, so on a phone it sat 6pt shorter than the

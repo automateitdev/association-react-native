@@ -6,7 +6,7 @@ import { Text } from './Text';
 import { useControlHeight } from './breakpoint';
 import { useFormDensity } from './Form';
 import { useReveal } from './reveal';
-import { space, type } from './tokens';
+import { fieldPadding, space, type } from './tokens';
 
 export type SelectOption = {
   value: string;
@@ -169,12 +169,12 @@ export function AnchoredSelect({
         // date field and ui/Icon. Both, or a screen reader is told nothing.
         aria-expanded={open}
         accessibilityLabel={`${selected?.label ?? placeholder}. Choose an option.`}
-        className="bg-field border border-field-border rounded-lg"
+        className="bg-field border border-field-border rounded-field"
         style={{
           flexDirection: 'row',
           alignItems: 'center',
           gap: space.sm,
-          paddingHorizontal: space.md,
+          paddingHorizontal: fieldPadding,
           height,
           width: compact ? width : undefined,
           opacity: isDisabled ? 0.5 : 1,
@@ -249,7 +249,7 @@ export function AnchoredSelect({
                   placeholder={searchPlaceholder}
                   placeholderTextColor={placeholderColor}
                   autoFocus
-                  className="bg-field border border-field-border rounded-lg text-field-foreground"
+                  className="bg-field border border-field-border rounded-field text-field-foreground"
                   style={{ height: 38, paddingHorizontal: space.md, ...type.body }}
                 />
               </View>

@@ -162,3 +162,16 @@ export const type = {
  * browser rendered a phone-width column. A measure is not one number: a form
  * wants a short line and a report wants every pixel going. See useContentWidth.
  */
+
+/**
+ * The inside edge of a field, matching HeroUI's own inputs.
+ *
+ * Its input.css sets `padding-inline: calc(var(--spacing) * 3)` - 12 - while
+ * every control this app draws itself used `space.md`, which is 10. Two points
+ * is not something anybody can name, and it is visible the moment a picker
+ * sits under a text input: the two placeholders do not start at the same x.
+ *
+ * A number rather than a class, because these controls set the rest of their
+ * padding in a style object and a className cannot win against one.
+ */
+export const fieldPadding = 12;
