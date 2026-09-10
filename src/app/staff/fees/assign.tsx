@@ -189,11 +189,35 @@ export default function AssignFeesScreen() {
     () => [
       {
         key: 'select',
-        header: '',
+        header: 'Select',
         width: 46,
         frozen: true,
         // No `sort`: ordering a list by which rows happen to be ticked is not
         // a question anybody asks.
+
+        /*
+         * SELECT ALL LIVES AT THE TOP OF ITS OWN COLUMN, which is where the
+         * legacy screen puts it and where it needs no words at all. It was a
+         * button in the section header reading "Select these 25" - a fragment
+         * that could not say WHICH 25 or what "these" meant, sitting at the
+         * far right of a heading, a screen away from the rows it acted on.
+         *
+         * It covers the page in front of you, which is what a checkbox above
+         * a page of rows can honestly mean. Selecting every match across every
+         * page would need the server to return ids it was never asked for.
+         */
+        headerRender: () => (
+          <Checkbox
+            isSelected={rows.length > 0 && rows.every((m) => memberIds.has(m.id))}
+            onSelectedChange={() =>
+              setMemberIds((current) =>
+                rows.every((m) => current.has(m.id))
+                  ? new Set([...current].filter((id) => !rows.some((m) => m.id === id)))
+                  : new Set([...current, ...rows.map((m) => m.id)]),
+              )
+            }
+          />
+        ),
         render: (row) => (
           <Checkbox
             isSelected={memberIds.has(row.id)}
@@ -311,22 +335,16 @@ export default function AssignFeesScreen() {
         </Form>
       </Section>
 
-      <Section
-        title="2 · Which months"
-        action={
-          <Button
-            variant="tertiary"
-            onPress={() =>
-              setMonths((current) =>
-                current.length === 12 ? [] : [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
-              )
-            }
-          >
-            <Button.Label>{months.length === 12 ? 'Clear' : 'All 12'}</Button.Label>
-          </Button>
-        }
-      >
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space.sm }}>
+      <Section title="2 · When it applies">
+        {/*
+          "All months" SITS WITH THE MONTHS. It was "All 12" at the far right
+          of the section heading - two words that named a quantity rather than
+          an action, as far from the chips as the row is wide. Beside them it
+          needs no explaining.
+        */}
+        <View
+          style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: space.sm }}
+        >
           {MONTH_NAMES.map((name, index) => {
             const month = index + 1;
 
@@ -341,6 +359,18 @@ export default function AssignFeesScreen() {
               </Chip>
             );
           })}
+
+          <Button
+            size="sm"
+            variant="tertiary"
+            onPress={() =>
+              setMonths((current) =>
+                current.length === 12 ? [] : [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+              )
+            }
+          >
+            <Button.Label>{months.length === 12 ? 'Clear' : 'All months'}</Button.Label>
+          </Button>
         </View>
 
         {/*
@@ -421,35 +451,7 @@ export default function AssignFeesScreen() {
         </Text>
       </Section>
 
-      <Section
-        title="3 · Which members"
-        action={
-          rows.length > 0 ? (
-            <Button
-              variant="tertiary"
-              onPress={() =>
-                setMemberIds((current) =>
-                  rows.every((m) => current.has(m.id))
-                    ? new Set([...current].filter((id) => !rows.some((m) => m.id === id)))
-                    : new Set([...current, ...rows.map((m) => m.id)]),
-                )
-              }
-            >
-              {/*
-                THIS PAGE, not all matches - and it says so, because with a
-                pager "Select 25" beside a total of 45 invites exactly the
-                wrong assumption. Selecting every match would need the server
-                to answer with ids it has not been asked for.
-              */}
-              <Button.Label>
-                {rows.every((m) => memberIds.has(m.id))
-                  ? 'Clear this page'
-                  : `Select these ${rows.length}`}
-              </Button.Label>
-            </Button>
-          ) : undefined
-        }
-      >
+      <Section title="3 · Which members">
         <Text tone="muted" style={{ ...type.rowMeta, marginBottom: space.sm }}>
           Active members only. Assigning to a suspended or unapproved member is a
           separate decision.

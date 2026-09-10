@@ -43,6 +43,18 @@ const DEFAULT_PAGE_SIZE = 25;
 export type Column<T> = {
   key: string;
   header: string;
+  /**
+   * A control in the header cell instead of the label.
+   *
+   * For the one case that needs it: a select-all checkbox above a column of
+   * checkboxes. That control belongs at the top of the column it governs -
+   * anywhere else and it has to explain itself in words, which is how a table
+   * ends up with a button reading "Select these 25" a screen away from the
+   * rows it selects.
+   *
+   * `header` is still required, and is used as the accessible name.
+   */
+  headerRender?: () => ReactNode;
   /** Fixed, because columns must line up between header, body and totals. */
   width: number;
   align?: 'left' | 'right';
@@ -289,13 +301,17 @@ export function DataTable<T>({
             justifyContent: column.align === 'right' ? 'flex-end' : 'flex-start',
           }}
         >
-          <Text
-            tone={sort?.key === column.key ? 'default' : 'muted'}
-            numberOfLines={1}
-            style={{ ...type.section, textTransform: 'uppercase' }}
-          >
-            {column.header}
-          </Text>
+          {column.headerRender ? (
+            column.headerRender()
+          ) : (
+            <Text
+              tone={sort?.key === column.key ? 'default' : 'muted'}
+              numberOfLines={1}
+              style={{ ...type.section, textTransform: 'uppercase' }}
+            >
+              {column.header}
+            </Text>
+          )}
 
           {/* Only on the sorted column. An arrow on every sortable header is
               five arrows saying nothing. */}
