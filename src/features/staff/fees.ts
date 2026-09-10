@@ -229,6 +229,54 @@ export function fineDayOptions(): { value: string; label: string }[] {
   }));
 }
 
+/**
+ * What choosing a fine day actually means for the months chosen.
+ *
+ * WHY THIS EXISTS. The dropdown offers 1 to 31 and the server clamps a day
+ * past the end of a short month to its last day. That is the right behaviour
+ * and completely invisible: somebody picking the 31st for a whole year has no
+ * way to know that February will not get one, and the screen cannot expect
+ * them to hold the length of twelve months in their head.
+ *
+ * So it is stated. No clamping and the sentence is simply the rule; clamping
+ * and the affected months are named, because "some months are shorter" is the
+ * kind of reassurance that leaves somebody wondering WHICH.
+ */
+export function fineDayNote(periods: string[], day: number | null): string | null {
+  if (day === null || periods.length === 0) return null;
+
+  const ordinal = (n: number) => {
+    if (n % 100 >= 11 && n % 100 <= 13) return `${n}th`;
+
+    return `${n}${({ 1: 'st', 2: 'nd', 3: 'rd' } as Record<number, string>)[n % 10] ?? 'th'}`;
+  };
+
+  const short = periods.filter((period) => {
+    const [year, month] = period.split('-').map(Number);
+
+    // Day 0 of the next month is the last day of this one.
+    return new Date(year, month, 0).getDate() < day;
+  });
+
+  if (short.length === 0) {
+    return `Every instalment is fined from the ${ordinal(day)} of its month.`;
+  }
+
+  const named = short.slice(0, 3).map((period) => {
+    const [year, month] = period.split('-').map(Number);
+    const last = new Date(year, month, 0);
+
+    return `${last.getDate()} ${MONTH_NAMES[month - 1]} ${year}`;
+  });
+
+  const rest = short.length - named.length;
+
+  return (
+    `The ${ordinal(day)} is past the end of ${short.length} of the ${periods.length} months chosen. ` +
+    `Those are fined from their last day instead — ${named.join(', ')}${rest > 0 ? ` and ${rest} more` : ''}.`
+  );
+}
+
 /** Month numbers as the office says them, not as the API stores them. */
 export const MONTH_NAMES = [
   'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',

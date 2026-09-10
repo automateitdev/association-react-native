@@ -4,6 +4,7 @@ import { View } from 'react-native';
 import { ApiError } from '@/api/errors';
 import { useMembers } from '@/features/staff/members';
 import {
+  fineDayNote,
   fineDayOptions,
   MONTH_NAMES,
   periodsFor,
@@ -392,7 +393,17 @@ export default function AssignFeesScreen() {
               options={[{ value: '', label: 'The association’s usual grace period' }, ...fineDayOptions()]}
               value={fineDay}
               onChange={setFineDay}
-              hint="Only for this assignment. Change the usual one in Admin → Settings."
+              /*
+                The hint answers whichever question is live. With no day
+                chosen that is "where does this come from"; with one chosen it
+                is "what will that actually do to the months I picked" - which
+                nobody can work out unaided, and which the 29th, 30th and 31st
+                make a real question rather than a pedantic one.
+              */
+              hint={
+                fineDayNote(periods, fineDay === '' ? null : Number(fineDay)) ??
+                'Only for this assignment. Change the usual one in Admin → Settings.'
+              }
             />
           </Form>
         </View>
