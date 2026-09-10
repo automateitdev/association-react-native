@@ -81,13 +81,14 @@ export function Icon({
 }: {
   name: IconName;
   size?: number;
-  tone?: 'default' | 'muted' | 'danger' | 'accent' | 'inverse' | 'success';
+  tone?: 'default' | 'muted' | 'danger' | 'warning' | 'accent' | 'inverse' | 'success';
   /** An explicit colour, for cases where the tone presets do not fit. */
   color?: string;
 }) {
   // Hooks cannot be conditional, so every tone colour is resolved.
   const muted = useThemeColor('muted');
   const danger = useThemeColor('danger');
+  const warning = useThemeColor('warning');
   const success = useThemeColor('success');
   const accent = useThemeColor('accent');
   const foreground = useThemeColor('foreground');
@@ -99,6 +100,8 @@ export function Icon({
       ? muted
       : tone === 'danger'
         ? danger
+        : tone === 'warning'
+          ? warning
         : tone === 'success'
           ? success
         : tone === 'accent'

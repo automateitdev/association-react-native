@@ -10,15 +10,16 @@ import {
   Actions,
   Button,
   DENSE_INPUT_STYLE,
-  Icon,
   Form,
   FormField,
+  Icon,
+  Inline,
   Input,
   Panel,
   Screen,
+  space,
   Text,
   TextField,
-  space,
   type,
 } from '@/ui';
 import { useTheme } from '@/features/theme';
@@ -97,7 +98,7 @@ export default function SignInScreen() {
             application - and a member who prefers light mode should not have to
             sign in to a theme they cannot read first.
           */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.md }}>
+          <Inline gap="md">
             <View
               className="bg-accent"
               style={{
@@ -139,7 +140,7 @@ export default function SignInScreen() {
                 tone="muted"
               />
             </Text>
-          </View>
+          </Inline>
 
           {/*
             A Panel, and this is the case it exists for: one focused surface on
@@ -240,7 +241,7 @@ export default function SignInScreen() {
             states a fact nobody asked for; "Not X?" is the only reason somebody
             reads this line at all - they are in the wrong place.
           */}
-          <View style={{ flexDirection: 'row', justifyContent: 'center', gap: space.xs }}>
+          <Inline gap="xs" align="stretch" justify="center">
             <Text tone="muted" style={type.rowMeta}>
               Not {association.data?.name ?? tenantSlug}?
             </Text>
@@ -254,7 +255,7 @@ export default function SignInScreen() {
             >
               Change association
             </Text>
-          </View>
+          </Inline>
         </View>
       </View>
     </Screen>

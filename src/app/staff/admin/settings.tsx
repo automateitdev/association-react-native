@@ -11,21 +11,22 @@ import {
 import {
   Button,
   Checkbox,
-  Form,
   Divider,
-  FormRow,
+  Form,
   FormField,
+  FormRow,
   Icon,
+  Inline,
   Input,
   InputField,
   Panel,
   Screen,
   ScreenHeader,
   Section,
+  space,
   StateView,
   Text,
   TextArea,
-  space,
   type,
 } from '@/ui';
 
@@ -311,7 +312,7 @@ function PaymentSection({ settings, editable }: { settings: Settings; editable: 
       onSave={() => void save()}
       error={error}
     >
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm }}>
+      <Inline gap="sm">
         <Checkbox isSelected={online} onSelectedChange={setOnline} isDisabled={! editable} />
         <View style={{ flex: 1 }}>
           <Text style={type.body}>Accept online payments</Text>
@@ -320,7 +321,7 @@ function PaymentSection({ settings, editable }: { settings: Settings; editable: 
             unaffected.
           </Text>
         </View>
-      </View>
+      </Inline>
 
       <FormRow>
       <InputField

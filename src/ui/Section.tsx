@@ -23,6 +23,7 @@ export function Section({
   action,
   children,
   first = false,
+  step,
 }: {
   /**
    * The heading, and it is optional on purpose.
@@ -55,6 +56,21 @@ export function Section({
   children: ReactNode;
   /** Tighter top margin. For the first section under a page title. */
   first?: boolean;
+  /**
+   * This section's place in an ordered set - "1", then "2", then "3".
+   *
+   * WRITTEN OUT BY HAND IN TWO SCREENS BEFORE THIS EXISTED: `1 · Which fee`,
+   * `2 · When it applies`, `3 · Which members` on the fee-assign screen and
+   * `1 · Choose instalments`, `2 · How would you like to pay?` on the member's
+   * payment screen - the separator, the spacing and the numbering all retyped,
+   * with nothing keeping the two screens agreeing on any of them.
+   *
+   * It marks ORDER, not progress. Every step here is on screen at once and can
+   * be answered in any order; nothing is locked until an earlier one is done.
+   * A screen that genuinely gates its steps needs a different control, and
+   * borrowing this one to imply it would be a lie about what the form allows.
+   */
+  step?: number;
 }) {
   return (
     <View style={{ marginTop: first ? space.md : space.xl }}>
@@ -71,7 +87,7 @@ export function Section({
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.xs }}>
             {icon ? <Icon name={icon} size={14} tone="muted" /> : null}
             <Text tone="muted" style={{ ...type.section, textTransform: 'uppercase' }}>
-              {title}
+              {step === undefined ? title : `${step} · ${title}`}
             </Text>
           </View>
           {action}
@@ -107,7 +123,26 @@ export function Panel({
   tone = 'neutral',
 }: {
   children: ReactNode;
-  tone?: 'neutral' | 'danger';
+  /**
+   * WHAT KIND OF ANSWER THIS IS.
+   *
+   * `success` was missing and its absence was already being worked around in
+   * the code: the staff-accounts screen carries a comment reading "Neutral, not
+   * danger. The account saved; nothing went wrong" - a note explaining that the
+   * only two tones available were both wrong for what had just happened. With
+   * nothing to say "this worked", every outcome that was not a failure had to
+   * borrow the voice of a passing remark.
+   *
+   *   neutral  a remark. Context, a caveat, something worth knowing.
+   *   success  it happened. The payment is recorded, the account exists.
+   *   warning  it will happen, and here is what it costs. Before, not after.
+   *   danger   it did not happen, or it cannot be undone.
+   *
+   * Green and red are not enough on their own - a colour blind reader gets
+   * nothing from the border - so each tone also carries its own glyph, and the
+   * text inside must still say what happened without either.
+   */
+  tone?: 'neutral' | 'success' | 'warning' | 'danger';
 }) {
   /*
    * A PANEL ARRIVES rather than appearing.
@@ -122,25 +157,60 @@ export function Panel({
    * No travel. A panel that slides has to slide from somewhere, and there is
    * no honest direction for "the server said no" to come from. It fades.
    */
+  const skin = PANEL_TONES[tone];
+
   return (
     <Appear distance={0}>
       <View
-        className={
-          tone === 'danger'
-            ? 'bg-danger-soft border border-danger'
-            : 'bg-background-secondary border border-border'
-        }
+        className={skin.className}
         style={{
           padding: space.lg,
           borderRadius: 14,
           gap: space.sm,
         }}
       >
+        {skin.icon ? (
+          <Icon name={skin.icon} size={16} tone={skin.iconTone} />
+        ) : null}
+
         {children}
       </View>
     </Appear>
   );
 }
+
+/**
+ * The four tones, and the glyph that says which one it is without colour.
+ *
+ * Neutral has no glyph on purpose: a remark that announces itself with an icon
+ * is no longer a remark, and every panel wearing a badge is the same as none of
+ * them wearing one.
+ */
+const PANEL_TONES = {
+  neutral: {
+    className: 'bg-background-secondary border border-border',
+    icon: null,
+    iconTone: 'muted',
+  },
+  success: {
+    className: 'bg-success-soft border border-success',
+    icon: 'check',
+    iconTone: 'success',
+  },
+  warning: {
+    className: 'bg-warning-soft border border-warning',
+    icon: 'warning',
+    iconTone: 'warning',
+  },
+  danger: {
+    className: 'bg-danger-soft border border-danger',
+    icon: 'warning',
+    iconTone: 'danger',
+  },
+} as const satisfies Record<
+  string,
+  { className: string; icon: IconName | null; iconTone: 'muted' | 'success' | 'warning' | 'danger' }
+>;
 
 /**
  * Where a screen's primary action goes.

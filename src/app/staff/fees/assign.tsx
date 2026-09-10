@@ -26,14 +26,14 @@ import {
   PickerField,
   Screen,
   ScreenHeader,
-  Section,
   SearchField,
-  useIsDesktop,
+  Section,
+  space,
   StateView,
   Text,
-  type Column,
-  space,
   type,
+  useIsDesktop,
+  type Column,
 } from '@/ui';
 
 /**
@@ -446,7 +446,7 @@ export default function AssignFeesScreen() {
         }}
       >
         <View style={halfWidth}>
-        <Section title="1 · Which fee" first>
+        <Section step={1} title="Which fee" first>
           {/*
             IN A Form, like every other labelled field in the app.
 
@@ -471,7 +471,7 @@ export default function AssignFeesScreen() {
         </View>
 
         <View style={halfWidth}>
-        <Section title="2 · When it applies" first>
+        <Section step={2} title="When it applies" first>
           {/*
             MONTHS AS A DROPDOWN, matching the years beside them.
 
@@ -581,7 +581,7 @@ export default function AssignFeesScreen() {
         </View>
       </View>
 
-      <Section title="3 · Which members">
+      <Section step={3} title="Which members">
         <Text tone="muted" style={{ ...type.rowMeta, marginBottom: space.sm }}>
           Active members only. Assigning to a suspended or unapproved member is a
           separate decision.

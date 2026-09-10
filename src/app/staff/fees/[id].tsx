@@ -5,21 +5,22 @@ import { ApiError } from '@/api/errors';
 import { useSession } from '@/features/auth/session';
 import { useFeeSetups, useLedgerOptions, useLedgers, useUpdateFeeSetup } from '@/features/staff/fees';
 import {
-  useActionButtonStyle,
   Button,
   Field,
+  Form,
+  Inline,
   Input,
   InputField,
   Panel,
-  Form,
   PickerField,
   Screen,
   ScreenHeader,
   Section,
+  space,
   StateView,
   Text,
-  space,
   type,
+  useActionButtonStyle,
 } from '@/ui';
 
 /**
@@ -197,7 +198,7 @@ export default function EditFeeSetupScreen() {
                     )}
                   </Form>
 
-                  <View style={{ flexDirection: 'row', gap: space.sm }}>
+                  <Inline gap="sm" align="stretch">
                     <Button variant="secondary" style={actionStyle} onPress={() => setOpen(false)}>
                       <Button.Label>Cancel</Button.Label>
                     </Button>
@@ -208,7 +209,7 @@ export default function EditFeeSetupScreen() {
                     >
                       <Button.Label>{update.isPending ? 'Saving…' : 'Save'}</Button.Label>
                     </Button>
-                  </View>
+                  </Inline>
                 </Panel>
               </Section>
             ) : (

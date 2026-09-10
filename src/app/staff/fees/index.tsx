@@ -10,14 +10,15 @@ import {
   Cell,
   DataTable,
   Icon,
+  Inline,
   NumberCell,
   Screen,
   ScreenHeader,
   Section,
+  space,
   StateView,
   Text,
   Toolbar,
-  space,
   type,
   type Column,
 } from '@/ui';
@@ -143,7 +144,7 @@ export default function FeeSetupsScreen() {
         */}
         <Toolbar
           filters={
-            <View style={{ flexDirection: 'row', gap: space.sm }}>
+            <Inline gap="sm" align="stretch">
               {can('fee-assigns.create') && active > 0 ? (
                 <Button variant="secondary" onPress={() => router.push('/staff/fees/assign')}>
                   <Icon name="members" size={15} />
@@ -157,7 +158,7 @@ export default function FeeSetupsScreen() {
                   <Button.Label>Adjust fines</Button.Label>
                 </Button>
               ) : null}
-            </View>
+            </Inline>
           }
           actions={
             can('reports.export') ? (

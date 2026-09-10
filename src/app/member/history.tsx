@@ -4,13 +4,14 @@ import { usePayments, type Payment } from '@/features/payments/queries';
 import { ReceiptButton } from '@/features/payments/ReceiptButton';
 import {
   AmountBreakdown,
+  Inline,
   Row,
   Screen,
   ScreenHeader,
   Section,
+  space,
   StateView,
   Text,
-  space,
   type,
 } from '@/ui';
 
@@ -71,7 +72,7 @@ function PaymentRow({ payment, divider }: { payment: Payment; divider: boolean }
         />
       }
       footer={
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.md, flexWrap: 'wrap' }}>
+        <Inline gap="md" wrap>
           <StatusLine status={payment.status} />
 
           {/*
@@ -88,7 +89,7 @@ function PaymentRow({ payment, divider }: { payment: Payment; divider: boolean }
               invoiceNo={payment.invoice_no}
             />
           ) : null}
-        </View>
+        </Inline>
       }
       onPress={() => router.push(`/member/payment/${payment.id}`)}
       divider={divider}

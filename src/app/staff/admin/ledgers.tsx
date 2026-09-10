@@ -18,16 +18,17 @@ import {
   Form,
   FormActions,
   Icon,
+  Inline,
   InputField,
   Panel,
   PickerField,
   Screen,
   ScreenHeader,
   Section,
+  space,
   StateView,
   Text,
   Toolbar,
-  space,
   type,
   type Column,
 } from '@/ui';
@@ -206,7 +207,7 @@ export default function LedgersScreen() {
       >
         <Toolbar
           filters={
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.md }}>
+            <Inline gap="md">
               {typeOptions.length > 1 ? (
                 <FilterSelect
                   options={typeOptions}
@@ -217,13 +218,13 @@ export default function LedgersScreen() {
                 />
               ) : null}
 
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.xs }}>
+              <Inline gap="xs">
                 <Checkbox isSelected={includeInactive} onSelectedChange={setIncludeInactive} />
                 <Text tone="muted" style={type.rowMeta}>
                   Show retired
                 </Text>
-              </View>
-            </View>
+              </Inline>
+            </Inline>
           }
           actions={
             can('ledgers.create') && ! editing && ! creating ? (
@@ -325,7 +326,7 @@ function LedgerForm({
         }
       />
 
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm }}>
+      <Inline gap="sm">
         <Checkbox isSelected={active} onSelectedChange={setActive} />
         <View style={{ flex: 1 }}>
           <Text style={type.body}>In use</Text>
@@ -334,7 +335,7 @@ function LedgerForm({
             readable - and one a fee head still names cannot be retired.
           </Text>
         </View>
-      </View>
+      </Inline>
 
       <FormActions>
         <Button variant="secondary" onPress={onCancel}>

@@ -8,14 +8,15 @@ import {
   Button,
   Checkbox,
   Form,
+  Inline,
   InputField,
   Panel,
   PickerField,
   Screen,
   ScreenHeader,
   Section,
-  Text,
   space,
+  Text,
   type,
 } from '@/ui';
 
@@ -265,7 +266,7 @@ function Toggle({
   meta: string;
 }) {
   return (
-    <View style={{ flexDirection: 'row', gap: space.md, alignItems: 'flex-start' }}>
+    <Inline gap="md" align="start">
       <Checkbox isSelected={selected} onSelectedChange={onToggle} />
       <View style={{ flex: 1, gap: 2 }}>
         <Text style={type.rowTitle}>{title}</Text>
@@ -273,6 +274,6 @@ function Toggle({
           {meta}
         </Text>
       </View>
-    </View>
+    </Inline>
   );
 }

@@ -8,13 +8,15 @@ import {
   Button,
   Chip,
   Form,
+  Inline,
   InputField,
   Panel,
   Screen,
   ScreenHeader,
   Section,
-  Text,
   space,
+  Stack,
+  Text,
   type,
 } from '@/ui';
 
@@ -169,9 +171,9 @@ export default function NewMemberScreen() {
             error={fieldErrors.birth_date?.[0]}
           />
 
-          <View style={{ gap: space.sm }}>
+          <Stack gap="sm">
             <Text tone="muted" style={type.rowMeta}>Gender</Text>
-            <View style={{ flexDirection: 'row', gap: space.sm }}>
+            <Inline gap="sm" align="stretch">
               {/* Chip is pressable itself; no wrapper needed. */}
               {(['male', 'female', 'other'] as const).map((option) => (
                 <Chip
@@ -183,8 +185,8 @@ export default function NewMemberScreen() {
                   <Chip.Label>{option}</Chip.Label>
                 </Chip>
               ))}
-            </View>
-          </View>
+            </Inline>
+          </Stack>
 
           <InputField
             label="NID"

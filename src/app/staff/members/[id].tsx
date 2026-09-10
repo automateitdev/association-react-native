@@ -18,24 +18,27 @@ import {
 } from '@/features/staff/members';
 import { useMemberTransfers } from '@/features/staff/shares';
 import {
-  useActionButtonStyle,
   Button,
+  Confirm,
   Field,
   Form,
+  humanDate,
   Icon,
+  Inline,
   InputField,
   Panel,
   Row,
   Screen,
   ScreenHeader,
   Section,
+  space,
+  Stack,
   StateView,
   StatusBadge,
   Text,
   TextArea,
-  humanDate,
-  space,
   type,
+  useActionButtonStyle,
 } from '@/ui';
 
 /**
@@ -161,87 +164,68 @@ function Transitions({
 
   return (
     <Section title="Status">
-      {transition.isError ? (
-        <View style={{ marginBottom: space.md }}>
+      <Stack gap="md">
+        {transition.isError ? (
           <Panel tone="danger">
             <Text style={type.body}>That change could not be saved. Nothing was altered.</Text>
           </Panel>
-        </View>
-      ) : null}
+        ) : null}
 
-      {config ? (
-        <Panel>
-          <Text style={type.rowTitle}>
-            {config.label} {member.name}?
-          </Text>
-
-          <Text tone="muted" style={type.rowMeta}>
-            {config.reasonRequired
-              ? 'The reason is recorded against this member and is what the office will refer to if they ask.'
-              : 'You can add a note. It is recorded against this member.'}
-          </Text>
-
-          {/*
-            FR-FINE-6, stated where it matters. Staff reasonably assume restoring
-            a member clears what accrued while they were out; it does not, and
-            only a recorded fine adjustment ever will.
-          */}
-          {pendingAction === 'reinstate' ? (
-            <Text style={type.rowTitle}>
-              Reinstating does not clear fines accrued while suspended.
+        {config ? (
+          <Confirm
+            question={`${config.label} ${member.name}?`}
+            confirmLabel={`Confirm ${config.label.toLowerCase()}`}
+            // Rejecting and suspending take something away from a member; the
+            // button that does it should not look like the one that approves.
+            destructive={config.destructive}
+            pending={transition.isPending}
+            // Mirrors the server's required_if, so the approver is told before
+            // the round trip rather than by a 422 afterwards.
+            blocked={config.reasonRequired && reason.trim().length === 0}
+            onConfirm={() => void submit()}
+            onCancel={() => {
+              setPendingAction(null);
+              setReason('');
+            }}
+          >
+            <Text tone="muted" style={type.rowMeta}>
+              {config.reasonRequired
+                ? 'The reason is recorded against this member and is what the office will refer to if they ask.'
+                : 'You can add a note. It is recorded against this member.'}
             </Text>
-          ) : null}
 
-          <TextArea
-            value={reason}
-            onChangeText={setReason}
-            placeholder={config.reasonRequired ? 'Required' : 'Optional'}
-          />
+            {/*
+              FR-FINE-6, stated where it matters. Staff reasonably assume restoring
+              a member clears what accrued while they were out; it does not, and
+              only a recorded fine adjustment ever will.
+            */}
+            {pendingAction === 'reinstate' ? (
+              <Text style={type.rowTitle}>
+                Reinstating does not clear fines accrued while suspended.
+              </Text>
+            ) : null}
 
-          <View style={{ flexDirection: 'row', gap: space.sm }}>
-            <Button
-              variant="secondary"
-              style={actionStyle}
-              onPress={() => {
-                setPendingAction(null);
-                setReason('');
-              }}
-            >
-              <Button.Label>Cancel</Button.Label>
-            </Button>
-
-            <Button
-              style={actionStyle}
-              // Rejecting and suspending take something away from a member; the
-              // button that does it should not look like the one that approves.
-              variant={config.destructive ? 'danger' : 'primary'}
-              // Mirrors the server's required_if, so the approver is told before
-              // the round trip rather than by a 422 afterwards.
-              isDisabled={
-                (config.reasonRequired && reason.trim().length === 0) || transition.isPending
-              }
-              onPress={() => void submit()}
-            >
-              <Button.Label>
-                {transition.isPending ? 'Saving…' : `Confirm ${config.label.toLowerCase()}`}
-              </Button.Label>
-            </Button>
-          </View>
-        </Panel>
-      ) : (
-        <View style={{ flexDirection: 'row', gap: space.sm, flexWrap: 'wrap' }}>
-          {available.map((key) => (
-            <Button
-              key={key}
-              variant="secondary"
-              style={{ flexGrow: 1 }}
-              onPress={() => setPendingAction(key)}
-            >
-              <Button.Label>{TRANSITIONS[key].label}</Button.Label>
-            </Button>
-          ))}
-        </View>
-      )}
+            <TextArea
+              value={reason}
+              onChangeText={setReason}
+              placeholder={config.reasonRequired ? 'Required' : 'Optional'}
+            />
+          </Confirm>
+        ) : (
+          <Inline gap="sm" wrap>
+            {available.map((key) => (
+              <Button
+                key={key}
+                variant="secondary"
+                style={{ flexGrow: 1 }}
+                onPress={() => setPendingAction(key)}
+              >
+                <Button.Label>{TRANSITIONS[key].label}</Button.Label>
+              </Button>
+            ))}
+          </Inline>
+        )}
+      </Stack>
     </Section>
   );
 }
@@ -378,7 +362,7 @@ function SocietyRecord({ member, editable }: { member: MemberDetail; editable: b
         />
         </Form>
 
-        <View style={{ flexDirection: 'row', gap: space.sm }}>
+        <Inline gap="sm" align="stretch">
           <Button variant="secondary" style={actionStyle} onPress={() => setOpen(false)}>
             <Button.Label>Cancel</Button.Label>
           </Button>
@@ -403,7 +387,7 @@ function SocietyRecord({ member, editable }: { member: MemberDetail; editable: b
           >
             <Button.Label>{assign.isPending ? 'Saving…' : 'Save'}</Button.Label>
           </Button>
-        </View>
+        </Inline>
       </Panel>
     </Section>
   );
@@ -473,7 +457,7 @@ function PersonalDetails({ member, editable }: { member: MemberDetail; editable:
           />
           </Form>
 
-          <View style={{ flexDirection: 'row', gap: space.sm }}>
+          <Inline gap="sm" align="stretch">
             <Button variant="secondary" style={actionStyle} onPress={() => setOpen(false)}>
               <Button.Label>Cancel</Button.Label>
             </Button>
@@ -498,7 +482,7 @@ function PersonalDetails({ member, editable }: { member: MemberDetail; editable:
             >
               <Button.Label>{update.isPending ? 'Saving…' : 'Save'}</Button.Label>
             </Button>
-          </View>
+          </Inline>
         </Panel>
       </Section>
     );

@@ -23,9 +23,10 @@ import {
   Screen,
   ScreenHeader,
   Section,
+  space,
+  Stack,
   StateView,
   Text,
-  space,
   type,
 } from '@/ui';
 
@@ -216,7 +217,7 @@ function RoleEditor({
     });
 
   return (
-    <View style={{ gap: space.lg }}>
+    <Stack gap="lg">
       {role ? null : (
         <Form maxWidth={380} dense>
           <InputField
@@ -273,6 +274,6 @@ function RoleEditor({
           </Button.Label>
         </Button>
       </FormActions>
-    </View>
+    </Stack>
   );
 }

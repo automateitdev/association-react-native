@@ -25,10 +25,10 @@ import {
   Screen,
   ScreenHeader,
   Section,
+  space,
   StateView,
   Text,
   Toolbar,
-  space,
   type,
   type Column,
 } from '@/ui';
@@ -190,13 +190,15 @@ export default function StaffUsersScreen() {
       ) : null}
 
       {/*
-        Neutral, not danger. The account saved; nothing went wrong. Red here
-        would read as "that failed" on a screen where it plainly did not, and
-        the person would go looking for the account that was in fact created.
+        SUCCESS, which this could not say until ui/Section grew the tone. It
+        read `neutral` and carried a note explaining that neutral was the least
+        wrong of the two colours available - danger would have said "that
+        failed" on a screen where the account plainly saved, and sent the
+        person looking for one that already existed.
       */}
       {notice ? (
         <View style={{ marginTop: space.lg }}>
-          <Panel>
+          <Panel tone="success">
             <Text style={type.rowTitle}>This person is also a member</Text>
             <Text tone="muted" style={type.body}>
               {notice}

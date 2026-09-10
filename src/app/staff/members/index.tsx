@@ -9,20 +9,21 @@ import {
   Cell,
   DataTable,
   DateField,
-  Icon,
   FilterSelect,
+  Icon,
+  Inline,
   NumberCell,
   Screen,
   ScreenHeader,
   SearchField,
   Section,
+  space,
   StateView,
   StatusBadge,
   Toolbar,
   type Column,
   type DateRange,
   type SortState,
-  space,
 } from '@/ui';
 
 /**
@@ -241,7 +242,7 @@ export default function MembersScreen() {
             </>
           }
           actions={
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm }}>
+            <Inline gap="sm">
               {can('reports.export') ? (
               <ExportButtons
                 path="/staff/members/export"
@@ -257,7 +258,7 @@ export default function MembersScreen() {
                 disabled={members.isLoading || rows.length === 0}
               />
               ) : null}
-            </View>
+            </Inline>
           }
         />
 

@@ -12,24 +12,25 @@ import {
 } from '@/features/staff/approvals';
 import {
   Actions,
-  useActionButtonStyle,
   Button,
   Cell,
   Checkbox,
   DataTable,
   DateField,
+  Inline,
   NumberCell,
   Panel,
   Screen,
   ScreenHeader,
   SearchField,
   Section,
+  space,
   StateView,
-  Toolbar,
   Text,
   TextArea,
-  space,
+  Toolbar,
   type,
+  useActionButtonStyle,
   type Column,
   type DateRange,
   type SortState,
@@ -391,7 +392,7 @@ export default function PaymentApprovalsScreen() {
                   placeholder="e.g. The slip shows ৳1,000 but ৳1,200 is due."
                 />
 
-                <View style={{ flexDirection: 'row', gap: space.sm }}>
+                <Inline gap="sm" align="stretch">
                   <Button
                     variant="secondary"
                     style={actionStyle}
@@ -417,7 +418,7 @@ export default function PaymentApprovalsScreen() {
                       {decide.isPending ? 'Rejecting…' : `Reject ${selected.size}`}
                     </Button.Label>
                   </Button>
-                </View>
+                </Inline>
               </>
             ) : (
               <>
@@ -425,7 +426,7 @@ export default function PaymentApprovalsScreen() {
                   {selected.size} selected
                 </Text>
 
-                <View style={{ flexDirection: 'row', gap: space.sm }}>
+                <Inline gap="sm" align="stretch">
                   <Button
                     variant="secondary"
                     style={actionStyle}
@@ -444,7 +445,7 @@ export default function PaymentApprovalsScreen() {
                       {decide.isPending ? 'Approving…' : `Approve ${selected.size}`}
                     </Button.Label>
                   </Button>
-                </View>
+                </Inline>
               </>
             )}
           </Panel>

@@ -24,9 +24,10 @@ import {
   Screen,
   ScreenHeader,
   Section,
+  space,
+  Stack,
   StateView,
   Text,
-  space,
   type,
 } from '@/ui';
 
@@ -222,7 +223,7 @@ export default function PayScreen() {
         emptyMessage="You have no unpaid instalments right now."
         onRetry={dues.refetch}
       >
-        <Section title="1 · Choose instalments" first>
+        <Section step={1} title="Choose instalments" first>
           {payable.map((due, index) => (
             <SelectableDue
               key={due.fee_assign_id}
@@ -235,7 +236,7 @@ export default function PayScreen() {
         </Section>
 
         {chosen.length > 0 && canPayOnline ? (
-          <Section title="2 · How would you like to pay?">
+          <Section step={2} title="How would you like to pay?">
             {/* Server-computed. The app does not add money up. */}
             <SelectionTotal quote={quote.data} isLoading={quote.isPending} />
 
@@ -260,7 +261,7 @@ export default function PayScreen() {
 
         {chosen.length > 0 && method === 'manual' ? (
           <Section title={canPayOnline ? '3 · Transfer this amount' : '2 · Transfer this amount'}>
-            <View style={{ gap: space.lg }}>
+            <Stack gap="lg">
               {/* Server-computed. The app does not add money up. */}
               {canPayOnline ? null : (
                 <SelectionTotal quote={quote.data} isLoading={quote.isPending} />
@@ -295,7 +296,7 @@ export default function PayScreen() {
                   </Text>
                 </Panel>
               )}
-            </View>
+            </Stack>
           </Section>
         ) : null}
 
