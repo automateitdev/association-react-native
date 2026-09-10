@@ -41,6 +41,7 @@
   },
   "devDependencies": {
     "@types/react": "~19.2.2",
+    "prettier": "3.9.6",
     "typescript": "~6.0.3"
   },
   "scripts": {
@@ -50,7 +51,9 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "lint": "expo lint",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "format": "prettier --write \"src/**/*.{ts,tsx}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,tsx}\""
   },
   "private": true
 }

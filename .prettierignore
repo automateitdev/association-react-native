@@ -1,0 +1,6 @@
+# Not ours to format.
+node_modules
+.expo
+dist
+web-build
+package-lock.json
