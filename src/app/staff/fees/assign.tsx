@@ -8,6 +8,7 @@ import {
   fineDayOptions,
   MONTH_NAMES,
   periodsFor,
+  useAssignCoverage,
   useAssignFees,
   useFeeSetups,
   type AssignSummary,
@@ -126,6 +127,7 @@ export default function AssignFeesScreen() {
   const rows = members.data?.data ?? [];
   const meta = members.data?.meta;
 
+
   // Only active fee heads can be assigned; the server refuses the rest with
   // FEE_HEAD_INACTIVE, so they are not offered.
   const options = useMemo(
@@ -137,6 +139,16 @@ export default function AssignFeesScreen() {
   );
 
   const periods = useMemo(() => periodsFor(years, months), [years, months]);
+  /*
+   * What this assignment would duplicate, for the page in front of you. Asked
+   * per page rather than for every match, because the answer is only shown
+   * against rows that are on screen.
+   */
+  const coverage = useAssignCoverage(
+    feeSetupId === null ? null : Number(feeSetupId),
+    rows.map((m) => m.id),
+    periods,
+  );
 
   const toggleMonth = (month: number) =>
     setMonths((current) =>
@@ -250,9 +262,44 @@ export default function AssignFeesScreen() {
         width: 210,
         render: (row) => <Cell>{row.email || '—'}</Cell>,
       },
+
+      /*
+       * ALREADY ASSIGNED, which the legacy screen shows and this one did not.
+       *
+       * It prints every fee head a member holds with every date it was
+       * assigned on - a paragraph per row. Here the periods are already chosen
+       * a section above, so the useful answer is how many of THOSE they have:
+       * "3 of 12", or nothing to do at all.
+       *
+       * The column only exists once there is a question. Before a fee head and
+       * a month are chosen, "already assigned" has no meaning to state.
+       */
+      ...(periods.length > 0 && feeSetupId !== null
+        ? [
+            {
+              key: 'assigned',
+              header: 'Already assigned',
+              width: 150,
+              render: (row: (typeof rows)[number]) => {
+                const already = coverage.data?.[String(row.id)] ?? 0;
+
+                if (coverage.isLoading) return <Cell>…</Cell>;
+                if (already === 0) return <Cell>—</Cell>;
+
+                return (
+                  <Cell bold={already === periods.length}>
+                    {already === periods.length
+                      ? `All ${periods.length}`
+                      : `${already} of ${periods.length}`}
+                  </Cell>
+                );
+              },
+            },
+          ]
+        : []),
     ],
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [memberIds],
+    [memberIds, periods, feeSetupId, coverage.data, coverage.isLoading],
   );
 
   const toggleMember = (id: number) =>

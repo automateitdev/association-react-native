@@ -183,6 +183,47 @@ export function useUpdateFeeSetup(id: number) {
  * silence about it reads as "all 200 were created", which is how a month gets
  * quietly double-billed or quietly missed.
  */
+/**
+ * How many of the chosen periods each member already has.
+ *
+ * Answers the question an officer is actually asking while ticking names:
+ * have these people already got this? Without it the only way to find out was
+ * to assign and read the skipped count afterwards - safe, because the unique
+ * index refuses a duplicate, but not visible.
+ *
+ * Keyed by member id, and a member with none is ABSENT rather than zero, so a
+ * page of members who have nothing costs an empty object.
+ *
+ * Disabled until there is a question to ask. Both a fee head and at least one
+ * period are needed before "already assigned" means anything, and the member
+ * ids come from the page in front of you.
+ */
+export function useAssignCoverage(
+  feeSetupId: number | null,
+  memberIds: number[],
+  periods: string[],
+) {
+  const enabled = feeSetupId !== null && memberIds.length > 0 && periods.length > 0;
+
+  return useQuery({
+    queryKey: ['staff', 'fee-assigns', 'coverage', feeSetupId, memberIds, periods] as const,
+    enabled,
+    queryFn: async () =>
+      (
+        await request<{ data: Record<string, number>; meta: { periods: number } }>(
+          '/staff/fee-assigns/coverage',
+          {
+            query: {
+              fee_setup_id: feeSetupId as number,
+              member_ids: memberIds.join(','),
+              periods: periods.join(','),
+            },
+          },
+        )
+      ).data,
+  });
+}
+
 export function useAssignFees() {
   const queryClient = useQueryClient();
 
