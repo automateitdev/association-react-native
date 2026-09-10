@@ -112,10 +112,21 @@ export const type = {
    * (13.5), larger than a row title, and only four points below the page
    * title itself. Thirteen labels shouting over the values they describe.
    *
-   * Semibold and below body: a label is signposting, and the value is the
-   * thing being read.
+   * MEDIUM, not semibold, and that correction is the point of this note.
+   *
+   * It was semibold at full-strength foreground - the same weight and the same
+   * colour as a member's NAME in a table, which is the most important content
+   * the app displays. So a form read: quiet muted heading, then a label
+   * shouting, then the value it describes in regular grey. The loudest thing
+   * on a settings screen was the word "Fee head", and on a screen carrying
+   * three fields it was three of them stacked.
+   *
+   * Below body in size and one step down in weight, so the sentence above
+   * finally describes what it does: a label is signposting, and the value is
+   * the thing being read. It is also the only use of the 500 weight outside
+   * the tab bar, in a scale that defines four and used three.
    */
-  label: { fontFamily: font.semibold, fontSize: 12.5, lineHeight: 16, fontWeight: '600' as const },
+  label: { fontFamily: font.medium, fontSize: 12.5, lineHeight: 16, fontWeight: '500' as const },
 
   /** The primary line of a row: a member's name, a fee head. */
   rowTitle: { fontFamily: font.semibold, fontSize: 13.5, lineHeight: 18, fontWeight: '600' as const },
