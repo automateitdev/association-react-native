@@ -3,6 +3,7 @@ import { Pressable, View } from 'react-native';
 import { Calendar, humanDate, todayIso, type DateRange, type IsoDate } from './Calendar';
 import { Icon } from './Icon';
 import { Text } from './Text';
+import { useReveal } from './reveal';
 import { space, type } from './tokens';
 
 /**
@@ -46,6 +47,9 @@ export function DateField({
   onClear?: () => void;
 }) {
   const [open, setOpen] = useState(false);
+  // A calendar is 300pt tall, so opening one low on a page put it off the
+  // bottom edge. See ui/reveal - the page comes to it.
+  const reveal = useReveal(open);
 
   const handle = (next: DateRange) => {
     onChange(next);
@@ -121,7 +125,7 @@ export function DateField({
             }}
           />
 
-          <View style={{ position: 'absolute', top: 42, left: 0 }}>
+          <View {...reveal} style={{ position: 'absolute', top: 42, left: 0 }}>
             <Calendar value={value} onChange={handle} maximum={maximum} />
 
             {value.from && !value.to ? (

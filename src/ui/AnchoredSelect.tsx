@@ -4,6 +4,7 @@ import { useThemeColor } from 'heroui-native';
 import { Icon, type IconName } from './Icon';
 import { Text } from './Text';
 import { useIsDesktop } from './breakpoint';
+import { useReveal } from './reveal';
 import { space, type } from './tokens';
 
 export type SelectOption = {
@@ -112,6 +113,9 @@ export function AnchoredSelect({
   onToggleValue?: (value: string) => void;
 }) {
   const [open, setOpen] = useState(false);
+  // Opening near the foot of the page scrolls the menu into view. See
+  // ui/reveal, which also says why this is not a flip-up.
+  const reveal = useReveal(open);
   const placeholderColor = useThemeColor('field-placeholder');
   const searchable = search !== undefined;
   const multiple = values !== undefined;
@@ -208,6 +212,7 @@ export function AnchoredSelect({
           ) : null}
 
           <View
+            {...reveal}
             accessibilityRole="menu"
             className="bg-surface border border-border rounded-lg"
             style={{

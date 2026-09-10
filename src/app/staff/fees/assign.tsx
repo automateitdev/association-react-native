@@ -78,6 +78,20 @@ export default function AssignFeesScreen() {
   const isDesktop = useIsDesktop();
 
   /*
+   * `flex: 1` ONLY WHILE THE TWO HALVES ARE SIDE BY SIDE.
+   *
+   * It means flex-basis 0 with grow 1, which is what makes two columns share a
+   * row evenly - and in a COLUMN it makes them share a height instead. Stacked
+   * on a phone, the moment the Months menu opened its 274pt was split between
+   * the two halves: 137pt of nothing appeared above the field, and the control
+   * being opened walked down the page away from the finger that opened it.
+   * Measured at 586x415, which is why nothing was seen of it on a desktop.
+   *
+   * Stacked, a half needs no flex at all. It is as tall as its own content.
+   */
+  const halfWidth = { flex: isDesktop ? 1 : undefined, width: '100%' as const };
+
+  /*
    * Empty means "whatever the association's grace period says", which is the
    * ordinary case and the reason this is a dropdown with a default rather than
    * a question every assignment has to answer.
@@ -431,125 +445,125 @@ export default function AssignFeesScreen() {
           alignItems: 'flex-start',
         }}
       >
-        <View style={{ flex: 1, width: '100%' }}>
-      <Section title="1 · Which fee" first>
-        {/*
-          IN A Form, like every other labelled field in the app.
+        <View style={halfWidth}>
+        <Section title="1 · Which fee" first>
+          {/*
+            IN A Form, like every other labelled field in the app.
 
-          Outside one it had no width of its own and stretched to the content
-          column - measured at 1103pt for a dropdown reading "Monthly
-          Subscription", against 460 for the same control on the fee and member
-          forms. ui/Form caps at 460 for the reason its own note gives: a field
-          drawn the width of a desktop window is harder to use, not easier.
-        */}
-        <Form dense>
-          <PickerField
-            label="Fee head"
-            value={feeSetupId}
-            onChange={setFeeSetupId}
-            options={options}
-            placeholder={setups.isLoading ? 'Loading…' : 'Choose a fee head'}
-            isDisabled={setups.isLoading}
-            hint="Only fee heads in use can be assigned."
-          />
-        </Form>
-      </Section>
-        </View>
-
-        <View style={{ flex: 1, width: '100%' }}>
-      <Section title="2 · When it applies" first>
-        {/*
-          MONTHS AS A DROPDOWN, matching the years beside them.
-
-          They were twelve chips and a button, which put a row of small
-          targets and one control that looked nothing like the two fields
-          under it. Three questions asked three ways in one section - a chip
-          row, a multi-select, a single select - is what made the section read
-          as improvised.
-
-          "All 12 months" is the FIRST ENTRY IN THE MENU rather than a button
-          outside it. Twelve presses is the wrong price for the commonest
-          choice on this screen, and a shortcut inside the control it affects
-          needs no explaining.
-        */}
-        <Form dense>
-          <PickerField
-            label="Months"
-            options={[
-              { value: 'all', label: months.length === 12 ? 'Clear all months' : 'All 12 months' },
-              ...MONTH_NAMES.map((name, index) => ({ value: String(index + 1), label: name })),
-            ]}
-            value={null}
-            onChange={() => {}}
-            values={months.map(String)}
-            onToggleValue={toggleMonthValue}
-            placeholder="Choose months"
-          />
-        </Form>
-
-        {/*
-          YEARS ARE A SECOND AXIS, not a prefix on each month. Twelve months
-          times three years is thirty-six chips as one list and twelve plus
-          three as two.
-
-          A DROPDOWN YOU TICK, which is what the legacy screen uses - a
-          multi-select of years beside the month checkboxes. It replaced first
-          a rank of year chips with a moving window, then a stepper: the chips
-          put a permanent row of years on screen to express a choice that is
-          nearly always just "this one", and the stepper made a second year
-          awkward enough that nobody would reach for it.
-
-          A closed dropdown is one line saying "2026", and every year it offers
-          is one press away without anything else moving.
-        */}
-        {/*
-          The same Form, so the two labelled fields on this screen match each
-          other and the rest of the app. This one had been hand-capped at 260 -
-          a number chosen for it alone, which is how a screen ends up with
-          three field widths and no rule.
-        */}
-        <View style={{ marginTop: space.md }}>
+            Outside one it had no width of its own and stretched to the content
+            column - measured at 1103pt for a dropdown reading "Monthly
+            Subscription", against 460 for the same control on the fee and member
+            forms. ui/Form caps at 460 for the reason its own note gives: a field
+            drawn the width of a desktop window is harder to use, not easier.
+          */}
           <Form dense>
             <PickerField
-              label="Years"
-              options={yearOptions}
-              value={null}
-              onChange={() => {}}
-              values={years.map(String)}
-              onToggleValue={toggleYear}
-              placeholder="Choose a year"
-            />
-
-            {/*
-              WHEN THE FINE STARTS, which the legacy asks on every assignment
-              and the rewrite had removed entirely.
-
-              Its form carries a fine-day dropdown defaulting to the 21st, and
-              associations use it - a fee agreed on different terms, a month
-              where the committee allowed longer, a correction re-entered as it
-              originally stood. Taking it away gave nothing back.
-
-              It is an override rather than a required answer: left alone, the
-              association's grace period decides, which is right nearly always.
-            */}
-            <PickerField
-              label="Fine starts on"
-              options={[{ value: '', label: 'The association’s usual grace period' }, ...fineDayOptions()]}
-              value={fineDay}
-              onChange={setFineDay}
-              /*
-                The hint answers whichever question is live. With no day
-                chosen that is "where does this come from"; with one chosen it
-                is "what will that actually do to the months I picked" - which
-                nobody can work out unaided, and which the 29th, 30th and 31st
-                make a real question rather than a pedantic one.
-              */
-              hint={
-                fineDayNote(periods, fineDay === '' ? null : Number(fineDay)) ??
-                'Only for this assignment. Change the usual one in Admin → Settings.'
-              }
+              label="Fee head"
+              value={feeSetupId}
+              onChange={setFeeSetupId}
+              options={options}
+              placeholder={setups.isLoading ? 'Loading…' : 'Choose a fee head'}
+              isDisabled={setups.isLoading}
+              hint="Only fee heads in use can be assigned."
             />
           </Form>
+        </Section>
+        </View>
+
+        <View style={halfWidth}>
+        <Section title="2 · When it applies" first>
+          {/*
+            MONTHS AS A DROPDOWN, matching the years beside them.
+
+            They were twelve chips and a button, which put a row of small
+            targets and one control that looked nothing like the two fields
+            under it. Three questions asked three ways in one section - a chip
+            row, a multi-select, a single select - is what made the section read
+            as improvised.
+
+            "All 12 months" is the FIRST ENTRY IN THE MENU rather than a button
+            outside it. Twelve presses is the wrong price for the commonest
+            choice on this screen, and a shortcut inside the control it affects
+            needs no explaining.
+          */}
+          <Form dense>
+            <PickerField
+              label="Months"
+              options={[
+                { value: 'all', label: months.length === 12 ? 'Clear all months' : 'All 12 months' },
+                ...MONTH_NAMES.map((name, index) => ({ value: String(index + 1), label: name })),
+              ]}
+              value={null}
+              onChange={() => {}}
+              values={months.map(String)}
+              onToggleValue={toggleMonthValue}
+              placeholder="Choose months"
+            />
+          </Form>
+
+          {/*
+            YEARS ARE A SECOND AXIS, not a prefix on each month. Twelve months
+            times three years is thirty-six chips as one list and twelve plus
+            three as two.
+
+            A DROPDOWN YOU TICK, which is what the legacy screen uses - a
+            multi-select of years beside the month checkboxes. It replaced first
+            a rank of year chips with a moving window, then a stepper: the chips
+            put a permanent row of years on screen to express a choice that is
+            nearly always just "this one", and the stepper made a second year
+            awkward enough that nobody would reach for it.
+
+            A closed dropdown is one line saying "2026", and every year it offers
+            is one press away without anything else moving.
+          */}
+          {/*
+            The same Form, so the two labelled fields on this screen match each
+            other and the rest of the app. This one had been hand-capped at 260 -
+            a number chosen for it alone, which is how a screen ends up with
+            three field widths and no rule.
+          */}
+          <View style={{ marginTop: space.md }}>
+            <Form dense>
+              <PickerField
+                label="Years"
+                options={yearOptions}
+                value={null}
+                onChange={() => {}}
+                values={years.map(String)}
+                onToggleValue={toggleYear}
+                placeholder="Choose a year"
+              />
+
+              {/*
+                WHEN THE FINE STARTS, which the legacy asks on every assignment
+                and the rewrite had removed entirely.
+
+                Its form carries a fine-day dropdown defaulting to the 21st, and
+                associations use it - a fee agreed on different terms, a month
+                where the committee allowed longer, a correction re-entered as it
+                originally stood. Taking it away gave nothing back.
+
+                It is an override rather than a required answer: left alone, the
+                association's grace period decides, which is right nearly always.
+              */}
+              <PickerField
+                label="Fine starts on"
+                options={[{ value: '', label: 'The association’s usual grace period' }, ...fineDayOptions()]}
+                value={fineDay}
+                onChange={setFineDay}
+                /*
+                  The hint answers whichever question is live. With no day
+                  chosen that is "where does this come from"; with one chosen it
+                  is "what will that actually do to the months I picked" - which
+                  nobody can work out unaided, and which the 29th, 30th and 31st
+                  make a real question rather than a pedantic one.
+                */
+                hint={
+                  fineDayNote(periods, fineDay === '' ? null : Number(fineDay)) ??
+                  'Only for this assignment. Change the usual one in Admin → Settings.'
+                }
+              />
+            </Form>
         </View>
 
         {/*

@@ -1,8 +1,9 @@
-import type { ReactNode } from 'react';
+import { useMemo, useRef, type ReactNode } from 'react';
 import { RefreshControl, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from './Text';
 import { useContentWidth, useIsDesktop } from './breakpoint';
+import { ScrollHostProvider, type ScrollHost } from './reveal';
 import { space, type } from './tokens';
 
 /**
@@ -52,9 +53,58 @@ export function Screen({
   const maxWidth = useContentWidth(width);
   const isDesktop = useIsDesktop();
 
+  /*
+   * The page as something a dropdown can ask to be scrolled - see ui/reveal.
+   *
+   * The frame is the one part of the app that knows where the visible window
+   * ends, which is the fact a menu opening near the bottom edge needs and
+   * cannot work out for itself: it is not the window height, because a tab bar
+   * or a sidebar takes a bite out of that, and it is not this component's own
+   * padding either.
+   */
+  const scroller = useRef<ScrollView>(null);
+  const frame = useRef<View>(null);
+  const mark = useRef<View>(null);
+
+  const host = useMemo<ScrollHost>(
+    () => ({
+      /*
+       * WHERE THE PAGE IS, READ RATHER THAN REMEMBERED.
+       *
+       * `scrollTo` takes an absolute offset, so scrolling BY something means
+       * knowing where it already is - and the obvious way to know, keeping a
+       * running total from `onScroll`, was measured going wrong the first time
+       * it was tried: a programmatic scroll never reported, the total was 411pt
+       * stale, and pressing a field at the foot of the page threw it back to
+       * near the top. A remembered position is only as good as the last event
+       * that happened to arrive.
+       *
+       * So it is derived from the content instead. The marker is the first
+       * thing inside the padded container, so its distance above the frame is
+       * exactly how far the page has been scrolled, whatever moved it and
+       * whether or not anything was listening.
+       */
+      scrollBy: (dy) =>
+        frame.current?.measureInWindow((_fx, frameY) =>
+          mark.current?.measureInWindow((_mx, markY) =>
+            scroller.current?.scrollTo({
+              y: Math.max(0, frameY + space.lg - markY + dy),
+              animated: true,
+            }),
+          ),
+        ),
+      measureViewport: (report) =>
+        frame.current?.measureInWindow((_x, y, _width, height) =>
+          report({ top: y, bottom: y + height }),
+        ),
+    }),
+    [],
+  );
+
   const padding = {
     // The AppBar already clears the inset; adding it again double-padded the
-    // top of every screen.
+    // top of every screen. `space.lg` is repeated in `scrollBy` above, which
+    // measures from where this padding leaves the content.
     paddingTop: space.lg,
     // Clears the tab bar as well as the home indicator.
     paddingBottom: insets.bottom + space.xxl,
@@ -102,23 +152,36 @@ export function Screen({
   }
 
   return (
-    <ScrollView
-      className="bg-background"
-      style={{ flex: 1 }}
-      contentContainerStyle={padding}
-      keyboardShouldPersistTaps="handled"
-      refreshControl={
-        onRefresh ? <RefreshControl refreshing={refreshing} onRefresh={onRefresh} /> : undefined
-      }
-    >
-      {/*
-        No blanket `gap` any more. Spacing used to be a flat 16pt between every
-        child, which is why the screens had one rhythm and no hierarchy: a
-        heading sat as far from its own content as from the section above it.
-        Section owns its spacing now.
-      */}
-      <View style={measure}>{children}</View>
-    </ScrollView>
+    /*
+      The frame exists to be MEASURED. A ScrollView cannot report its own
+      visible box - `measureInWindow` on one gives the scrolling content, not
+      the window it is seen through - so an ordinary View wraps it, and that is
+      the box a dropdown is asking about.
+    */
+    <View ref={frame} collapsable={false} className="bg-background" style={{ flex: 1 }}>
+      <ScrollHostProvider value={host}>
+        <ScrollView
+          ref={scroller}
+          style={{ flex: 1 }}
+          contentContainerStyle={padding}
+          keyboardShouldPersistTaps="handled"
+          refreshControl={
+            onRefresh ? <RefreshControl refreshing={refreshing} onRefresh={onRefresh} /> : undefined
+          }
+        >
+          {/* Nothing to see: the fixed point `scrollBy` measures against. */}
+          <View ref={mark} collapsable={false} style={{ height: 0 }} />
+
+          {/*
+            No blanket `gap` any more. Spacing used to be a flat 16pt between
+            every child, which is why the screens had one rhythm and no
+            hierarchy: a heading sat as far from its own content as from the
+            section above it. Section owns its spacing now.
+          */}
+          <View style={measure}>{children}</View>
+        </ScrollView>
+      </ScrollHostProvider>
+    </View>
   );
 }
 
