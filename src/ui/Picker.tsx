@@ -23,6 +23,8 @@ export function Picker({
   search,
   onSearchChange,
   searchPlaceholder,
+  values,
+  onToggleValue,
   placeholder = 'Choose…',
   isDisabled = false,
 }: {
@@ -36,6 +38,9 @@ export function Picker({
   search?: string;
   onSearchChange?: (text: string) => void;
   searchPlaceholder?: string;
+  /** See ui/AnchoredSelect - present makes this a multi-select. */
+  values?: string[];
+  onToggleValue?: (value: string) => void;
 }) {
   return (
     <AnchoredSelect
@@ -48,6 +53,8 @@ export function Picker({
       search={search}
       onSearchChange={onSearchChange}
       searchPlaceholder={searchPlaceholder}
+      values={values}
+      onToggleValue={onToggleValue}
     />
   );
 }

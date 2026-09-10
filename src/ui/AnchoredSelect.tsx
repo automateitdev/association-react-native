@@ -68,6 +68,8 @@ export function AnchoredSelect({
   search,
   onSearchChange,
   searchPlaceholder = 'Type to search…',
+  values,
+  onToggleValue,
 }: {
   options: SelectOption[];
   /** Null shows the placeholder. A filter always has a value; a form may not. */
@@ -94,10 +96,25 @@ export function AnchoredSelect({
   search?: string;
   onSearchChange?: (text: string) => void;
   searchPlaceholder?: string;
+  /**
+   * Turns the menu into a MULTI-select, holding every chosen value.
+   *
+   * Passing this switches the control's whole character: the menu stays open
+   * as things are ticked, because closing after each one makes choosing three
+   * items three round trips through the same menu. `value`/`onChange` are
+   * ignored while it is set.
+   *
+   * The tick column that single-select already draws does the work - a
+   * multi-select that looked identical to a single one, differing only in
+   * whether the menu closed, would be a worse lie than no multi-select at all.
+   */
+  values?: string[];
+  onToggleValue?: (value: string) => void;
 }) {
   const [open, setOpen] = useState(false);
   const placeholderColor = useThemeColor('field-placeholder');
   const searchable = search !== undefined;
+  const multiple = values !== undefined;
 
   /*
    * A SERVER-SEARCHED MENU MUST NOT FILTER AGAIN HERE.
@@ -154,10 +171,10 @@ export function AnchoredSelect({
 
         <Text
           numberOfLines={1}
-          tone={selected ? 'default' : 'muted'}
+          tone={multiple ? (values.length > 0 ? 'default' : 'muted') : selected ? 'default' : 'muted'}
           style={{ ...type.body, flex: 1 }}
         >
-          {selected?.label ?? placeholder}
+          {multiple ? summarise(values, options, placeholder) : (selected?.label ?? placeholder)}
         </Text>
 
         <Icon name={open ? 'chevronUp' : 'chevronDown'} size={15} tone="muted" />
@@ -256,12 +273,21 @@ export function AnchoredSelect({
                   {shown
                     .filter((o) => (o.group ?? '') === group)
                     .map((option) => {
-                      const active = option.value === value;
+                      const active = multiple
+                        ? values.includes(option.value)
+                        : option.value === value;
 
                       return (
                         <Pressable
                           key={option.value}
                           onPress={() => {
+                            if (multiple) {
+                              onToggleValue?.(option.value);
+                              // Stays open: choosing three things should not
+                              // mean opening the same menu three times.
+                              return;
+                            }
+
                             onChange(option.value);
                             setOpen(false);
                           }}
@@ -303,4 +329,24 @@ export function AnchoredSelect({
       ) : null}
     </View>
   );
+}
+
+/**
+ * What a multi-select trigger says when it is closed.
+ *
+ * Names them while they fit and counts them when they do not. A trigger
+ * reading "2026, 2027" is worth more than one reading "2 selected" - it
+ * answers without being opened - but past three the names stop fitting and a
+ * truncated list is the worst of both: it neither names them nor counts them.
+ */
+function summarise(values: string[], options: SelectOption[], placeholder: string): string {
+  if (values.length === 0) return placeholder;
+
+  if (values.length <= 3) {
+    return values
+      .map((v) => options.find((o) => o.value === v)?.label ?? v)
+      .join(', ');
+  }
+
+  return `${values.length} selected`;
 }

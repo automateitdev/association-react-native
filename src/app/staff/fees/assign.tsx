@@ -134,18 +134,31 @@ export default function AssignFeesScreen() {
     );
 
   /*
-   * The stepper moves the FIRST year, keeping any extras. One year is what
-   * this screen is for; the extras exist for corrections and are managed
-   * separately below.
+   * The years offered, as the legacy screen offers them - a dropdown you tick.
+   *
+   * Its own list is range(2022, 5000): three thousand options to pick this
+   * year from, and the only reason that is survivable is that nobody scrolls
+   * past the default. A window that moves with the clock covers the same real
+   * work - a few years back for corrections, a few forward for billing ahead -
+   * without asking anyone to scroll to the year 5000.
    */
-  const stepYear = (by: number) =>
-    setYears(([first, ...rest]) => [first + by, ...rest].sort((a, b) => a - b));
+  const yearOptions = useMemo(() => {
+    const now = new Date().getFullYear();
 
-  const addYear = () =>
-    setYears((current) => [...current, Math.max(...current) + 1].sort((a, b) => a - b));
+    return Array.from({ length: 12 }, (_, i) => now - 6 + i).map((year) => ({
+      value: String(year),
+      label: String(year),
+    }));
+  }, []);
 
-  const removeYear = (year: number) =>
-    setYears((current) => current.filter((y) => y !== year));
+  const toggleYear = (value: string) =>
+    setYears((current) => {
+      const year = Number(value);
+
+      return current.includes(year)
+        ? current.filter((y) => y !== year)
+        : [...current, year].sort((a, b) => a - b);
+    });
 
   /*
    * THE SAME TABLE AS EVERY OTHER MEMBER LIST, with the approvals queue's
@@ -313,63 +326,26 @@ export default function AssignFeesScreen() {
           times three years is thirty-six chips as one list and twelve plus
           three as two.
 
-          ONE YEAR AT A TIME, because that is what this screen is nearly always
-          for. This was a row of five year chips with arrows moving a window
-          over them, which put a rank of years on screen permanently to express
-          a choice that is normally just "this one" - and the chips shifted
-          under the hand as the window moved. A stepper says the same thing in
-          one control and never changes length.
+          A DROPDOWN YOU TICK, which is what the legacy screen uses - a
+          multi-select of years beside the month checkboxes. It replaced first
+          a rank of year chips with a moving window, then a stepper: the chips
+          put a permanent row of years on screen to express a choice that is
+          nearly always just "this one", and the stepper made a second year
+          awkward enough that nobody would reach for it.
 
-          A second year is still reachable, because assigning the same months
-          across several years is how a backdated correction is applied, and
-          the legacy screen allows it. It is behind a button rather than in
-          front of one, which is the right way round for something rare.
+          A closed dropdown is one line saying "2026", and every year it offers
+          is one press away without anything else moving.
         */}
-        <View
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            flexWrap: 'wrap',
-            gap: space.sm,
-            marginTop: space.md,
-          }}
-        >
-          <Button
-            size="sm"
-            variant="tertiary"
-            onPress={() => stepYear(-1)}
-            accessibilityLabel="Previous year"
-          >
-            <Icon name="back" size={14} tone="muted" />
-          </Button>
-
-          <Chip size="sm" variant="primary">
-            <Chip.Label>{String(years[0])}</Chip.Label>
-          </Chip>
-
-          <Button
-            size="sm"
-            variant="tertiary"
-            onPress={() => stepYear(1)}
-            accessibilityLabel="Next year"
-          >
-            <Icon name="chevron" size={14} tone="muted" />
-          </Button>
-
-          {/*
-            The extra years, each removable. Absent entirely in the ordinary
-            case, which is the point of putting them here rather than showing
-            every year all the time.
-          */}
-          {years.slice(1).map((year) => (
-            <Chip size="sm" key={year} variant="primary" onPress={() => removeYear(year)}>
-              <Chip.Label>{`${year} ×`}</Chip.Label>
-            </Chip>
-          ))}
-
-          <Button size="sm" variant="tertiary" onPress={addYear}>
-            <Button.Label>+ Year</Button.Label>
-          </Button>
+        <View style={{ maxWidth: 260, marginTop: space.md }}>
+          <PickerField
+            label="Years"
+            options={yearOptions}
+            value={null}
+            onChange={() => {}}
+            values={years.map(String)}
+            onToggleValue={toggleYear}
+            placeholder="Choose a year"
+          />
         </View>
 
         {/*
