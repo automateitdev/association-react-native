@@ -15,15 +15,18 @@ import {
   Form,
   FormActions,
   Icon,
+  Inline,
   InputField,
+  Pager,
   Panel,
   Screen,
   ScreenHeader,
   Section,
+  space,
+  Stack,
   StateView,
   Text,
   Toolbar,
-  space,
   type,
 } from '@/ui';
 
@@ -80,11 +83,11 @@ export default function ProfileUpdatesScreen() {
       />
 
       {error ? (
-        <View style={{ marginTop: space.lg }}>
+        <Section>
           <Panel tone="danger">
             <Text style={type.body}>{error}</Text>
           </Panel>
-        </View>
+        </Section>
       ) : null}
 
       {rejecting ? (
@@ -103,7 +106,7 @@ export default function ProfileUpdatesScreen() {
 
       {/* Headed only while the refusal form is open above it; otherwise the page
           header has already said Requested changes. */}
-      <Section title={rejecting ? 'Requests' : undefined} first={! rejecting}>
+      <Section title={rejecting ? 'Requests' : undefined} first={!rejecting}>
         <Toolbar
           filters={
             <FilterSelect
@@ -139,90 +142,72 @@ export default function ProfileUpdatesScreen() {
         >
           {rows.map((update, index) => (
             <View key={update.id} style={{ paddingVertical: space.md }}>
-              <Text style={type.rowTitle}>{update.member_name}</Text>
-              <Text tone="muted" style={type.rowMeta}>
-                {update.member_mobile} · asked {update.requested_at}
-              </Text>
+              <Stack gap="sm">
+                <Stack gap="none">
+                  <Text style={type.rowTitle}>{update.member_name}</Text>
+                  <Text tone="muted" style={type.rowMeta}>
+                    {update.member_mobile} · asked {update.requested_at}
+                  </Text>
+                </Stack>
 
-              <View style={{ marginTop: space.sm, gap: 6 }}>
-                {update.fields.map((field) => (
-                  <View key={field.field} style={{ flexDirection: 'row', gap: space.sm }}>
-                    <Text tone="muted" style={{ ...type.rowMeta, width: 130 }}>
-                      {label(field.field)}
-                    </Text>
-                    {/*
+                <Stack gap="xs">
+                  {update.fields.map((field) => (
+                    <Inline key={field.field} gap="sm" align="stretch">
+                      <Text tone="muted" style={{ ...type.rowMeta, width: 130 }}>
+                        {label(field.field)}
+                      </Text>
+                      {/*
                       Current, then proposed. The order matters: read left to
                       right it says what is changing, not merely what is wanted.
                     */}
-                    <Text tone="muted" style={{ ...type.rowMeta, flex: 1 }}>
-                      {field.current || '—'}
+                      <Text tone="muted" style={{ ...type.rowMeta, flex: 1 }}>
+                        {field.current || '—'}
+                      </Text>
+                      <Text style={{ ...type.rowMeta, flex: 1 }}>{field.proposed || '—'}</Text>
+                    </Inline>
+                  ))}
+                </Stack>
+
+                {update.status === 'pending' ? (
+                  can('profile-updates.decide') ? (
+                    <Inline gap="sm">
+                      <Button
+                        size="sm"
+                        isDisabled={decide.isPending}
+                        onPress={() => void act(update.id, 'approve')}
+                      >
+                        <Button.Label>Approve</Button.Label>
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="danger"
+                        isDisabled={decide.isPending}
+                        onPress={() => setRejecting(update)}
+                      >
+                        <Button.Label>Refuse</Button.Label>
+                      </Button>
+                    </Inline>
+                  ) : (
+                    <Text tone="muted" style={type.rowMeta}>
+                      You can see these but not decide them.
                     </Text>
-                    <Text style={{ ...type.rowMeta, flex: 1 }}>{field.proposed || '—'}</Text>
-                  </View>
-                ))}
-              </View>
-
-              {update.status === 'pending' ? (
-                can('profile-updates.decide') ? (
-                  <View style={{ flexDirection: 'row', gap: space.sm, marginTop: space.md }}>
-                    <Button
-                      size="sm"
-                      isDisabled={decide.isPending}
-                      onPress={() => void act(update.id, 'approve')}
-                    >
-                      <Button.Label>Approve</Button.Label>
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="danger"
-                      isDisabled={decide.isPending}
-                      onPress={() => setRejecting(update)}
-                    >
-                      <Button.Label>Refuse</Button.Label>
-                    </Button>
-                  </View>
+                  )
                 ) : (
-                  <Text tone="muted" style={{ ...type.rowMeta, marginTop: space.sm }}>
-                    You can see these but not decide them.
+                  <Text tone="muted" style={type.rowMeta}>
+                    {update.status === 'approved' ? 'Approved' : 'Refused'} {update.decided_at}
+                    {update.decision_reason ? ` · ${update.decision_reason}` : ''}
                   </Text>
-                )
-              ) : (
-                <Text tone="muted" style={{ ...type.rowMeta, marginTop: space.sm }}>
-                  {update.status === 'approved' ? 'Approved' : 'Refused'} {update.decided_at}
-                  {update.decision_reason ? ` · ${update.decision_reason}` : ''}
-                </Text>
-              )}
+                )}
 
-              {index < rows.length - 1 ? (
-                <View style={{ marginTop: space.md }}>
-                  <Divider />
-                </View>
-              ) : null}
+                {index < rows.length - 1 ? <Divider /> : null}
+              </Stack>
             </View>
           ))}
         </StateView>
 
-        {meta && meta.last_page > 1 ? (
-          <View style={{ flexDirection: 'row', gap: space.sm, marginTop: space.md }}>
-            <Button
-              size="sm"
-              variant="secondary"
-              isDisabled={page <= 1}
-              onPress={() => setPage((p) => p - 1)}
-            >
-              <Button.Label>Previous</Button.Label>
-            </Button>
-            <Button
-              size="sm"
-              variant="secondary"
-              isDisabled={page >= meta.last_page}
-              onPress={() => setPage((p) => p + 1)}
-            >
-              <Button.Label>Next</Button.Label>
-            </Button>
-            <Text tone="muted" style={{ ...type.rowMeta, alignSelf: 'center' }}>
-              {meta.current_page} / {meta.last_page}
-            </Text>
+        {meta ? (
+          <View style={{ marginTop: space.md }}>
+            <Pager page={meta.current_page} pageCount={meta.last_page} onGoTo={setPage} />
           </View>
         ) : null}
       </Section>

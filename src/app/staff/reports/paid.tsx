@@ -14,18 +14,19 @@ import {
   Cell,
   DataTable,
   DateField,
-  humanDate,
-  NumberCell,
-  Icon,
   FilterSelect,
+  humanDate,
+  Icon,
+  NumberCell,
   Screen,
   ScreenHeader,
   SearchField,
   Section,
+  space,
+  Stack,
   StateView,
   Text,
   Toolbar,
-  space,
   type,
   type Column,
 } from '@/ui';
@@ -116,7 +117,9 @@ export default function PaidReportScreen() {
         // This report DOES carry a count total - unlike the dues report, whose
         // meta has only a member count. Each column takes its total from the
         // field the server sent for it, or has none.
-        total: meta ? <NumberCell bold>{String(meta.instalments_paid_count)}</NumberCell> : undefined,
+        total: meta ? (
+          <NumberCell bold>{String(meta.instalments_paid_count)}</NumberCell>
+        ) : undefined,
       },
       {
         key: 'instalments',
@@ -140,7 +143,9 @@ export default function PaidReportScreen() {
         // The raw value, not the formatted one - see the dues report.
         sort: (row) => row.fines_paid_amount,
         sortType: 'decimal',
-        total: meta ? <NumberCell bold>{formatMoney(meta.fines_paid_amount)}</NumberCell> : undefined,
+        total: meta ? (
+          <NumberCell bold>{formatMoney(meta.fines_paid_amount)}</NumberCell>
+        ) : undefined,
       },
       {
         key: 'total',
@@ -286,7 +291,7 @@ export default function PaidReportScreen() {
                 general meeting, an auditor's window.
               */}
               <DateField
-                  value={custom ?? draft}
+                value={custom ?? draft}
                 onChange={(next) => {
                   setDraft(next);
 
@@ -310,7 +315,7 @@ export default function PaidReportScreen() {
             <ExportButtons
               path="/staff/reports/memberwise-paid/export"
               name="memberwise-paid"
-                scope="Every row in the report, with the totals."
+              scope="Every row in the report, with the totals."
               query={{
                 ...(range.from ? { from: range.from } : {}),
                 ...(range.to ? { to: range.to } : {}),
@@ -327,26 +332,28 @@ export default function PaidReportScreen() {
           counts in September - which is the honest answer for a cash report
           and a surprising one if nobody says so.
         */}
-        <Text tone="muted" style={{ ...type.rowMeta, marginBottom: space.sm }}>
-          Counted by payment date, so a payment approved this month for last
-          month&apos;s instalment falls in this month.
-        </Text>
+        <Stack gap="md">
+          <Text tone="muted" style={type.rowMeta}>
+            Counted by payment date, so a payment approved this month for last month&apos;s
+            instalment falls in this month.
+          </Text>
 
-        <StateView
-          loading={report.isLoading}
-          error={report.error}
-          empty={rows.length === 0}
-          emptyTitle="Nothing paid"
-          emptyMessage="No completed payments fall in this period."
-          onRetry={() => void report.refetch()}
-        >
-          <DataTable
-            columns={columns}
-            rows={rows}
-            keyExtractor={(row) => row.member_id}
-            totalsLabel={members(rows.length)}
-          />
-        </StateView>
+          <StateView
+            loading={report.isLoading}
+            error={report.error}
+            empty={rows.length === 0}
+            emptyTitle="Nothing paid"
+            emptyMessage="No completed payments fall in this period."
+            onRetry={() => void report.refetch()}
+          >
+            <DataTable
+              columns={columns}
+              rows={rows}
+              keyExtractor={(row) => row.member_id}
+              totalsLabel={members(rows.length)}
+            />
+          </StateView>
+        </Stack>
       </Section>
     </Screen>
   );

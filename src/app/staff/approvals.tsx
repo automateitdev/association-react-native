@@ -196,7 +196,9 @@ export default function PaymentApprovalsScreen() {
         render: (row) => <NumberCell>{formatMoney(row.payable_amount)}</NumberCell>,
         sort: (row) => row.payable_amount,
         sortType: 'decimal',
-        total: meta ? <NumberCell bold>{formatMoney(meta.instalments_amount)}</NumberCell> : undefined,
+        total: meta ? (
+          <NumberCell bold>{formatMoney(meta.instalments_amount)}</NumberCell>
+        ) : undefined,
       },
       {
         key: 'fine_amount',
@@ -257,18 +259,18 @@ export default function PaymentApprovalsScreen() {
       />
 
       {outcome ? (
-        <View style={{ marginTop: space.lg }}>
+        <Section>
           <Outcome outcome={outcome} onDismiss={() => setOutcome(null)} />
-        </View>
+        </Section>
       ) : null}
 
       {decide.isError ? (
-        <View style={{ marginTop: space.lg }}>
+        <Section>
           <Panel tone="danger">
             <Text style={type.rowTitle}>The batch could not be sent</Text>
             <Text style={type.body}>Nothing was decided. Check your connection and try again.</Text>
           </Panel>
-        </View>
+        </Section>
       ) : null}
 
       <Section title="Awaiting a decision" first>
@@ -377,7 +379,7 @@ export default function PaymentApprovalsScreen() {
       </Section>
 
       {selected.size > 0 ? (
-        <View style={{ marginTop: space.xl }}>
+        <Section>
           <Panel>
             {rejecting ? (
               <>
@@ -449,7 +451,7 @@ export default function PaymentApprovalsScreen() {
               </>
             )}
           </Panel>
-        </View>
+        </Section>
       ) : null}
     </Screen>
   );
@@ -485,7 +487,7 @@ function Outcome({ outcome, onDismiss }: { outcome: DecisionOutcome; onDismiss: 
         and the server refuses to produce one.
       */}
       {receipts.length > 0 ? (
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space.sm, marginTop: space.sm }}>
+        <Inline gap="sm" wrap>
           {receipts.map((result) => (
             <ReceiptButton
               key={result.payment_id}
@@ -493,7 +495,7 @@ function Outcome({ outcome, onDismiss }: { outcome: DecisionOutcome; onDismiss: 
               invoiceNo={String(result.payment_id)}
             />
           ))}
-        </View>
+        </Inline>
       ) : null}
 
       {failures.map((failure) => (

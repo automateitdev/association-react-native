@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 import { slugFromInput } from '@/features/auth/discovery';
 import { useSession } from '@/features/auth/session';
-import { Button, Screen, ScreenHeader, Text, space, type } from '@/ui';
+import { Actions, Button, Screen, ScreenHeader, space, Stack, Text, type } from '@/ui';
 
 /**
  * `…/join/demo-one` — the link an association sends its members.
@@ -58,14 +58,14 @@ export default function JoinScreen() {
       <Screen width="reading">
         <ScreenHeader title="That link does not look right" />
         <Text style={type.body}>
-          The association code in the link is not one this app recognises. Ask your association
-          for the link again, or enter the code by hand.
+          The association code in the link is not one this app recognises. Ask your association for
+          the link again, or enter the code by hand.
         </Text>
-        <View style={{ marginTop: space.lg }}>
+        <Actions>
           <Button onPress={() => setApplied(true)}>
             <Button.Label>Enter it by hand</Button.Label>
           </Button>
-        </View>
+        </Actions>
       </Screen>
     );
   }
@@ -83,20 +83,20 @@ export default function JoinScreen() {
           <Text style={type.rowTitle}>{tenantSlug}</Text>, and switching will sign you out of it.
         </Text>
 
-        <View style={{ marginTop: space.lg, gap: space.sm }}>
+        <Actions>
           <Button onPress={() => void chooseTenant(target).then(() => setApplied(true))}>
             <Button.Label>Switch to {target}</Button.Label>
           </Button>
-        </View>
+        </Actions>
       </Screen>
     );
   }
 
   if (!applied) {
     return (
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+      <Stack grow align="center" justify="center">
         <ActivityIndicator />
-      </View>
+      </Stack>
     );
   }
 

@@ -3,7 +3,12 @@ import { useState } from 'react';
 import { View } from 'react-native';
 import { ApiError } from '@/api/errors';
 import { useSession } from '@/features/auth/session';
-import { useFeeSetups, useLedgerOptions, useLedgers, useUpdateFeeSetup } from '@/features/staff/fees';
+import {
+  useFeeSetups,
+  useLedgerOptions,
+  useLedgers,
+  useUpdateFeeSetup,
+} from '@/features/staff/fees';
 import {
   Button,
   Field,
@@ -17,6 +22,7 @@ import {
   ScreenHeader,
   Section,
   space,
+  Stack,
   StateView,
   Text,
   type,
@@ -94,7 +100,11 @@ export default function EditFeeSetupScreen() {
   };
 
   return (
-    <Screen width="reading" onRefresh={() => void setups.refetch()} refreshing={setups.isRefetching}>
+    <Screen
+      width="reading"
+      onRefresh={() => void setups.refetch()}
+      refreshing={setups.isRefetching}
+    >
       <ScreenHeader
         title={setup?.fee_head ?? 'Fee head'}
         subtitle={
@@ -153,9 +163,8 @@ export default function EditFeeSetupScreen() {
                     scrolled past.
                   */}
                   <Text tone="muted" style={type.rowMeta}>
-                    Changing the amount affects instalments assigned from now on.
-                    Instalments already assigned keep the amount they were created
-                    with.
+                    Changing the amount affects instalments assigned from now on. Instalments
+                    already assigned keep the amount they were created with.
                   </Text>
 
                   <Form maxWidth={null} dense>
@@ -254,21 +263,23 @@ export default function EditFeeSetupScreen() {
 
             {editable && !open ? (
               <Section title={setup.is_active ? 'Deactivate' : 'Reactivate'}>
-                <Text tone="muted" style={{ ...type.body, marginBottom: space.md }}>
-                  {setup.is_active
-                    ? 'A deactivated fee head cannot be assigned again. Existing instalments are untouched — it is kept because they reference it, which is why there is no delete.'
-                    : 'Reactivating lets this fee head be assigned to members again.'}
-                </Text>
+                <Stack gap="md">
+                  <Text tone="muted" style={type.body}>
+                    {setup.is_active
+                      ? 'A deactivated fee head cannot be assigned again. Existing instalments are untouched — it is kept because they reference it, which is why there is no delete.'
+                      : 'Reactivating lets this fee head be assigned to members again.'}
+                  </Text>
 
-                <Button
-                  variant={setup.is_active ? 'danger' : 'secondary'}
-                  isDisabled={update.isPending}
-                  onPress={() => void update.mutateAsync({ is_active: !setup.is_active })}
-                >
-                  <Button.Label>
-                    {setup.is_active ? 'Deactivate fee head' : 'Reactivate fee head'}
-                  </Button.Label>
-                </Button>
+                  <Button
+                    variant={setup.is_active ? 'danger' : 'secondary'}
+                    isDisabled={update.isPending}
+                    onPress={() => void update.mutateAsync({ is_active: !setup.is_active })}
+                  >
+                    <Button.Label>
+                      {setup.is_active ? 'Deactivate fee head' : 'Reactivate fee head'}
+                    </Button.Label>
+                  </Button>
+                </Stack>
               </Section>
             ) : null}
           </>

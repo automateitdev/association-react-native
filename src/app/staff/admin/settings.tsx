@@ -3,11 +3,7 @@ import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 import { ApiError } from '@/api/errors';
 import { useSession } from '@/features/auth/session';
-import {
-  useSettings,
-  useUpdateSettings,
-  type Settings,
-} from '@/features/staff/settings';
+import { useSettings, useUpdateSettings, type Settings } from '@/features/staff/settings';
 import {
   Button,
   Checkbox,
@@ -24,6 +20,7 @@ import {
   ScreenHeader,
   Section,
   space,
+  Stack,
   StateView,
   Text,
   TextArea,
@@ -70,15 +67,15 @@ export default function SettingsScreen() {
       >
         {settings.data ? (
           <>
-            {! editable ? (
-              <View style={{ marginTop: space.lg }}>
+            {!editable ? (
+              <Section>
                 <Panel>
                   <Text tone="muted" style={type.body}>
                     You can see these settings but not change them. Changing them needs the
                     settings.edit permission.
                   </Text>
                 </Panel>
-              </View>
+              </Section>
             ) : null}
 
             <FineSection settings={settings.data} editable={editable} />
@@ -136,9 +133,9 @@ function SavingSection({
         blocky.
       */}
       {first ? null : (
-        <View style={{ marginTop: space.xl }}>
+        <Section>
           <Divider />
-        </View>
+        </Section>
       )}
 
       <Section
@@ -152,24 +149,22 @@ function SavingSection({
         */
         action={
           editable ? (
-            <Button size="sm" isDisabled={! dirty || pending} onPress={onSave}>
+            <Button size="sm" isDisabled={!dirty || pending} onPress={onSave}>
               <Button.Label>{pending ? 'Saving…' : 'Save'}</Button.Label>
             </Button>
           ) : undefined
         }
       >
         {description ? (
-          <Text tone="muted" style={{ ...type.body, marginBottom: space.md }}>
+          <Text tone="muted" style={type.body}>
             {description}
           </Text>
         ) : null}
 
         {error ? (
-          <View style={{ marginBottom: space.md }}>
-            <Panel tone="danger">
-              <Text style={type.body}>{error}</Text>
-            </Panel>
-          </View>
+          <Panel tone="danger">
+            <Text style={type.body}>{error}</Text>
+          </Panel>
         ) : null}
 
         {/*
@@ -243,29 +238,29 @@ function FineSection({ settings, editable }: { settings: Settings; editable: boo
         lines it took to ask for very little.
       */}
       <FormRow>
-      <InputField
-        label="Fine per missed month"
-        value={rate}
-        onChangeText={setRate}
-        keyboardType="phone-pad"
-        hint="Charged once for each fine date that passes with the instalment unpaid."
-      />
+        <InputField
+          label="Fine per missed month"
+          value={rate}
+          onChangeText={setRate}
+          keyboardType="phone-pad"
+          hint="Charged once for each fine date that passes with the instalment unpaid."
+        />
 
-      <InputField
-        label="Grace days"
-        value={grace}
-        onChangeText={setGrace}
-        keyboardType="phone-pad"
-        hint="Days after the due date before the first fine date falls."
-      />
+        <InputField
+          label="Grace days"
+          value={grace}
+          onChangeText={setGrace}
+          keyboardType="phone-pad"
+          hint="Days after the due date before the first fine date falls."
+        />
 
-      <InputField
-        label="Suspension threshold"
-        value={threshold}
-        onChangeText={setThreshold}
-        keyboardType="phone-pad"
-        hint="Unpaid instalments before a member is suspended."
-      />
+        <InputField
+          label="Suspension threshold"
+          value={threshold}
+          onChangeText={setThreshold}
+          keyboardType="phone-pad"
+          hint="Unpaid instalments before a member is suspended."
+        />
       </FormRow>
     </SavingSection>
   );
@@ -283,7 +278,11 @@ function PaymentSection({ settings, editable }: { settings: Settings; editable: 
     setTtl(String(settings.payment.intent_ttl_minutes));
     setOnline(settings.payment.online_enabled);
     setFormat(settings.invoice.format);
-  }, [settings.payment.intent_ttl_minutes, settings.payment.online_enabled, settings.invoice.format]);
+  }, [
+    settings.payment.intent_ttl_minutes,
+    settings.payment.online_enabled,
+    settings.invoice.format,
+  ]);
 
   const dirty =
     ttl !== String(settings.payment.intent_ttl_minutes) ||
@@ -313,32 +312,32 @@ function PaymentSection({ settings, editable }: { settings: Settings; editable: 
       error={error}
     >
       <Inline gap="sm">
-        <Checkbox isSelected={online} onSelectedChange={setOnline} isDisabled={! editable} />
-        <View style={{ flex: 1 }}>
+        <Checkbox isSelected={online} onSelectedChange={setOnline} isDisabled={!editable} />
+        <Stack gap="none" grow>
           <Text style={type.body}>Accept online payments</Text>
           <Text tone="muted" style={type.rowMeta}>
             Turn off to take payment only at the counter. Members already mid-payment are
             unaffected.
           </Text>
-        </View>
+        </Stack>
       </Inline>
 
       <FormRow>
-      <InputField
-        label="Payment window (minutes)"
-        value={ttl}
-        onChangeText={setTtl}
-        keyboardType="phone-pad"
-        hint="How long a started online payment stays valid before it expires."
-      />
+        <InputField
+          label="Payment window (minutes)"
+          value={ttl}
+          onChangeText={setTtl}
+          keyboardType="phone-pad"
+          hint="How long a started online payment stays valid before it expires."
+        />
 
-      <InputField
-        label="Invoice number format"
-        value={format}
-        onChangeText={setFormat}
-        autoCapitalize="none"
-        hint="The pattern new invoice numbers follow."
-      />
+        <InputField
+          label="Invoice number format"
+          value={format}
+          onChangeText={setFormat}
+          autoCapitalize="none"
+          hint="The pattern new invoice numbers follow."
+        />
       </FormRow>
     </SavingSection>
   );
@@ -416,7 +415,11 @@ function BankSection({ settings, editable }: { settings: Settings; editable: boo
       onSave={() => void save()}
       error={error}
     >
-      <InputField label="Account name" value={form.account_name} onChangeText={set('account_name')} />
+      <InputField
+        label="Account name"
+        value={form.account_name}
+        onChangeText={set('account_name')}
+      />
       <InputField
         label="Account number"
         value={form.account_number}
@@ -443,11 +446,7 @@ function BankSection({ settings, editable }: { settings: Settings; editable: boo
         label="Instructions"
         hint="Anything a member needs to know when paying in - a reference to quote, for instance."
       >
-        <TextArea
-          value={form.instructions}
-          onChangeText={set('instructions')}
-          numberOfLines={3}
-        />
+        <TextArea value={form.instructions} onChangeText={set('instructions')} numberOfLines={3} />
       </FormField>
     </SavingSection>
   );
@@ -482,15 +481,15 @@ function GatewaySection({ settings, editable }: { settings: Settings; editable: 
             : 'No gateway is configured, so online payment cannot be taken.'}
         </Text>
 
-        <Text tone="muted" style={{ ...type.rowMeta, marginTop: 4 }}>
-          Set by whoever registered this association, not from here. The account the money
-          lands in is not something an association account can change - ask them to change
-          it, and they can confirm the new account back to you.
+        <Text tone="muted" style={type.rowMeta}>
+          Set by whoever registered this association, not from here. The account the money lands in
+          is not something an association account can change - ask them to change it, and they can
+          confirm the new account back to you.
         </Text>
       </Panel>
 
       {editable ? (
-        <View style={{ marginTop: space.md }}>
+        <Section>
           <Panel>
             <Text tone="muted" style={type.rowMeta}>
               {gateway.configured
@@ -498,7 +497,7 @@ function GatewaySection({ settings, editable }: { settings: Settings; editable: 
                 : 'Until a gateway is configured, members can still be recorded as paying at the counter.'}
             </Text>
           </Panel>
-        </View>
+        </Section>
       ) : null}
     </Section>
   );

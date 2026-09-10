@@ -6,7 +6,7 @@ import { request } from '@/api/client';
 import { ApiError } from '@/api/errors';
 import { slugFromInput } from '@/features/auth/discovery';
 import { useSession } from '@/features/auth/session';
-import { Button, Input, Label, Screen, Text, TextField } from '@/ui';
+import { Button, Input, Label, Screen, Stack, Text, TextField, type } from '@/ui';
 
 type Lookup = {
   slug: string;
@@ -64,13 +64,13 @@ export default function AssociationScreen() {
 
   return (
     <Screen width="reading" center>
-      <View style={{ gap: 8, paddingTop: 24 }}>
-        <Text style={{ fontSize: 24, fontWeight: '700' }}>Find your association</Text>
+      <Stack gap="sm">
+        <Text style={type.title}>Find your association</Text>
         <Text>
-          Paste the link your association sent, or enter its code. You will only be asked for
-          this once.
+          Paste the link your association sent, or enter its code. You will only be asked for this
+          once.
         </Text>
-      </View>
+      </Stack>
 
       <TextField>
         <Label>Association code or link</Label>
@@ -98,11 +98,14 @@ export default function AssociationScreen() {
 
       {error ? <Text tone="danger">{error.message}</Text> : null}
 
-      <Button isDisabled={! parsed || lookup.isPending} onPress={() => parsed && lookup.mutate(parsed)}>
+      <Button
+        isDisabled={!parsed || lookup.isPending}
+        onPress={() => parsed && lookup.mutate(parsed)}
+      >
         <Button.Label>{lookup.isPending ? 'Checking…' : 'Continue'}</Button.Label>
       </Button>
 
-      <Text style={{ fontSize: 12, opacity: 0.7 }}>
+      <Text tone="muted" style={type.rowMeta}>
         Do not know your code? Ask your association office.
       </Text>
     </Screen>

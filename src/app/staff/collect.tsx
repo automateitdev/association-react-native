@@ -101,7 +101,7 @@ export default function CollectScreen() {
 
   const toggle = (id: number) => {
     const line = lines.find((l) => l.fee_assign_id === id);
-    if (line && ! collectable(line)) return;
+    if (line && !collectable(line)) return;
 
     setSelected((current) => {
       const next = new Set(current);
@@ -120,7 +120,7 @@ export default function CollectScreen() {
         render: (row) => (
           <Checkbox
             isSelected={selected.has(row.fee_assign_id)}
-            isDisabled={! collectable(row)}
+            isDisabled={!collectable(row)}
             onSelectedChange={() => toggle(row.fee_assign_id)}
           />
         ),
@@ -172,7 +172,9 @@ export default function CollectScreen() {
         render: (row) => <NumberCell>{formatMoney(row.instalment_amount)}</NumberCell>,
         sort: (row) => row.instalment_amount,
         sortType: 'decimal',
-        total: meta ? <NumberCell bold>{formatMoney(meta.instalment_total)}</NumberCell> : undefined,
+        total: meta ? (
+          <NumberCell bold>{formatMoney(meta.instalment_total)}</NumberCell>
+        ) : undefined,
       },
       {
         key: 'fine',
@@ -209,7 +211,10 @@ export default function CollectScreen() {
         idempotencyKey: attemptKey,
       });
 
-      setDone({ invoice: collection.invoice_no, total: collection.total_amount });
+      setDone({
+        invoice: collection.invoice_no,
+        total: collection.total_amount,
+      });
       setSelected(new Set());
 
       // The next collection is a new attempt and needs its own key.
@@ -223,11 +228,15 @@ export default function CollectScreen() {
     <Screen onRefresh={() => void dues.refetch()} refreshing={dues.isRefetching}>
       <ScreenHeader
         title="Collect"
-        subtitle={meta ? `${meta.member_name}${meta.membership_no ? ` · No. ${meta.membership_no}` : ''}` : 'Take a payment at the counter'}
+        subtitle={
+          meta
+            ? `${meta.member_name}${meta.membership_no ? ` · No. ${meta.membership_no}` : ''}`
+            : 'Take a payment at the counter'
+        }
       />
 
       {done ? (
-        <View style={{ marginTop: space.lg }}>
+        <Section>
           <Panel>
             <Text style={type.rowTitle}>Recorded as {done.invoice}</Text>
             {/*
@@ -236,18 +245,18 @@ export default function CollectScreen() {
               available until it has.
             */}
             <Text style={type.body}>
-              {formatMoney(done.total)} taken, awaiting approval. It is in the
-              approvals queue now, and the receipt can be printed once approved.
+              {formatMoney(done.total)} taken, awaiting approval. It is in the approvals queue now,
+              and the receipt can be printed once approved.
             </Text>
             <Button variant="secondary" size="sm" onPress={() => setDone(null)}>
               <Button.Label>Dismiss</Button.Label>
             </Button>
           </Panel>
-        </View>
+        </Section>
       ) : null}
 
       {collect.isError ? (
-        <View style={{ marginTop: space.lg }}>
+        <Section>
           <Panel tone="danger">
             <Text style={type.rowTitle}>The collection was not recorded</Text>
             <Text style={type.body}>
@@ -256,7 +265,7 @@ export default function CollectScreen() {
                 : 'Nothing was taken. Check the details and try again.'}
             </Text>
           </Panel>
-        </View>
+        </Section>
       ) : null}
 
       <Section title="Who is paying" first>
@@ -273,7 +282,7 @@ export default function CollectScreen() {
           them scroll past everybody to reach a search box.
         */}
         {query ? (
-          <View style={{ marginTop: space.md }}>
+          <Section>
             <StateView
               loading={members.isLoading}
               error={members.error}
@@ -291,7 +300,9 @@ export default function CollectScreen() {
                     member.mobile,
                   ].join(' · ')}
                   trailing={
-                    memberId === member.id ? <Icon name="check" size={16} tone="accent" /> : undefined
+                    memberId === member.id ? (
+                      <Icon name="check" size={16} tone="accent" />
+                    ) : undefined
                   }
                   onPress={() => {
                     setMemberId(member.id);
@@ -301,7 +312,7 @@ export default function CollectScreen() {
                 />
               ))}
             </StateView>
-          </View>
+          </Section>
         ) : null}
       </Section>
 
@@ -318,7 +329,10 @@ export default function CollectScreen() {
               <FilterSelect
                 icon="bank"
                 width={230}
-                options={(ledgers.data ?? []).map((l) => ({ value: String(l.id), label: l.name }))}
+                options={(ledgers.data ?? []).map((l) => ({
+                  value: String(l.id),
+                  label: l.name,
+                }))}
                 value={ledgerId ?? ''}
                 onChange={setLedgerId}
               />
@@ -330,7 +344,7 @@ export default function CollectScreen() {
             silently gets wrong. The fee head decides which income account the
             instalment credits; this is the other half - where the cash landed.
           */}
-          <Text tone="muted" style={{ ...type.rowMeta, marginBottom: space.md }}>
+          <Text tone="muted" style={type.rowMeta}>
             Choose the account the money went into - the cash box or the bank.
           </Text>
 
@@ -356,7 +370,7 @@ export default function CollectScreen() {
       )}
 
       {selected.size > 0 && can('collections.create') ? (
-        <View style={{ marginTop: space.xl }}>
+        <Section>
           <Panel>
             <Text style={type.rowTitle}>
               {selected.size} instalment{selected.size === 1 ? '' : 's'} selected
@@ -373,8 +387,8 @@ export default function CollectScreen() {
               is recorded, and those are what the receipt carries.
             */}
             <Text tone="muted" style={type.rowMeta}>
-              The amount is calculated by the server when the collection is
-              recorded, and shown on the receipt.
+              The amount is calculated by the server when the collection is recorded, and shown on
+              the receipt.
             </Text>
 
             <Button
@@ -390,7 +404,7 @@ export default function CollectScreen() {
               </Button.Label>
             </Button>
           </Panel>
-        </View>
+        </Section>
       ) : null}
     </Screen>
   );

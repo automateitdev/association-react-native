@@ -66,11 +66,16 @@ export { Section, Divider, Panel, Actions, useActionButtonStyle } from './Sectio
  * The two shapes every screen was drawing by hand - see the count in Layout.tsx.
  * Reach for these before an inline `style={{ flexDirection: 'row', gap }}`.
  */
-export { Stack, Inline } from './Layout';
+export { Stack, Inline, Spacer } from './Layout';
 
 // The confirmation step, in the page rather than over it. See Confirm.tsx for
 // why this app does not open a modal to ask a question.
 export { Confirm } from './Confirm';
+
+// Which page of how many. Shared by DataTable and by the list screens that are
+// not tables - see Pager.tsx for the three versions this replaced.
+export { Pager } from './Pager';
+
 export { Row, Field } from './Row';
 export { SearchField } from './SearchField';
 export { Toolbar } from './Toolbar';

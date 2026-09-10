@@ -3,17 +3,7 @@ import { View } from 'react-native';
 import { formatMoney, type Money } from '@/api/money';
 import { useSession } from '@/features/auth/session';
 import { useDashboard } from '@/features/staff/dashboard';
-import {
-  Screen,
-  ScreenHeader,
-  Section,
-  StateView,
-  Stat,
-  StatGrid,
-  Text,
-  space,
-  type,
-} from '@/ui';
+import { Screen, ScreenHeader, Section, StateView, Stat, StatGrid, Text, space, type } from '@/ui';
 
 /**
  * The staff landing screen.
@@ -119,7 +109,7 @@ export default function DashboardScreen() {
                 />
               </StatGrid>
 
-              <Text tone="muted" style={{ ...type.rowMeta, marginTop: space.sm }}>
+              <Text tone="muted" style={type.rowMeta}>
                 Instalments and fines are never added together — an association has to be able to
                 say how much of what it is owed is subscription and how much is penalty.
               </Text>

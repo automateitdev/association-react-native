@@ -39,7 +39,17 @@ import { space } from './tokens';
  * mistake is hardest to see. `Row` was taken too - ui/Row is a row of a LIST,
  * which is a different thing from a row of a layout - hence `Inline`.
  */
-type Gap = keyof typeof space;
+/*
+ * `none` is here so that "these do not get a gap" can be SAID.
+ *
+ * Without it, every wrapper that exists for one reason - to take the free space,
+ * to stop a button stretching - would have had to keep its own inline style, or
+ * silently acquire the default spacing on the day a second child was added
+ * beside the first.
+ */
+const gaps = { none: 0, ...space } as const;
+
+type Gap = keyof typeof gaps;
 
 const alignments = {
   start: 'flex-start',
@@ -68,20 +78,31 @@ export function Stack({
   children,
   gap = 'md',
   align,
+  justify,
   grow = false,
 }: {
   children: ReactNode;
   gap?: Gap;
   /** Cross-axis: how children sit ACROSS the column. Default: full width. */
   align?: 'start' | 'center' | 'end' | 'stretch';
+  /**
+   * Main axis: where the children sit DOWN the column.
+   *
+   * Only means anything with `grow`, or inside a parent that has already given
+   * this one a height - a column as tall as its content has no spare room to
+   * distribute. `grow` plus `justify="center"` is the empty-state layout: a
+   * message in the middle of whatever space is left.
+   */
+  justify?: 'start' | 'center' | 'end' | 'between';
   /** Take the free space in the parent. Replaces a hand-written `flex: 1`. */
   grow?: boolean;
 }) {
   return (
     <View
       style={{
-        gap: space[gap],
+        gap: gaps[gap],
         alignItems: align ? alignments[align] : undefined,
+        justifyContent: justify ? justifications[justify] : undefined,
         flex: grow ? 1 : undefined,
       }}
     >
@@ -124,11 +145,22 @@ export function Inline({
         alignItems: alignments[align],
         justifyContent: justify ? justifications[justify] : undefined,
         flexWrap: wrap ? 'wrap' : undefined,
-        gap: space[gap],
+        gap: gaps[gap],
         flex: grow ? 1 : undefined,
       }}
     >
       {children}
     </View>
   );
+}
+
+/**
+ * Nothing, taking whatever room is going.
+ *
+ * For the case a gap cannot express: pushing the rest of a row to the far end,
+ * or holding an empty first column so a heading lines up with the values under
+ * it. `justify="between"` handles two groups; this handles the awkward ones.
+ */
+export function Spacer() {
+  return <View style={{ flex: 1 }} />;
 }

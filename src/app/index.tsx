@@ -1,8 +1,9 @@
 import { Redirect } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import { ActivityIndicator } from 'react-native';
 import { tenantFromHost, tenantFromQuery } from '@/features/auth/discovery';
 import { useSession } from '@/features/auth/session';
+import { Stack } from '@/ui';
 
 /**
  * The launch gate.
@@ -56,9 +57,9 @@ export default function Index() {
 
   if (isLoading || discovered === null) {
     return (
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+      <Stack grow align="center" justify="center">
         <ActivityIndicator />
-      </View>
+      </Stack>
     );
   }
 

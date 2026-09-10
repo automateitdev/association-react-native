@@ -17,6 +17,7 @@ import {
   Form,
   FormActions,
   Icon,
+  Inline,
   InputField,
   Panel,
   Row,
@@ -80,11 +81,11 @@ export default function RolesScreen() {
       />
 
       {error ? (
-        <View style={{ marginTop: space.lg }}>
+        <Section>
           <Panel tone="danger">
             <Text style={type.body}>{error}</Text>
           </Panel>
-        </View>
+        </Section>
       ) : null}
 
       {editing || creating ? (
@@ -116,12 +117,12 @@ export default function RolesScreen() {
         // the page header above is the only thing naming the list.
         <Section first>
           {can('roles.create') ? (
-            <View style={{ marginBottom: space.md, alignItems: 'flex-start' }}>
+            <Stack align="start">
               <Button size="sm" onPress={() => setCreating(true)}>
                 <Icon name="add" size={15} tone="inverse" />
                 <Button.Label>Add role</Button.Label>
               </Button>
-            </View>
+            </Stack>
           ) : null}
 
           <StateView
@@ -144,20 +145,20 @@ export default function RolesScreen() {
                   .filter(Boolean)
                   .join(' · ')}
                 footer={
-                  ! role.is_editable ? (
+                  !role.is_editable ? (
                     /*
                       Superadmin. Saying why it cannot be edited is the whole
                       value of the line - otherwise a greyed-out row reads as a
                       bug rather than as a rule.
                     */
                     <Text tone="muted" style={type.rowMeta}>
-                      Holds every permission, including ones added by a later
-                      release. It cannot be narrowed.
+                      Holds every permission, including ones added by a later release. It cannot be
+                      narrowed.
                     </Text>
                   ) : undefined
                 }
                 trailing={
-                  can('roles.delete') && ! role.is_seeded && role.users === 0 ? (
+                  can('roles.delete') && !role.is_seeded && role.users === 0 ? (
                     <Button
                       size="sm"
                       variant="danger"
@@ -168,9 +169,7 @@ export default function RolesScreen() {
                     </Button>
                   ) : undefined
                 }
-                onPress={
-                  can('roles.edit') && role.is_editable ? () => setEditing(role) : undefined
-                }
+                onPress={can('roles.edit') && role.is_editable ? () => setEditing(role) : undefined}
                 divider={index < list.length - 1}
               />
             ))}
@@ -232,16 +231,13 @@ function RoleEditor({
       )}
 
       {grouped.map(([group, permissions]) => (
-        <View key={group} style={{ gap: space.sm }}>
+        <Stack key={group} gap="sm">
           <Text tone="muted" style={{ ...type.section, textTransform: 'uppercase' }}>
             {group}
           </Text>
 
           {permissions.map((permission) => (
-            <View
-              key={permission}
-              style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm }}
-            >
+            <Inline key={permission} gap="sm">
               <Checkbox
                 isSelected={selected.has(permission)}
                 onSelectedChange={() => toggle(permission)}
@@ -253,11 +249,11 @@ function RoleEditor({
                 two vocabularies for the same thing.
               */}
               <Text style={type.body}>{permission}</Text>
-            </View>
+            </Inline>
           ))}
 
           <Divider />
-        </View>
+        </Stack>
       ))}
 
       <FormActions>
@@ -266,7 +262,7 @@ function RoleEditor({
         </Button>
 
         <Button
-          isDisabled={pending || selected.size === 0 || (! role && name.trim() === '')}
+          isDisabled={pending || selected.size === 0 || (!role && name.trim() === '')}
           onPress={() => onSubmit({ name: name.trim(), permissions: [...selected] })}
         >
           <Button.Label>

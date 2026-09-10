@@ -18,6 +18,7 @@ import {
   Panel,
   Screen,
   space,
+  Stack,
   Text,
   TextField,
   type,
@@ -112,7 +113,7 @@ export default function SignInScreen() {
               <Icon name="bank" size={21} tone="inverse" />
             </View>
 
-            <View style={{ flex: 1 }}>
+            <Stack gap="none" grow>
               {/*
                 The association's own name, once known. Falling back to the
                 slug rather than to a generic label: "demo-one" at least tells
@@ -127,7 +128,7 @@ export default function SignInScreen() {
                   Cooperative society
                 </Text>
               ) : null}
-            </View>
+            </Stack>
 
             <Text
               accessibilityRole="button"
@@ -149,12 +150,12 @@ export default function SignInScreen() {
             only thing on the page is the opposite problem.
           */}
           <Panel>
-            <View style={{ gap: space.xs, marginBottom: space.md }}>
+            <Stack gap="xs">
               <Text style={type.title}>Sign in</Text>
               <Text tone="muted" style={type.body}>
                 Use the mobile number or email registered with your association.
               </Text>
-            </View>
+            </Stack>
 
             {/*
               FormField rather than InputField: these two inputs carry autofill
@@ -196,13 +197,9 @@ export default function SignInScreen() {
               </FormField>
             </Form>
 
-            {error ? (
-              <View style={{ marginTop: space.md }}>
-                <SignInError error={error} />
-              </View>
-            ) : null}
+            {error ? <SignInError error={error} /> : null}
 
-            <View style={{ marginTop: space.lg, gap: space.sm }}>
+            <Stack gap="sm">
               {askingWhich ? (
                 <>
                   {/*
@@ -210,10 +207,7 @@ export default function SignInScreen() {
                     exactly two answers, the person already typed their
                     password, and one more tap should finish it.
                   */}
-                  <Button
-                    isDisabled={attempt.isPending}
-                    onPress={() => attempt.mutate('staff')}
-                  >
+                  <Button isDisabled={attempt.isPending} onPress={() => attempt.mutate('staff')}>
                     <Button.Label>Sign in as staff</Button.Label>
                   </Button>
 
@@ -233,7 +227,7 @@ export default function SignInScreen() {
                   <Button.Label>{attempt.isPending ? 'Signing in…' : 'Sign in'}</Button.Label>
                 </Button>
               )}
-            </View>
+            </Stack>
           </Panel>
 
           {/*
@@ -315,7 +309,7 @@ function SignInError({ error }: { error: ApiError }) {
       almost invisible against a dark background. The same mistake was fixed on
       the pay screen and left here.
     */
-    <View style={{ gap: 4 }}>
+    <Stack gap="xs">
       <Text tone={asking ? 'default' : 'danger'} style={{ ...type.body, fontWeight: '600' }}>
         {error.message}
       </Text>
@@ -324,6 +318,6 @@ function SignInError({ error }: { error: ApiError }) {
           {guidance}
         </Text>
       ) : null}
-    </View>
+    </Stack>
   );
 }

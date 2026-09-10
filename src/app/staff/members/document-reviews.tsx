@@ -14,14 +14,16 @@ import {
   Divider,
   Form,
   FormActions,
+  Inline,
   InputField,
   Panel,
   Screen,
   ScreenHeader,
   Section,
+  space,
+  Stack,
   StateView,
   Text,
-  space,
   type,
 } from '@/ui';
 
@@ -62,11 +64,11 @@ export default function DocumentReviewsScreen() {
       />
 
       {error ? (
-        <View style={{ marginTop: space.lg }}>
+        <Section>
           <Panel tone="danger">
             <Text style={type.body}>{error}</Text>
           </Panel>
-        </View>
+        </Section>
       ) : null}
 
       <Section title="Waiting" first={!error}>
@@ -125,7 +127,7 @@ function ReviewCard({
   };
 
   return (
-    <View style={{ marginBottom: space.lg }}>
+    <Stack gap="sm">
       <Text style={type.rowTitle}>
         {review.owner_name ?? 'Unknown'} · {review.label}
       </Text>
@@ -143,7 +145,7 @@ function ReviewCard({
           .join(' · ')}
       </Text>
 
-      <View style={{ marginTop: space.sm }}>
+      <View>
         <StateView
           loading={image.isLoading}
           error={image.error}
@@ -163,51 +165,47 @@ function ReviewCard({
       </View>
 
       {refusing ? (
-        <View style={{ marginTop: space.md }}>
-          <Form dense>
-            <InputField
-              label="Why is it not accepted?"
-              required
-              value={reason}
-              onChangeText={setReason}
-              placeholder="e.g. the number is not readable"
-              hint="The member sees this, so it should tell them what to do next."
-            />
+        <Form dense>
+          <InputField
+            label="Why is it not accepted?"
+            required
+            value={reason}
+            onChangeText={setReason}
+            placeholder="e.g. the number is not readable"
+            hint="The member sees this, so it should tell them what to do next."
+          />
 
-            <FormActions>
-              <Button variant="secondary" onPress={() => setRefusing(false)}>
-                <Button.Label>Cancel</Button.Label>
-              </Button>
+          <FormActions>
+            <Button variant="secondary" onPress={() => setRefusing(false)}>
+              <Button.Label>Cancel</Button.Label>
+            </Button>
 
-              <Button
-                variant="danger"
-                isDisabled={reason.trim().length === 0 || decide.isPending}
-                onPress={() => void submit('rejected')}
-              >
-                <Button.Label>
-                  {decide.isPending ? 'Sending…' : 'Not accepted'}
-                </Button.Label>
-              </Button>
-            </FormActions>
-          </Form>
-        </View>
+            <Button
+              variant="danger"
+              isDisabled={reason.trim().length === 0 || decide.isPending}
+              onPress={() => void submit('rejected')}
+            >
+              <Button.Label>{decide.isPending ? 'Sending…' : 'Not accepted'}</Button.Label>
+            </Button>
+          </FormActions>
+        </Form>
       ) : (
-        <View style={{ flexDirection: 'row', gap: space.sm, marginTop: space.md }}>
+        <Inline gap="sm">
           <Button isDisabled={decide.isPending} onPress={() => void submit('approved')}>
             <Button.Label>{decide.isPending ? 'Saving…' : 'Approve'}</Button.Label>
           </Button>
 
-          <Button variant="secondary" isDisabled={decide.isPending} onPress={() => setRefusing(true)}>
+          <Button
+            variant="secondary"
+            isDisabled={decide.isPending}
+            onPress={() => setRefusing(true)}
+          >
             <Button.Label>Not accepted</Button.Label>
           </Button>
-        </View>
+        </Inline>
       )}
 
-      {divider ? (
-        <View style={{ marginTop: space.lg }}>
-          <Divider />
-        </View>
-      ) : null}
-    </View>
+      {divider ? <Divider /> : null}
+    </Stack>
   );
 }

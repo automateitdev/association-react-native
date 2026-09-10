@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { View } from 'react-native';
 import { ApiError } from '@/api/errors';
 import { useSession } from '@/features/auth/session';
@@ -20,16 +20,20 @@ import {
   Form,
   FormActions,
   Icon,
+  Inline,
   InputField,
+  Pager,
   Panel,
   PickerField,
   Screen,
   ScreenHeader,
   Section,
+  space,
+  Spacer,
+  Stack,
   StateView,
   Text,
   Toolbar,
-  space,
   type,
 } from '@/ui';
 
@@ -89,11 +93,11 @@ export default function VouchersScreen() {
       />
 
       {error ? (
-        <View style={{ marginTop: space.lg }}>
+        <Section>
           <Panel tone="danger">
             <Text style={type.body}>{error}</Text>
           </Panel>
-        </View>
+        </Section>
       ) : null}
 
       {writing ? (
@@ -128,10 +132,7 @@ export default function VouchersScreen() {
         `first`, inverted. With "New voucher" on screen the list needs telling
         apart from it; without one, the page header has already said Vouchers.
       */}
-      <Section
-        title={writing || reversing ? 'Vouchers' : undefined}
-        first={! writing && ! reversing}
-      >
+      <Section title={writing || reversing ? 'Vouchers' : undefined} first={!writing && !reversing}>
         <Toolbar
           filters={
             <FilterSelect
@@ -151,7 +152,7 @@ export default function VouchersScreen() {
             />
           }
           actions={
-            can('vouchers.create') && ! writing && ! reversing ? (
+            can('vouchers.create') && !writing && !reversing ? (
               <Button size="sm" onPress={() => setWriting(true)}>
                 <Icon name="add" size={15} tone="inverse" />
                 <Button.Label>Write a voucher</Button.Label>
@@ -174,170 +175,149 @@ export default function VouchersScreen() {
         >
           {rows.map((voucher, index) => (
             <View key={voucher.id} style={{ paddingVertical: space.md }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm }}>
-                <Text style={type.rowTitle}>{voucher.voucher_no}</Text>
-                <Text tone="muted" style={type.rowMeta}>
-                  {voucher.type} · {voucher.voucher_date}
-                </Text>
-              </View>
-
-              {voucher.narration ? (
-                <Text tone="muted" style={{ ...type.rowMeta, marginTop: 2 }}>
-                  {voucher.narration}
-                </Text>
-              ) : null}
-
-              <View style={{ marginTop: space.sm, gap: 4 }}>
-                {/*
-                  Headed, because two right-aligned columns of money are
-                  otherwise a guess, and which side a figure sits on is the
-                  entire content of a ledger line.
-                */}
-                <View style={{ flexDirection: 'row', gap: space.sm }}>
-                  <View style={{ flex: 1 }} />
-                  <Text tone="muted" style={{ ...type.rowMeta, width: 110, textAlign: 'right' }}>
-                    Debit
+              <Stack gap="sm">
+                <Inline gap="sm">
+                  <Text style={type.rowTitle}>{voucher.voucher_no}</Text>
+                  <Text tone="muted" style={type.rowMeta}>
+                    {voucher.type} · {voucher.voucher_date}
                   </Text>
-                  <Text tone="muted" style={{ ...type.rowMeta, width: 110, textAlign: 'right' }}>
-                    Credit
+                </Inline>
+
+                {voucher.narration ? (
+                  <Text tone="muted" style={type.rowMeta}>
+                    {voucher.narration}
                   </Text>
-                </View>
-
-                {voucher.lines.map((line, i) => (
-                  <View key={line.id ?? i} style={{ flexDirection: 'row', gap: space.sm }}>
-                    <Text style={{ ...type.rowMeta, flex: 1 }}>{line.ledger ?? '—'}</Text>
-                    {/*
-                      Debit and credit in fixed columns, so the two sides line
-                      up down the document the way a ledger is read.
-                    */}
-                    <View style={{ width: 110, alignItems: 'flex-end' }}>
-                      {line.debit !== '0.00' ? <Amount value={line.debit} size="sm" /> : null}
-                    </View>
-                    <View style={{ width: 110, alignItems: 'flex-end' }}>
-                      {line.credit !== '0.00' ? <Amount value={line.credit} size="sm" /> : null}
-                    </View>
-                  </View>
-                ))}
-
-                <Divider />
-
-                <View style={{ flexDirection: 'row', gap: space.sm }}>
-                  <Text tone="muted" style={{ ...type.rowMeta, flex: 1 }}>
-                    Total
-                  </Text>
-                  <View style={{ width: 110, alignItems: 'flex-end' }}>
-                    <Amount value={voucher.total_debit} size="sm" />
-                  </View>
-                  <View style={{ width: 110, alignItems: 'flex-end' }}>
-                    <Amount value={voucher.total_credit} size="sm" />
-                  </View>
-                </View>
-              </View>
-
-              <View
-                style={{
-                  flexDirection: 'row',
-                  gap: space.sm,
-                  marginTop: space.md,
-                  alignItems: 'center',
-                  flexWrap: 'wrap',
-                }}
-              >
-                <StatusBadgeForVoucher status={voucher.status} />
-
-                {voucher.status === 'draft' && can('vouchers.approve') ? (
-                  <>
-                    <Button
-                      size="sm"
-                      isDisabled={decide.isPending}
-                      onPress={() => void run(() => decide.mutateAsync({ id: voucher.id, decision: 'approve' }))}
-                    >
-                      <Button.Label>Approve</Button.Label>
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      isDisabled={decide.isPending}
-                      onPress={() => void run(() => decide.mutateAsync({ id: voucher.id, decision: 'reject' }))}
-                    >
-                      <Button.Label>Refuse</Button.Label>
-                    </Button>
-                  </>
                 ) : null}
 
-                {voucher.status === 'draft' && can('vouchers.create') ? (
-                  <Button
-                    size="sm"
-                    variant="danger"
-                    isDisabled={remove.isPending}
-                    onPress={() => void run(() => remove.mutateAsync(voucher.id))}
-                  >
-                    <Button.Label>Delete</Button.Label>
-                  </Button>
-                ) : null}
+                <Stack gap="xs">
+                  {/*
+                    Headed, because two right-aligned columns of money are
+                    otherwise a guess, and which side a figure sits on is the
+                    entire content of a ledger line.
+                  */}
+                  <LedgerLine
+                    label={null}
+                    debit={<ColumnHeading>Debit</ColumnHeading>}
+                    credit={<ColumnHeading>Credit</ColumnHeading>}
+                  />
 
-                {/*
+                  {voucher.lines.map((line, i) => (
+                    <LedgerLine
+                      key={line.id ?? i}
+                      label={line.ledger ?? '—'}
+                      debit={line.debit !== '0.00' ? <Amount value={line.debit} size="sm" /> : null}
+                      credit={
+                        line.credit !== '0.00' ? <Amount value={line.credit} size="sm" /> : null
+                      }
+                    />
+                  ))}
+
+                  <Divider />
+
+                  <LedgerLine
+                    label="Total"
+                    muted
+                    debit={<Amount value={voucher.total_debit} size="sm" />}
+                    credit={<Amount value={voucher.total_credit} size="sm" />}
+                  />
+                </Stack>
+
+                <Inline gap="sm" wrap>
+                  <StatusBadgeForVoucher status={voucher.status} />
+
+                  {voucher.status === 'draft' && can('vouchers.approve') ? (
+                    <>
+                      <Button
+                        size="sm"
+                        isDisabled={decide.isPending}
+                        onPress={() =>
+                          void run(() =>
+                            decide.mutateAsync({
+                              id: voucher.id,
+                              decision: 'approve',
+                            }),
+                          )
+                        }
+                      >
+                        <Button.Label>Approve</Button.Label>
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        isDisabled={decide.isPending}
+                        onPress={() =>
+                          void run(() =>
+                            decide.mutateAsync({
+                              id: voucher.id,
+                              decision: 'reject',
+                            }),
+                          )
+                        }
+                      >
+                        <Button.Label>Refuse</Button.Label>
+                      </Button>
+                    </>
+                  ) : null}
+
+                  {voucher.status === 'draft' && can('vouchers.create') ? (
+                    <Button
+                      size="sm"
+                      variant="danger"
+                      isDisabled={remove.isPending}
+                      onPress={() => void run(() => remove.mutateAsync(voucher.id))}
+                    >
+                      <Button.Label>Delete</Button.Label>
+                    </Button>
+                  ) : null}
+
+                  {/*
                   Offered only while there is something to offer. A voucher
                   that has already been reversed would have the request refused
                   by the server, and a button whose one outcome is a refusal is
                   not a choice — it is a trap with a label on it.
                 */}
-                {voucher.status === 'approved' && ! voucher.reversed_by && can('vouchers.approve') ? (
-                  <Button size="sm" variant="secondary" onPress={() => setReversing(voucher)}>
-                    <Button.Label>Reverse</Button.Label>
-                  </Button>
-                ) : null}
+                  {voucher.status === 'approved' &&
+                  !voucher.reversed_by &&
+                  can('vouchers.approve') ? (
+                    <Button size="sm" variant="secondary" onPress={() => setReversing(voucher)}>
+                      <Button.Label>Reverse</Button.Label>
+                    </Button>
+                  ) : null}
 
-                {voucher.reversed_by ? (
-                  <Text tone="muted" style={type.rowMeta}>
-                    reversed by {voucher.reversed_by}
-                  </Text>
-                ) : null}
+                  {voucher.reversed_by ? (
+                    <Text tone="muted" style={type.rowMeta}>
+                      reversed by {voucher.reversed_by}
+                    </Text>
+                  ) : null}
 
-                {voucher.reverses ? (
-                  <Text tone="muted" style={type.rowMeta}>
-                    reverses {voucher.reverses}
-                  </Text>
-                ) : null}
+                  {voucher.reverses ? (
+                    <Text tone="muted" style={type.rowMeta}>
+                      reverses {voucher.reverses}
+                    </Text>
+                  ) : null}
 
-                {voucher.approved_by ? (
-                  <Text tone="muted" style={type.rowMeta}>
-                    by {voucher.approved_by}
-                    {/*
+                  {voucher.approved_by ? (
+                    <Text tone="muted" style={type.rowMeta}>
+                      by {voucher.approved_by}
+                      {/*
                       Said plainly where the voucher is read. An approval
                       performed on one's own work is not the control it looks
                       like, and a reviewer is entitled to notice.
                     */}
-                    {voucher.self_approved ? ' · who also wrote it' : ''}
-                  </Text>
-                ) : null}
-              </View>
+                      {voucher.self_approved ? ' · who also wrote it' : ''}
+                    </Text>
+                  ) : null}
+                </Inline>
 
-              {index < rows.length - 1 ? (
-                <View style={{ marginTop: space.md }}>
-                  <Divider />
-                </View>
-              ) : null}
+                {index < rows.length - 1 ? <Divider /> : null}
+              </Stack>
             </View>
           ))}
         </StateView>
 
-        {meta && meta.last_page > 1 ? (
-          <View style={{ flexDirection: 'row', gap: space.sm, marginTop: space.md }}>
-            <Button size="sm" variant="secondary" isDisabled={page <= 1} onPress={() => setPage((p) => p - 1)}>
-              <Button.Label>Previous</Button.Label>
-            </Button>
-            <Button
-              size="sm"
-              variant="secondary"
-              isDisabled={page >= meta.last_page}
-              onPress={() => setPage((p) => p + 1)}
-            >
-              <Button.Label>Next</Button.Label>
-            </Button>
-            <Text tone="muted" style={{ ...type.rowMeta, alignSelf: 'center' }}>
-              {meta.current_page} / {meta.last_page}
-            </Text>
+        {meta ? (
+          <View style={{ marginTop: space.md }}>
+            <Pager page={meta.current_page} pageCount={meta.last_page} onGoTo={setPage} />
           </View>
         ) : null}
       </Section>
@@ -358,6 +338,57 @@ export default function VouchersScreen() {
  * a colour. Most vouchers in a list are approved, and a column of loud badges
  * saying "normal" draws the eye to every row equally.
  */
+/**
+ * One line of a voucher: what it is, and which side its money sits on.
+ *
+ * THE COLUMN WIDTH IS DECLARED ONCE. It was written out six times as
+ * `{ width: 110, alignItems: 'flex-end' }` - the heading row, every ledger
+ * line, and the totals - which is six places to miss when the widest figure
+ * the association posts stops fitting in 110.
+ *
+ * Fixed rather than flexed, because the two sides have to line up DOWN the
+ * document. A column sized to its own contents puts the debits of one voucher
+ * at a different x than the debits of the next, and reading a ledger is mostly
+ * reading down.
+ */
+const MONEY_COLUMN = 110;
+
+function LedgerLine({
+  label,
+  debit,
+  credit,
+  muted = false,
+}: {
+  /** Null for the heading row, which has nothing to name. */
+  label: string | null;
+  debit: ReactNode;
+  credit: ReactNode;
+  muted?: boolean;
+}) {
+  return (
+    <Inline gap="sm" align="stretch">
+      {label === null ? (
+        <Spacer />
+      ) : (
+        <Text tone={muted ? 'muted' : 'default'} style={{ ...type.rowMeta, flex: 1 }}>
+          {label}
+        </Text>
+      )}
+
+      <View style={{ width: MONEY_COLUMN, alignItems: 'flex-end' }}>{debit}</View>
+      <View style={{ width: MONEY_COLUMN, alignItems: 'flex-end' }}>{credit}</View>
+    </Inline>
+  );
+}
+
+function ColumnHeading({ children }: { children: ReactNode }) {
+  return (
+    <Text tone="muted" style={type.rowMeta}>
+      {children}
+    </Text>
+  );
+}
+
 function StatusBadgeForVoucher({ status }: { status: Voucher['status'] }) {
   if (status === 'approved') {
     return (
@@ -370,7 +401,7 @@ function StatusBadgeForVoucher({ status }: { status: Voucher['status'] }) {
   const refused = status === 'rejected';
 
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.xs }}>
+    <Inline gap="xs">
       <Icon
         name={refused ? 'suspended' : 'awaiting'}
         size={15}
@@ -379,7 +410,7 @@ function StatusBadgeForVoucher({ status }: { status: Voucher['status'] }) {
       <Text tone={refused ? 'danger' : 'accent'} style={type.rowMeta}>
         {refused ? 'Refused' : 'Draft'}
       </Text>
-    </View>
+    </Inline>
   );
 }
 
@@ -426,11 +457,19 @@ function VoucherForm({
           the form simply cannot express the invalid thing.
         */
         if (key === 'debit') {
-          return { ...line, debit: value, credit: value.trim() === '' ? line.credit : '' };
+          return {
+            ...line,
+            debit: value,
+            credit: value.trim() === '' ? line.credit : '',
+          };
         }
 
         if (key === 'credit') {
-          return { ...line, credit: value, debit: value.trim() === '' ? line.debit : '' };
+          return {
+            ...line,
+            credit: value,
+            debit: value.trim() === '' ? line.debit : '',
+          };
         }
 
         return { ...line, ledger_id: value };
@@ -500,7 +539,7 @@ function VoucherForm({
       />
 
       {lines.map((line, index) => (
-        <View key={index} style={{ gap: space.sm }}>
+        <Stack key={index} gap="sm">
           <Text tone="muted" style={type.section}>
             LINE {index + 1}
           </Text>
@@ -513,27 +552,27 @@ function VoucherForm({
             required
           />
 
-          <View style={{ flexDirection: 'row', gap: space.sm }}>
-            <View style={{ flex: 1 }}>
+          <Inline gap="sm" align="stretch">
+            <Stack grow>
               <InputField
                 label="Debit"
                 value={line.debit}
                 onChangeText={(value) => set(index, 'debit', value)}
                 keyboardType="phone-pad"
               />
-            </View>
-            <View style={{ flex: 1 }}>
+            </Stack>
+            <Stack grow>
               <InputField
                 label="Credit"
                 value={line.credit}
                 onChangeText={(value) => set(index, 'credit', value)}
                 keyboardType="phone-pad"
               />
-            </View>
-          </View>
+            </Stack>
+          </Inline>
 
           {lines.length > 2 ? (
-            <View style={{ alignItems: 'flex-start' }}>
+            <Stack align="start">
               <Button
                 size="sm"
                 variant="secondary"
@@ -541,12 +580,12 @@ function VoucherForm({
               >
                 <Button.Label>Remove line</Button.Label>
               </Button>
-            </View>
+            </Stack>
           ) : null}
-        </View>
+        </Stack>
       ))}
 
-      <View style={{ alignItems: 'flex-start' }}>
+      <Stack align="start">
         <Button
           size="sm"
           variant="secondary"
@@ -555,16 +594,16 @@ function VoucherForm({
           <Icon name="add" size={15} tone="muted" />
           <Button.Label>Add a line</Button.Label>
         </Button>
-      </View>
+      </Stack>
 
       <Panel tone={difference === 0 && debits > 0 ? undefined : 'danger'}>
         <Text style={type.body}>
           Debits {debits.toFixed(2)} · Credits {credits.toFixed(2)}
           {difference === 0 ? ' · balanced' : ` · out by ${Math.abs(difference).toFixed(2)}`}
         </Text>
-        <Text tone="muted" style={{ ...type.rowMeta, marginTop: 4 }}>
-          A voucher that does not balance is refused. Saving it as a draft posts nothing —
-          approval is what reaches the ledger.
+        <Text tone="muted" style={type.rowMeta}>
+          A voucher that does not balance is refused. Saving it as a draft posts nothing — approval
+          is what reaches the ledger.
         </Text>
       </Panel>
 
@@ -572,7 +611,7 @@ function VoucherForm({
         <Button variant="secondary" onPress={onCancel}>
           <Button.Label>Cancel</Button.Label>
         </Button>
-        <Button isDisabled={! complete || save.isPending} onPress={() => void submit()}>
+        <Button isDisabled={!complete || save.isPending} onPress={() => void submit()}>
           <Button.Label>{save.isPending ? 'Saving…' : 'Save as draft'}</Button.Label>
         </Button>
       </FormActions>
@@ -599,9 +638,9 @@ function ReverseForm({
         <Text style={type.body}>
           {voucher.voucher_no} posted {voucher.total_debit} on {voucher.voucher_date}.
         </Text>
-        <Text tone="muted" style={{ ...type.rowMeta, marginTop: 4 }}>
-          Reversing does not delete it. A new voucher posts the opposite of every line, so a
-          report run last month still reconciles with what it said.
+        <Text tone="muted" style={type.rowMeta}>
+          Reversing does not delete it. A new voucher posts the opposite of every line, so a report
+          run last month still reconciles with what it said.
         </Text>
       </Panel>
 
@@ -617,7 +656,10 @@ function ReverseForm({
         <Button variant="secondary" onPress={onCancel}>
           <Button.Label>Cancel</Button.Label>
         </Button>
-        <Button isDisabled={pending || reason.trim().length < 5} onPress={() => onSubmit(reason.trim())}>
+        <Button
+          isDisabled={pending || reason.trim().length < 5}
+          onPress={() => onSubmit(reason.trim())}
+        >
           <Button.Label>{pending ? 'Posting…' : 'Post the reversal'}</Button.Label>
         </Button>
       </FormActions>

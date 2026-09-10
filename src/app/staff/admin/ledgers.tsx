@@ -3,12 +3,7 @@ import { useMemo, useState } from 'react';
 import { View } from 'react-native';
 import { ApiError } from '@/api/errors';
 import { useSession } from '@/features/auth/session';
-import {
-  useAccountGroups,
-  useLedgers,
-  useSaveLedger,
-  type Ledger,
-} from '@/features/staff/ledgers';
+import { useAccountGroups, useLedgers, useSaveLedger, type Ledger } from '@/features/staff/ledgers';
 import {
   Button,
   Cell,
@@ -26,6 +21,7 @@ import {
   ScreenHeader,
   Section,
   space,
+  Stack,
   StateView,
   Text,
   Toolbar,
@@ -173,11 +169,11 @@ export default function LedgersScreen() {
       />
 
       {error ? (
-        <View style={{ marginTop: space.lg }}>
+        <Section>
           <Panel tone="danger">
             <Text style={type.body}>{error}</Text>
           </Panel>
-        </View>
+        </Section>
       ) : null}
 
       {editing || creating ? (
@@ -201,10 +197,7 @@ export default function LedgersScreen() {
         the page's own subject named a second time - a chart of accounts IS
         the ledgers, and the subtitle already counts them.
       */}
-      <Section
-        title={editing || creating ? 'Ledgers' : undefined}
-        first={! editing && ! creating}
-      >
+      <Section title={editing || creating ? 'Ledgers' : undefined} first={!editing && !creating}>
         <Toolbar
           filters={
             <Inline gap="md">
@@ -227,7 +220,7 @@ export default function LedgersScreen() {
             </Inline>
           }
           actions={
-            can('ledgers.create') && ! editing && ! creating ? (
+            can('ledgers.create') && !editing && !creating ? (
               <Button size="sm" onPress={() => setCreating(true)}>
                 <Icon name="add" size={15} tone="inverse" />
                 <Button.Label>Add ledger</Button.Label>
@@ -269,7 +262,12 @@ function LedgerForm({
   onSubmit,
 }: {
   ledger: Ledger | null;
-  groups: { id: number; name: string; category: string | null; type: string | null }[];
+  groups: {
+    id: number;
+    name: string;
+    category: string | null;
+    type: string | null;
+  }[];
   pending: boolean;
   onCancel: () => void;
   onSubmit: (values: {
@@ -328,13 +326,13 @@ function LedgerForm({
 
       <Inline gap="sm">
         <Checkbox isSelected={active} onSelectedChange={setActive} />
-        <View style={{ flex: 1 }}>
+        <Stack gap="none" grow>
           <Text style={type.body}>In use</Text>
           <Text tone="muted" style={type.rowMeta}>
-            Turn off to retire it. Ledgers are never deleted - their history has to stay
-            readable - and one a fee head still names cannot be retired.
+            Turn off to retire it. Ledgers are never deleted - their history has to stay readable -
+            and one a fee head still names cannot be retired.
           </Text>
-        </View>
+        </Stack>
       </Inline>
 
       <FormActions>

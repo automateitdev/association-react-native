@@ -19,6 +19,7 @@ import {
   Button,
   Checkbox,
   Field,
+  Inline,
   Panel,
   Row,
   Screen,
@@ -240,7 +241,7 @@ export default function PayScreen() {
             {/* Server-computed. The app does not add money up. */}
             <SelectionTotal quote={quote.data} isLoading={quote.isPending} />
 
-            <View style={{ marginTop: space.lg }}>
+            <Stack gap="none">
               <MethodChoice
                 title={`Pay now with ${online?.label ?? 'card or mobile banking'}`}
                 detail="You are taken to the bank's own page and back. Nothing to upload."
@@ -255,7 +256,7 @@ export default function PayScreen() {
                 onPress={() => setChosenMethod('manual')}
                 divider={false}
               />
-            </View>
+            </Stack>
           </Section>
         ) : null}
 
@@ -281,9 +282,7 @@ export default function PayScreen() {
                     <Field label="Routing" value={bank.bank.routing_number} />
                   ) : null}
                   {bank.bank.instructions ? (
-                    <Text style={{ ...type.body, marginTop: space.sm }}>
-                      {bank.bank.instructions}
-                    </Text>
+                    <Text style={type.body}>{bank.bank.instructions}</Text>
                   ) : null}
                 </View>
               ) : (
@@ -307,12 +306,9 @@ export default function PayScreen() {
               this.
             </Text>
 
-            <View style={{ marginTop: space.md, gap: space.sm }}>
+            <Stack gap="sm">
               {slips.map((slip, index) => (
-                <View
-                  key={slip.assetId ?? slip.uri}
-                  style={{ flexDirection: 'row', justifyContent: 'space-between', gap: space.sm }}
-                >
+                <Inline key={slip.assetId ?? slip.uri} gap="sm" justify="between">
                   <Text style={{ ...type.body, flex: 1 }} numberOfLines={1}>
                     {slip.fileName ?? `Slip ${index + 1}`}
                   </Text>
@@ -321,7 +317,7 @@ export default function PayScreen() {
                       Remove
                     </Text>
                   </Pressable>
-                </View>
+                </Inline>
               ))}
 
               {slips.length < 5 ? (
@@ -329,12 +325,12 @@ export default function PayScreen() {
                   <Button.Label>{slips.length === 0 ? 'Add slip' : 'Add another'}</Button.Label>
                 </Button>
               ) : null}
-            </View>
+            </Stack>
           </Section>
         ) : null}
 
         {error ? (
-          <View style={{ marginTop: space.lg }}>
+          <Section>
             <Panel tone="danger">
               {/*
                 `text-danger` rather than a hex value. The old version hard-coded
@@ -345,14 +341,16 @@ export default function PayScreen() {
                 {error.message}
               </Text>
               {error.isRetryable ? (
-                <Text style={type.body}>Tap Submit again — your payment will not be duplicated.</Text>
+                <Text style={type.body}>
+                  Tap Submit again — your payment will not be duplicated.
+                </Text>
               ) : null}
             </Panel>
-          </View>
+          </Section>
         ) : null}
 
         {chosen.length > 0 ? (
-          <View style={{ marginTop: space.xl, gap: space.sm }}>
+          <Stack gap="sm">
             <Actions>
               {method === 'online' ? (
                 <Button isDisabled={busy} onPress={payOnline}>
@@ -380,7 +378,7 @@ export default function PayScreen() {
                 Attach your bank slip to submit.
               </Text>
             ) : null}
-          </View>
+          </Stack>
         ) : null}
       </StateView>
     </Screen>

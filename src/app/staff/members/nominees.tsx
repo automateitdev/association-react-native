@@ -22,9 +22,10 @@ import {
   Screen,
   ScreenHeader,
   Section,
+  space,
+  Stack,
   StateView,
   Text,
-  space,
   type,
 } from '@/ui';
 
@@ -99,11 +100,11 @@ export default function NomineesScreen() {
       />
 
       {error ? (
-        <View style={{ marginTop: space.lg }}>
+        <Section>
           <Panel tone="danger">
             <Text style={type.body}>{error}</Text>
           </Panel>
-        </View>
+        </Section>
       ) : null}
 
       {editing || adding ? (
@@ -111,9 +112,7 @@ export default function NomineesScreen() {
           <NomineeForm
             nominee={editing}
             allocatedElsewhere={
-              editing
-                ? subtract(allocated, editing.share_percentage ?? '0.00')
-                : allocated
+              editing ? subtract(allocated, editing.share_percentage ?? '0.00') : allocated
             }
             pending={create.isPending || update.isPending}
             onCancel={() => {
@@ -145,7 +144,7 @@ export default function NomineesScreen() {
 
       {/* Headed only while a form is open above it; otherwise the page header
           has already said Nominees. */}
-      <Section title={editing || adding ? 'Nominated' : undefined} first={! editing && ! adding}>
+      <Section title={editing || adding ? 'Nominated' : undefined} first={!editing && !adding}>
         <Panel>
           <Text style={type.body}>
             {allocated === '0.00'
@@ -154,22 +153,22 @@ export default function NomineesScreen() {
                   allocated === '100.00' ? '' : `, ${subtract('100.00', allocated)}% still free`
                 }.`}
           </Text>
-          <Text tone="muted" style={{ ...type.rowMeta, marginTop: 4 }}>
-            Shares cannot add up to more than 100%. They may add up to less while the member
-            is still deciding.
+          <Text tone="muted" style={type.rowMeta}>
+            Shares cannot add up to more than 100%. They may add up to less while the member is
+            still deciding.
           </Text>
         </Panel>
 
-        {! editing && ! adding ? (
-          <View style={{ marginTop: space.md, alignItems: 'flex-start' }}>
+        {!editing && !adding ? (
+          <Stack align="start">
             <Button size="sm" onPress={() => setAdding(true)}>
               <Icon name="add" size={15} tone="inverse" />
               <Button.Label>Add nominee</Button.Label>
             </Button>
-          </View>
+          </Stack>
         ) : null}
 
-        <View style={{ marginTop: space.md }}>
+        <Section>
           <StateView
             loading={nominees.isLoading}
             error={nominees.error}
@@ -204,7 +203,7 @@ export default function NomineesScreen() {
               />
             ))}
           </StateView>
-        </View>
+        </Section>
       </Section>
     </Screen>
   );
@@ -291,7 +290,9 @@ function NomineeForm({
             })
           }
         >
-          <Button.Label>{pending ? 'Saving…' : nominee ? 'Save nominee' : 'Add nominee'}</Button.Label>
+          <Button.Label>
+            {pending ? 'Saving…' : nominee ? 'Save nominee' : 'Add nominee'}
+          </Button.Label>
         </Button>
       </FormActions>
     </Form>

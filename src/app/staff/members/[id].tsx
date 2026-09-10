@@ -58,7 +58,11 @@ export default function MemberDetailScreen() {
   const member = useMember(memberId);
 
   return (
-    <Screen width="reading" onRefresh={() => void member.refetch()} refreshing={member.isRefetching}>
+    <Screen
+      width="reading"
+      onRefresh={() => void member.refetch()}
+      refreshing={member.isRefetching}
+    >
       <ScreenHeader
         title={member.data?.name ?? 'Member'}
         subtitle={
@@ -83,9 +87,11 @@ export default function MemberDetailScreen() {
       >
         {member.data ? (
           <>
-            <View style={{ flexDirection: 'row', marginTop: space.md, gap: space.sm }}>
-              <StatusBadge status={member.data.status} />
-            </View>
+            <Section first>
+              <Inline gap="sm" align="start">
+                <StatusBadge status={member.data.status} />
+              </Inline>
+            </Section>
 
             <Transitions member={member.data} can={can} />
             <SocietyRecord member={member.data} editable={can('members.edit')} />
@@ -284,14 +290,12 @@ function SocietyRecord({ member, editable }: { member: MemberDetail; editable: b
           quoted one on a receipt or an approval SMS.
         */}
         {!member.membership_no ? (
-          <View style={{ marginBottom: space.md }}>
-            <Panel>
-              <Text style={type.rowTitle}>No membership number assigned yet</Text>
-              <Text tone="muted" style={type.rowMeta}>
-                The office assigns it, together with the approval date.
-              </Text>
-            </Panel>
-          </View>
+          <Panel>
+            <Text style={type.rowTitle}>No membership number assigned yet</Text>
+            <Text tone="muted" style={type.rowMeta}>
+              The office assigns it, together with the approval date.
+            </Text>
+          </Panel>
         ) : null}
 
         <Field label="Membership no." value={member.membership_no} />
@@ -316,7 +320,7 @@ function SocietyRecord({ member, editable }: { member: MemberDetail; editable: b
           a list of people with their own fields and a percentage split, and
           folding that into a panel of single-line inputs would bury it.
         */}
-        <View style={{ marginTop: space.sm, alignItems: 'flex-start' }}>
+        <Stack align="start">
           <Button
             size="sm"
             variant="secondary"
@@ -325,7 +329,7 @@ function SocietyRecord({ member, editable }: { member: MemberDetail; editable: b
             <Icon name="members" size={15} tone="muted" />
             <Button.Label>Nominees</Button.Label>
           </Button>
-        </View>
+        </Stack>
 
         {/*
           A Form, so the gap between fields belongs to the form rather than to
@@ -335,31 +339,31 @@ function SocietyRecord({ member, editable }: { member: MemberDetail; editable: b
           the drift the real component's docblock was written about.
         */}
         <Form maxWidth={null} dense columns={2}>
-        <InputField
-          label="Membership no."
-          value={fields.membership_no}
-          onChangeText={set('membership_no')}
-          error={fieldErrors.membership_no?.[0]}
-        />
-        <InputField
-          label="Joined"
-          placeholder="YYYY-MM-DD"
-          value={fields.join_date ?? ''}
-          onChangeText={set('join_date')}
-          error={fieldErrors.join_date?.[0]}
-        />
-        <InputField
-          label="Share no."
-          value={fields.share_no ?? ''}
-          onChangeText={set('share_no')}
-          error={fieldErrors.share_no?.[0]}
-        />
-        <InputField label="Employer" value={fields.company ?? ''} onChangeText={set('company')} />
-        <InputField
-          label="Designation"
-          value={fields.designation ?? ''}
-          onChangeText={set('designation')}
-        />
+          <InputField
+            label="Membership no."
+            value={fields.membership_no}
+            onChangeText={set('membership_no')}
+            error={fieldErrors.membership_no?.[0]}
+          />
+          <InputField
+            label="Joined"
+            placeholder="YYYY-MM-DD"
+            value={fields.join_date ?? ''}
+            onChangeText={set('join_date')}
+            error={fieldErrors.join_date?.[0]}
+          />
+          <InputField
+            label="Share no."
+            value={fields.share_no ?? ''}
+            onChangeText={set('share_no')}
+            error={fieldErrors.share_no?.[0]}
+          />
+          <InputField label="Employer" value={fields.company ?? ''} onChangeText={set('company')} />
+          <InputField
+            label="Designation"
+            value={fields.designation ?? ''}
+            onChangeText={set('designation')}
+          />
         </Form>
 
         <Inline gap="sm" align="stretch">
@@ -427,34 +431,34 @@ function PersonalDetails({ member, editable }: { member: MemberDetail; editable:
           ) : null}
 
           <Form maxWidth={null} dense columns={2}>
-          <InputField label="Name" value={fields.name ?? ''} onChangeText={set('name')} />
-          <InputField
-            label="Mobile"
-            value={fields.mobile ?? ''}
-            onChangeText={set('mobile')}
-            keyboardType="phone-pad"
-          />
-          <InputField
-            label="Email"
-            value={fields.email ?? ''}
-            onChangeText={set('email')}
-            keyboardType="email-address"
-          />
-          <InputField
-            label="Father's name"
-            value={fields.father_name ?? ''}
-            onChangeText={set('father_name')}
-          />
-          <InputField
-            label="Present address"
-            value={fields.present_address ?? ''}
-            onChangeText={set('present_address')}
-          />
-          <InputField
-            label="Permanent address"
-            value={fields.permanent_address ?? ''}
-            onChangeText={set('permanent_address')}
-          />
+            <InputField label="Name" value={fields.name ?? ''} onChangeText={set('name')} />
+            <InputField
+              label="Mobile"
+              value={fields.mobile ?? ''}
+              onChangeText={set('mobile')}
+              keyboardType="phone-pad"
+            />
+            <InputField
+              label="Email"
+              value={fields.email ?? ''}
+              onChangeText={set('email')}
+              keyboardType="email-address"
+            />
+            <InputField
+              label="Father's name"
+              value={fields.father_name ?? ''}
+              onChangeText={set('father_name')}
+            />
+            <InputField
+              label="Present address"
+              value={fields.present_address ?? ''}
+              onChangeText={set('present_address')}
+            />
+            <InputField
+              label="Permanent address"
+              value={fields.permanent_address ?? ''}
+              onChangeText={set('permanent_address')}
+            />
           </Form>
 
           <Inline gap="sm" align="stretch">
@@ -510,7 +514,7 @@ function PersonalDetails({ member, editable }: { member: MemberDetail; editable:
       <Field label="NID" value={member.nid} />
 
       {editable ? (
-        <Text tone="muted" style={{ ...type.rowMeta, marginTop: space.sm }}>
+        <Text tone="muted" style={type.rowMeta}>
           Batch, date of birth, gender and NID are set when the member is created and cannot be
           changed here.
         </Text>
@@ -537,7 +541,7 @@ function TransferHistory({ member }: { member: MemberDetail }) {
   const transfers = useMemberTransfers(member.id);
   const rows = transfers.data?.data ?? [];
 
-  if (! transfers.isLoading && rows.length === 0) return null;
+  if (!transfers.isLoading && rows.length === 0) return null;
 
   return (
     <Section title="Instalment transfers">
@@ -573,7 +577,7 @@ function TransferHistory({ member }: { member: MemberDetail }) {
               }
               footer={
                 transfer.note ? (
-                  <Text tone="muted" style={{ ...type.rowMeta, marginTop: space.xs }}>
+                  <Text tone="muted" style={type.rowMeta}>
                     {transfer.note}
                   </Text>
                 ) : null

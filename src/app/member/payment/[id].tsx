@@ -6,6 +6,7 @@ import * as WebBrowser from 'expo-web-browser';
 import { ApiError } from '@/api/errors';
 import { usePayment, useGatewaySession } from '@/features/payments/queries';
 import {
+  Actions,
   AmountBreakdown,
   Button,
   Panel,
@@ -13,9 +14,9 @@ import {
   Screen,
   ScreenHeader,
   Section,
+  space,
   StateView,
   Text,
-  space,
   type,
 } from '@/ui';
 
@@ -59,9 +60,7 @@ export default function PaymentDetailScreen() {
       // Shown, not swallowed. A silent failure here is what put this screen in
       // front of somebody claiming a bank was confirming a payment it had
       // never been sent.
-      setSessionError(
-        e instanceof ApiError ? e.message : 'The payment page could not be opened.',
-      );
+      setSessionError(e instanceof ApiError ? e.message : 'The payment page could not be opened.');
     }
   };
 
@@ -81,7 +80,7 @@ export default function PaymentDetailScreen() {
         {payment.data ? (
           <>
             {payment.data.status === 'pending' ? (
-              <View style={{ marginTop: space.lg }}>
+              <Section>
                 <Panel>
                   {/*
                     Two different waits, and saying the wrong one is worse than
@@ -108,25 +107,22 @@ export default function PaymentDetailScreen() {
                   */}
                   {payment.data.payment_type === 'online' &&
                   payment.data.gateway_started === false ? (
-                    <View style={{ marginTop: space.md }}>
-                      <Button
-                        isDisabled={session.isPending}
-                        onPress={() => void retry()}
-                      >
+                    <Actions>
+                      <Button isDisabled={session.isPending} onPress={() => void retry()}>
                         <Button.Label>
                           {session.isPending ? 'Opening…' : 'Try the payment page again'}
                         </Button.Label>
                       </Button>
 
                       {sessionError ? (
-                        <Text tone="danger" style={{ ...type.rowMeta, marginTop: space.sm }}>
+                        <Text tone="danger" style={type.rowMeta}>
                           {sessionError}
                         </Text>
                       ) : null}
-                    </View>
+                    </Actions>
                   ) : null}
                 </Panel>
-              </View>
+              </Section>
             ) : null}
 
             <Section title="Amount" first>

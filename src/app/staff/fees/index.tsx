@@ -193,10 +193,12 @@ export default function FeeSetupsScreen() {
             pageSize={25}
           />
 
-          <Text tone="muted" style={{ ...type.rowMeta, marginTop: space.sm }}>
-            Deactivated heads are kept because assignments reference them. They
-            cannot be assigned again.
-          </Text>
+          <View style={{ marginTop: space.sm }}>
+            <Text tone="muted" style={type.rowMeta}>
+              Deactivated heads are kept because assignments reference them. They cannot be assigned
+              again.
+            </Text>
+          </View>
         </StateView>
       </Section>
     </Screen>

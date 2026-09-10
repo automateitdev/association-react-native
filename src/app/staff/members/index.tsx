@@ -225,7 +225,7 @@ export default function MembersScreen() {
                 slightly narrower question.
               */}
               <DateField
-                  value={added.from && added.to ? added : draft}
+                value={added.from && added.to ? added : draft}
                 onChange={(next) => {
                   setDraft(next);
 
@@ -244,19 +244,19 @@ export default function MembersScreen() {
           actions={
             <Inline gap="sm">
               {can('reports.export') ? (
-              <ExportButtons
-                path="/staff/members/export"
-                name="members"
-                scope="Every member matching these filters, not just this page."
-                query={{
-                  ...(query ? { q: query } : {}),
-                  ...(status ? { status } : {}),
-                  ...(added.from ? { from: added.from } : {}),
-                  ...(added.to ? { to: added.to } : {}),
-                  ...(sort ? { sort: sort.key, direction: sort.direction } : {}),
-                }}
-                disabled={members.isLoading || rows.length === 0}
-              />
+                <ExportButtons
+                  path="/staff/members/export"
+                  name="members"
+                  scope="Every member matching these filters, not just this page."
+                  query={{
+                    ...(query ? { q: query } : {}),
+                    ...(status ? { status } : {}),
+                    ...(added.from ? { from: added.from } : {}),
+                    ...(added.to ? { to: added.to } : {}),
+                    ...(sort ? { sort: sort.key, direction: sort.direction } : {}),
+                  }}
+                  disabled={members.isLoading || rows.length === 0}
+                />
               ) : null}
             </Inline>
           }
@@ -359,14 +359,7 @@ function RelatedScreens({ can }: { can: (permission: string) => boolean }) {
   if (links.length === 0) return null;
 
   return (
-    <View
-      style={{
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        gap: space.sm,
-        marginTop: space.md,
-      }}
-    >
+    <Inline gap="sm" wrap>
       {links.map((link) => (
         <Button
           key={link.href}
@@ -378,6 +371,6 @@ function RelatedScreens({ can }: { can: (permission: string) => boolean }) {
           <Button.Label>{link.label}</Button.Label>
         </Button>
       ))}
-    </View>
+    </Inline>
   );
 }

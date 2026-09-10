@@ -29,6 +29,7 @@ import {
   SearchField,
   Section,
   space,
+  Stack,
   StateView,
   Text,
   type,
@@ -143,14 +144,16 @@ export default function AssignFeesScreen() {
   const rows = members.data?.data ?? [];
   const meta = members.data?.meta;
 
-
   // Only active fee heads can be assigned; the server refuses the rest with
   // FEE_HEAD_INACTIVE, so they are not offered.
   const options = useMemo(
     () =>
       (setups.data ?? [])
         .filter((s) => s.is_active)
-        .map((s) => ({ value: String(s.id), label: `${s.fee_head} · ${s.amount}` })),
+        .map((s) => ({
+          value: String(s.id),
+          label: `${s.fee_head} · ${s.amount}`,
+        })),
     [setups.data],
   );
 
@@ -181,7 +184,9 @@ export default function AssignFeesScreen() {
    */
   const toggleMonthValue = (value: string) => {
     if (value === 'all') {
-      setMonths((current) => (current.length === 12 ? [] : [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]));
+      setMonths((current) =>
+        current.length === 12 ? [] : [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+      );
 
       return;
     }
@@ -327,7 +332,7 @@ export default function AssignFeesScreen() {
           const held = coverage.data?.[String(row.id)];
 
           if (coverage.isLoading && held === undefined) return <Cell>…</Cell>;
-          if (! held || held.total === 0) return <Cell>—</Cell>;
+          if (!held || held.total === 0) return <Cell>—</Cell>;
 
           /*
             A proposal is on screen: say how much of it they have, and WHICH.
@@ -336,9 +341,10 @@ export default function AssignFeesScreen() {
           */
           if (held.matching !== null && periods.length > 0) {
             const chosen = new Set(periods);
-            const overlap = held.heads
-              .find((h) => h.fee_head === chosenHeadName)
-              ?.periods.filter((p) => chosen.has(p)) ?? [];
+            const overlap =
+              held.heads
+                .find((h) => h.fee_head === chosenHeadName)
+                ?.periods.filter((p) => chosen.has(p)) ?? [];
 
             return (
               <Cell bold={held.matching === periods.length}>
@@ -409,13 +415,13 @@ export default function AssignFeesScreen() {
       />
 
       {summary ? (
-        <View style={{ marginTop: space.lg }}>
+        <Section>
           <Outcome summary={summary} onDismiss={() => setSummary(null)} />
-        </View>
+        </Section>
       ) : null}
 
       {assign.isError ? (
-        <View style={{ marginTop: space.lg }}>
+        <Section>
           <Panel tone="danger">
             <Text style={type.body}>
               {assign.error instanceof ApiError
@@ -423,7 +429,7 @@ export default function AssignFeesScreen() {
                 : 'Nothing was assigned. Check your connection and try again.'}
             </Text>
           </Panel>
-        </View>
+        </Section>
       ) : null}
 
       {/*
@@ -446,8 +452,8 @@ export default function AssignFeesScreen() {
         }}
       >
         <View style={halfWidth}>
-        <Section step={1} title="Which fee" first>
-          {/*
+          <Section step={1} title="Which fee" first>
+            {/*
             IN A Form, like every other labelled field in the app.
 
             Outside one it had no width of its own and stretched to the content
@@ -456,23 +462,23 @@ export default function AssignFeesScreen() {
             forms. ui/Form caps at 460 for the reason its own note gives: a field
             drawn the width of a desktop window is harder to use, not easier.
           */}
-          <Form dense>
-            <PickerField
-              label="Fee head"
-              value={feeSetupId}
-              onChange={setFeeSetupId}
-              options={options}
-              placeholder={setups.isLoading ? 'Loading…' : 'Choose a fee head'}
-              isDisabled={setups.isLoading}
-              hint="Only fee heads in use can be assigned."
-            />
-          </Form>
-        </Section>
+            <Form dense>
+              <PickerField
+                label="Fee head"
+                value={feeSetupId}
+                onChange={setFeeSetupId}
+                options={options}
+                placeholder={setups.isLoading ? 'Loading…' : 'Choose a fee head'}
+                isDisabled={setups.isLoading}
+                hint="Only fee heads in use can be assigned."
+              />
+            </Form>
+          </Section>
         </View>
 
         <View style={halfWidth}>
-        <Section step={2} title="When it applies" first>
-          {/*
+          <Section step={2} title="When it applies" first>
+            {/*
             MONTHS AS A DROPDOWN, matching the years beside them.
 
             They were twelve chips and a button, which put a row of small
@@ -486,22 +492,28 @@ export default function AssignFeesScreen() {
             choice on this screen, and a shortcut inside the control it affects
             needs no explaining.
           */}
-          <Form dense>
-            <PickerField
-              label="Months"
-              options={[
-                { value: 'all', label: months.length === 12 ? 'Clear all months' : 'All 12 months' },
-                ...MONTH_NAMES.map((name, index) => ({ value: String(index + 1), label: name })),
-              ]}
-              value={null}
-              onChange={() => {}}
-              values={months.map(String)}
-              onToggleValue={toggleMonthValue}
-              placeholder="Choose months"
-            />
-          </Form>
+            <Form dense>
+              <PickerField
+                label="Months"
+                options={[
+                  {
+                    value: 'all',
+                    label: months.length === 12 ? 'Clear all months' : 'All 12 months',
+                  },
+                  ...MONTH_NAMES.map((name, index) => ({
+                    value: String(index + 1),
+                    label: name,
+                  })),
+                ]}
+                value={null}
+                onChange={() => {}}
+                values={months.map(String)}
+                onToggleValue={toggleMonthValue}
+                placeholder="Choose months"
+              />
+            </Form>
 
-          {/*
+            {/*
             YEARS ARE A SECOND AXIS, not a prefix on each month. Twelve months
             times three years is thirty-six chips as one list and twelve plus
             three as two.
@@ -516,25 +528,25 @@ export default function AssignFeesScreen() {
             A closed dropdown is one line saying "2026", and every year it offers
             is one press away without anything else moving.
           */}
-          {/*
+            {/*
             The same Form, so the two labelled fields on this screen match each
             other and the rest of the app. This one had been hand-capped at 260 -
             a number chosen for it alone, which is how a screen ends up with
             three field widths and no rule.
           */}
-          <View style={{ marginTop: space.md }}>
-            <Form dense>
-              <PickerField
-                label="Years"
-                options={yearOptions}
-                value={null}
-                onChange={() => {}}
-                values={years.map(String)}
-                onToggleValue={toggleYear}
-                placeholder="Choose a year"
-              />
+            <Stack gap="md">
+              <Form dense>
+                <PickerField
+                  label="Years"
+                  options={yearOptions}
+                  value={null}
+                  onChange={() => {}}
+                  values={years.map(String)}
+                  onToggleValue={toggleYear}
+                  placeholder="Choose a year"
+                />
 
-              {/*
+                {/*
                 WHEN THE FINE STARTS, which the legacy asks on every assignment
                 and the rewrite had removed entirely.
 
@@ -546,48 +558,55 @@ export default function AssignFeesScreen() {
                 It is an override rather than a required answer: left alone, the
                 association's grace period decides, which is right nearly always.
               */}
-              <PickerField
-                label="Fine starts on"
-                options={[{ value: '', label: 'The association’s usual grace period' }, ...fineDayOptions()]}
-                value={fineDay}
-                onChange={setFineDay}
-                /*
+                <PickerField
+                  label="Fine starts on"
+                  options={[
+                    {
+                      value: '',
+                      label: 'The association’s usual grace period',
+                    },
+                    ...fineDayOptions(),
+                  ]}
+                  value={fineDay}
+                  onChange={setFineDay}
+                  /*
                   The hint answers whichever question is live. With no day
                   chosen that is "where does this come from"; with one chosen it
                   is "what will that actually do to the months I picked" - which
                   nobody can work out unaided, and which the 29th, 30th and 31st
                   make a real question rather than a pedantic one.
                 */
-                hint={
-                  fineDayNote(periods, fineDay === '' ? null : Number(fineDay)) ??
-                  'Only for this assignment. Change the usual one in Admin → Settings.'
-                }
-              />
-            </Form>
-        </View>
+                  hint={
+                    fineDayNote(periods, fineDay === '' ? null : Number(fineDay)) ??
+                    'Only for this assignment. Change the usual one in Admin → Settings.'
+                  }
+                />
+              </Form>
+            </Stack>
 
-        {/*
+            {/*
           A cross product multiplies quietly. Six months across two years is
           twelve instalments per member, and with forty selected members that
           is four hundred and eighty rows from one press of a button - which
           nothing on the screen would otherwise say before it happened.
         */}
-        <Text tone="muted" style={{ ...type.rowMeta, marginTop: space.md }}>
-          {periods.length === 0
-            ? 'Choose at least one month and one year.'
-            : `${periods.length} instalment${periods.length === 1 ? '' : 's'} per member — ${periods[0]} to ${periods[periods.length - 1]}`}
-        </Text>
-      </Section>
+            <Text tone="muted" style={type.rowMeta}>
+              {periods.length === 0
+                ? 'Choose at least one month and one year.'
+                : `${periods.length} instalment${periods.length === 1 ? '' : 's'} per member — ${periods[0]} to ${periods[periods.length - 1]}`}
+            </Text>
+          </Section>
         </View>
       </View>
 
       <Section step={3} title="Which members">
-        <Text tone="muted" style={{ ...type.rowMeta, marginBottom: space.sm }}>
-          Active members only. Assigning to a suspended or unapproved member is a
-          separate decision.
-        </Text>
+        <Stack gap="md">
+          <Text tone="muted" style={type.rowMeta}>
+            Active members only. Assigning to a suspended or unapproved member is a separate
+            decision.
+          </Text>
 
-        {/*
+          {/*
           SearchField, like every other list in the app.
 
           This was a raw TextField + Input at maxWidth 340 - which is precisely
@@ -597,54 +616,54 @@ export default function AssignFeesScreen() {
           so the only member list in the app that filters like a form rather
           than like a filter was this one.
         */}
-        <SearchField
-          value={search}
-          onChangeText={setSearch}
-          placeholder="Search name or mobile"
-        />
-
-        <StateView
-          loading={members.isLoading}
-          error={members.error}
-          empty={rows.length === 0}
-          emptyTitle="No active members"
-          emptyMessage="Nobody matches this search."
-          onRetry={() => void members.refetch()}
-        >
-          <DataTable
-            columns={memberColumns}
-            rows={rows}
-            keyExtractor={(member) => member.id}
-            server={
-              meta
-                ? {
-                    page: meta.current_page,
-                    pageCount: meta.last_page,
-                    total: meta.total,
-                    // What the hook asks the API for. See ServerPaging.pageSize.
-                    pageSize: 25,
-                    onPageChange: setPage,
-                    sort: null,
-                    onSortChange: () => {},
-                  }
-                : undefined
-            }
+          <SearchField
+            value={search}
+            onChangeText={setSearch}
+            placeholder="Search name or mobile"
           />
 
-        </StateView>
+          <StateView
+            loading={members.isLoading}
+            error={members.error}
+            empty={rows.length === 0}
+            emptyTitle="No active members"
+            emptyMessage="Nobody matches this search."
+            onRetry={() => void members.refetch()}
+          >
+            <DataTable
+              columns={memberColumns}
+              rows={rows}
+              keyExtractor={(member) => member.id}
+              server={
+                meta
+                  ? {
+                      page: meta.current_page,
+                      pageCount: meta.last_page,
+                      total: meta.total,
+                      // What the hook asks the API for. See ServerPaging.pageSize.
+                      pageSize: 25,
+                      onPageChange: setPage,
+                      sort: null,
+                      onSortChange: () => {},
+                    }
+                  : undefined
+              }
+            />
+          </StateView>
+        </Stack>
       </Section>
 
-      <View style={{ marginTop: space.xl, gap: space.sm }}>
+      <Stack gap="sm">
         <Actions>
-        <Button isDisabled={!canSubmit || assign.isPending} onPress={() => void submit()}>
-          <Button.Label>
-            {assign.isPending
-              ? 'Assigning…'
-              : canSubmit
-                ? `Assign to ${memberIds.size} member${memberIds.size === 1 ? '' : 's'} · ${periods.length} instalment${periods.length === 1 ? '' : 's'} each`
-                : 'Assign'}
-          </Button.Label>
-        </Button>
+          <Button isDisabled={!canSubmit || assign.isPending} onPress={() => void submit()}>
+            <Button.Label>
+              {assign.isPending
+                ? 'Assigning…'
+                : canSubmit
+                  ? `Assign to ${memberIds.size} member${memberIds.size === 1 ? '' : 's'} · ${periods.length} instalment${periods.length === 1 ? '' : 's'} each`
+                  : 'Assign'}
+            </Button.Label>
+          </Button>
         </Actions>
 
         {/*
@@ -658,7 +677,7 @@ export default function AssignFeesScreen() {
             Choose a fee head, at least one month, and at least one member.
           </Text>
         ) : null}
-      </View>
+      </Stack>
     </Screen>
   );
 }

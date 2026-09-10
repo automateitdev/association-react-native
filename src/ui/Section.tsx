@@ -84,7 +84,13 @@ export function Section({
             gap: space.md,
           }}
         >
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.xs }}>
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: space.xs,
+            }}
+          >
             {icon ? <Icon name={icon} size={14} tone="muted" /> : null}
             <Text tone="muted" style={{ ...type.section, textTransform: 'uppercase' }}>
               {step === undefined ? title : `${step} · ${title}`}
@@ -169,9 +175,7 @@ export function Panel({
           gap: space.sm,
         }}
       >
-        {skin.icon ? (
-          <Icon name={skin.icon} size={16} tone={skin.iconTone} />
-        ) : null}
+        {skin.icon ? <Icon name={skin.icon} size={16} tone={skin.iconTone} /> : null}
 
         {children}
       </View>
@@ -209,7 +213,11 @@ const PANEL_TONES = {
   },
 } as const satisfies Record<
   string,
-  { className: string; icon: IconName | null; iconTone: 'muted' | 'success' | 'warning' | 'danger' }
+  {
+    className: string;
+    icon: IconName | null;
+    iconTone: 'muted' | 'success' | 'warning' | 'danger';
+  }
 >;
 
 /**

@@ -19,7 +19,9 @@ import {
   Field,
   Form,
   FormActions,
+  humanDate,
   Icon,
+  Inline,
   InputField,
   Panel,
   PickerField,
@@ -27,12 +29,12 @@ import {
   Screen,
   ScreenHeader,
   Section,
+  space,
+  Stack,
   StateView,
   Text,
-  Toolbar,
-  humanDate,
   todayIso,
-  space,
+  Toolbar,
   type,
   type Column,
   type SortState,
@@ -71,7 +73,9 @@ export default function SharesScreen() {
         header: 'Date',
         width: 120,
         frozen: true,
-        render: (row) => <Cell bold>{row.transferred_on ? humanDate(row.transferred_on) : '—'}</Cell>,
+        render: (row) => (
+          <Cell bold>{row.transferred_on ? humanDate(row.transferred_on) : '—'}</Cell>
+        ),
       },
       {
         key: 'seller_name',
@@ -132,19 +136,19 @@ export default function SharesScreen() {
       />
 
       {error ? (
-        <View style={{ marginTop: space.lg }}>
+        <Section>
           <Panel tone="danger">
             <Text style={type.body}>{error}</Text>
           </Panel>
-        </View>
+        </Section>
       ) : null}
 
       {done ? (
-        <View style={{ marginTop: space.lg }}>
+        <Section>
           <Panel>
             <Text style={type.body}>{done}</Text>
           </Panel>
-        </View>
+        </Section>
       ) : null}
 
       {transferring ? (
@@ -165,12 +169,18 @@ export default function SharesScreen() {
 
       {/* Headed only while the transfer form is open above it; otherwise the
           page header has already said Share transfers. */}
-      <Section title={transferring ? 'Transfers' : undefined} first={! transferring}>
+      <Section title={transferring ? 'Transfers' : undefined} first={!transferring}>
         <Toolbar
           filters={null}
           actions={
-            can('shares.transfer') && ! transferring ? (
-              <Button size="sm" onPress={() => { setTransferring(true); setDone(null); }}>
+            can('shares.transfer') && !transferring ? (
+              <Button
+                size="sm"
+                onPress={() => {
+                  setTransferring(true);
+                  setDone(null);
+                }}
+              >
                 <Icon name="add" size={15} tone="inverse" />
                 <Button.Label>Record a transfer</Button.Label>
               </Button>
@@ -280,9 +290,7 @@ function TransferForm({
   };
 
   const totalShares = rows.reduce((sum, row) => sum + (Number(row.shares) || 0), 0);
-  const totalAmount = rows
-    .reduce((sum, row) => sum + Number(rowAmount(row)), 0)
-    .toFixed(2);
+  const totalAmount = rows.reduce((sum, row) => sum + Number(rowAmount(row)), 0).toFixed(2);
 
   const setRow = (index: number, patch: Partial<BuyerRow>) =>
     setRows((was) => was.map((row, i) => (i === index ? { ...row, ...patch } : row)));
@@ -380,11 +388,7 @@ function TransferForm({
         and it is the difference between choosing a number and guessing one.
       */}
       {sellerId !== '' ? (
-        <View style={{ marginTop: space.md }}>
-          <Text tone="muted" style={type.section}>
-            WHAT THIS MEMBER HOLDS
-          </Text>
-
+        <Section title="What this member holds">
           <StateView loading={holdings.isLoading} error={holdings.error}>
             {byHead.length === 0 ? (
               <Panel>
@@ -408,15 +412,11 @@ function TransferForm({
               ))
             )}
           </StateView>
-        </View>
+        </Section>
       ) : null}
 
       {/* ---------------------------------------------------------- buyers */}
-      <View style={{ marginTop: space.lg }}>
-        <Text tone="muted" style={type.section}>
-          WHO RECEIVES THEM
-        </Text>
-
+      <Section title="Who receives them">
         {sellerId === '' ? (
           <Panel>
             <Text tone="muted" style={type.body}>
@@ -495,7 +495,7 @@ function TransferForm({
                 </Form>
 
                 {rows.length > 1 ? (
-                  <View style={{ alignItems: 'flex-start', marginTop: space.xs }}>
+                  <Stack align="start">
                     <Button
                       size="sm"
                       variant="tertiary"
@@ -504,22 +504,17 @@ function TransferForm({
                       <Icon name="close" size={14} tone="danger" />
                       <Button.Label>Remove</Button.Label>
                     </Button>
-                  </View>
+                  </Stack>
                 ) : null}
               </View>
             ))}
 
-            <View
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                flexWrap: 'wrap',
-                gap: space.sm,
-                marginTop: space.md,
-              }}
-            >
-              <Button size="sm" variant="secondary" onPress={() => setRows((was) => [...was, blankRow()])}>
+            <Inline gap="sm" justify="between" wrap>
+              <Button
+                size="sm"
+                variant="secondary"
+                onPress={() => setRows((was) => [...was, blankRow()])}
+              >
                 <Icon name="add" size={15} tone="muted" />
                 <Button.Label>Add another buyer</Button.Label>
               </Button>
@@ -532,16 +527,16 @@ function TransferForm({
               <Text tone="muted" style={type.rowMeta}>
                 {totalShares} instalment(s) · {formatMoney(totalAmount)}
               </Text>
-            </View>
+            </Inline>
           </>
         )}
-      </View>
+      </Section>
 
       <FormActions>
         <Button variant="secondary" onPress={onCancel}>
           <Button.Label>Cancel</Button.Label>
         </Button>
-        <Button isDisabled={! complete || transfer.isPending} onPress={() => void submit()}>
+        <Button isDisabled={!complete || transfer.isPending} onPress={() => void submit()}>
           <Button.Label>{transfer.isPending ? 'Saving…' : 'Record transfer'}</Button.Label>
         </Button>
       </FormActions>

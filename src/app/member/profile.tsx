@@ -13,18 +13,20 @@ import {
   type ProfileUpdate,
 } from '@/features/member/profile';
 import {
+  Actions,
   Button,
   Field,
   Form,
   InputField,
-  PickerField,
   Panel,
+  PickerField,
   Screen,
   ScreenHeader,
   Section,
+  space,
+  Stack,
   StatusBadge,
   Text,
-  space,
   type,
 } from '@/ui';
 
@@ -123,30 +125,32 @@ export default function ProfileScreen() {
               office has decided on it.
             </Text>
           ) : (
-            <>
+            <Stack gap="md" align="start">
               {/*
                 Says what happens next, not just what the button does. A member
                 who thinks the change is immediate stops watching their old
                 number.
               */}
-              <Text tone="muted" style={{ ...type.body, marginBottom: space.md }}>
-                Ask the office to change what is on file. Nothing changes until they approve it,
-                and you will see the decision here.
+              <Text tone="muted" style={type.body}>
+                Ask the office to change what is on file. Nothing changes until they approve it, and
+                you will see the decision here.
               </Text>
 
               <Button onPress={() => setAsking(true)}>
                 <Button.Label>Ask for a change</Button.Label>
               </Button>
-            </>
+            </Stack>
           )}
         </Section>
       )}
 
       {decided.length > 0 ? (
         <Section title="Past requests">
-          {decided.map((update) => (
-            <DecidedRequest key={update.id} update={update} />
-          ))}
+          <Stack gap="md">
+            {decided.map((update) => (
+              <DecidedRequest key={update.id} update={update} />
+            ))}
+          </Stack>
         </Section>
       ) : null}
     </Screen>
@@ -208,7 +212,10 @@ function MembershipCard({
           to somebody: whose card this is matters as much as whose name is on
           it, and a member of two societies should be able to tell at a glance.
         */}
-        <View className="bg-accent" style={{ paddingHorizontal: space.lg, paddingVertical: space.sm }}>
+        <View
+          className="bg-accent"
+          style={{ paddingHorizontal: space.lg, paddingVertical: space.sm }}
+        >
           <Text tone="inverse" style={type.section} numberOfLines={1}>
             {association.toUpperCase()}
           </Text>
@@ -309,10 +316,10 @@ function MembershipCard({
  */
 function PendingRequest({ update }: { update: ProfileUpdate }) {
   return (
-    <View style={{ marginTop: space.lg }}>
+    <Section>
       <Panel>
         <Text style={type.rowTitle}>Waiting to be reviewed</Text>
-        <Text tone="muted" style={{ ...type.rowMeta, marginBottom: space.sm }}>
+        <Text tone="muted" style={type.rowMeta}>
           Asked {update.requested_at ?? 'recently'}. Nothing has changed yet.
         </Text>
 
@@ -320,7 +327,7 @@ function PendingRequest({ update }: { update: ProfileUpdate }) {
           <Field key={field} label={fieldLabel(field)} value={value ?? '—'} />
         ))}
       </Panel>
-    </View>
+    </Section>
   );
 }
 
@@ -328,7 +335,7 @@ function DecidedRequest({ update }: { update: ProfileUpdate }) {
   const approved = update.status === 'approved';
 
   return (
-    <View style={{ marginBottom: space.md }}>
+    <Stack gap="xs">
       <Text style={type.rowTitle}>{approved ? 'Approved' : 'Not approved'}</Text>
       <Text tone="muted" style={type.rowMeta}>
         {Object.keys(update.changes).map(fieldLabel).join(', ')} · {update.decided_at ?? ''}
@@ -339,11 +346,11 @@ function DecidedRequest({ update }: { update: ProfileUpdate }) {
         nothing to act on and nothing to ask about.
       */}
       {update.decision_reason ? (
-        <Text tone={approved ? 'muted' : 'danger'} style={{ ...type.body, marginTop: 2 }}>
+        <Text tone={approved ? 'muted' : 'danger'} style={type.body}>
           {update.decision_reason}
         </Text>
       ) : null}
-    </View>
+    </Stack>
   );
 }
 
@@ -368,7 +375,10 @@ const GENDERS = [
 type FieldGroup = { title: string; fields: string[]; stacked?: boolean };
 
 const GROUPS: FieldGroup[] = [
-  { title: 'Name and family', fields: ['name', 'father_name', 'mother_name', 'spouse_name'] },
+  {
+    title: 'Name and family',
+    fields: ['name', 'father_name', 'mother_name', 'spouse_name'],
+  },
   { title: 'Personal', fields: ['birth_date', 'gender', 'nid'] },
   { title: 'Contact', fields: ['mobile', 'email', 'emergency_contact'] },
 
@@ -429,7 +439,9 @@ function RequestForm({
   const error = submit.error instanceof ApiError ? submit.error : null;
 
   const send = () => {
-    submit.mutate(Object.fromEntries(changed.map((f) => [f, values[f]])), { onSuccess: onDone });
+    submit.mutate(Object.fromEntries(changed.map((f) => [f, values[f]])), {
+      onSuccess: onDone,
+    });
   };
 
   /** One field, whichever control it needs. Shared by both layouts. */
@@ -469,56 +481,48 @@ function RequestForm({
 
   return (
     <Section title="Ask for a change" first>
-      <Text tone="muted" style={{ ...type.body, marginBottom: space.md }}>
-        Change only what is wrong. The office reviews it before anything takes effect.
-      </Text>
+      <Stack gap="lg">
+        <Text tone="muted" style={type.body}>
+          Change only what is wrong. The office reviews it before anything takes effect.
+        </Text>
 
-      {error ? (
-        <View style={{ marginBottom: space.md }}>
+        {error ? (
           <Panel tone="danger">
             <Text style={type.body}>{error.message}</Text>
           </Panel>
-        </View>
-      ) : null}
+        ) : null}
 
-      {groupFields(fields).map((group, index) => (
-        <View key={group.title} style={{ marginTop: index === 0 ? 0 : space.lg }}>
-          <Text tone="muted" style={{ ...type.section, marginBottom: space.sm }}>
-            {group.title.toUpperCase()}
-          </Text>
+        {groupFields(fields).map((group) => (
+          <Stack key={group.title} gap="sm">
+            <Text tone="muted" style={type.section}>
+              {group.title.toUpperCase()}
+            </Text>
 
-          {/*
-            TWO COLUMNS WHERE THERE IS ROOM, one where there is not.
+            {/*
+              TWO COLUMNS WHERE THERE IS ROOM, one where there is not.
 
-            FormRow flex-wraps on a basis, so this needs no breakpoint check: on
-            a handset every field takes the full width, on a wider screen they
-            pair up. Thirteen fields in a single column is right on a phone and
-            a very long scroll on anything else.
-          */}
-          {/*
-            `maxWidth={null}`, so the form is as wide as everything else on the
-            page. Form caps itself at 460 by default, which is right for a
-            single column - a 760pt text input is unpleasant to fill - and wrong
-            here: it left the fields huddled at 460 while the rows above them
-            ran to 760, which reads as two pages stacked.
-          */}
-          {/*
-            `maxWidth={null}`, so the form is as wide as everything else on the
-            page. Form caps itself at 460 by default, which is right for a
-            single column - a 760pt text input is unpleasant to fill - and wrong
-            here: it left the fields huddled at 460 while the rows above them
-            ran to 760, which reads as two pages stacked.
+              FormRow flex-wraps on a basis, so this needs no breakpoint check:
+              on a handset every field takes the full width, on a wider screen
+              they pair up. Thirteen fields in a single column is right on a
+              phone and a very long scroll on anything else.
 
-            The addresses stay one per row: they hold long values, and half a
-            column means every line wraps.
-          */}
-          <Form maxWidth={null} columns={group.stacked ? 1 : 2}>
-            {group.fields.map((field) => renderField(field))}
-          </Form>
-        </View>
-      ))}
+              `maxWidth={null}`, so the form is as wide as everything else on
+              the page. Form caps itself at 460 by default, which is right for a
+              single column - a 760pt text input is unpleasant to fill - and
+              wrong here: it left the fields huddled at 460 while the rows above
+              them ran to 760, which reads as two pages stacked.
 
-      <View style={{ flexDirection: 'row', gap: space.sm, marginTop: space.lg }}>
+              The addresses stay one per row: they hold long values, and half a
+              column means every line wraps.
+            */}
+            <Form maxWidth={null} columns={group.stacked ? 1 : 2}>
+              {group.fields.map((field) => renderField(field))}
+            </Form>
+          </Stack>
+        ))}
+      </Stack>
+
+      <Actions>
         <Button variant="secondary" onPress={onCancel}>
           <Button.Label>Cancel</Button.Label>
         </Button>
@@ -536,7 +540,7 @@ function RequestForm({
                 : `Send ${changed.length} change${changed.length === 1 ? '' : 's'}`}
           </Button.Label>
         </Button>
-      </View>
+      </Actions>
     </Section>
   );
 }

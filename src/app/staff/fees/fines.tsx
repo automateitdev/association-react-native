@@ -69,7 +69,12 @@ export default function FineAdjustmentScreen() {
         width: 180,
         render: (row) => <Cell>{row.fee_head}</Cell>,
       },
-      { key: 'period', header: 'Period', width: 110, render: (row) => <Cell>{row.period}</Cell> },
+      {
+        key: 'period',
+        header: 'Period',
+        width: 110,
+        render: (row) => <Cell>{row.period}</Cell>,
+      },
       {
         key: 'instalment_amount',
         header: 'Instalment',
@@ -98,14 +103,18 @@ export default function FineAdjustmentScreen() {
   );
 
   const submit = async (fineAmount: string, reason: string) => {
-    if (! editing) {
+    if (!editing) {
       return;
     }
 
     setError(null);
 
     try {
-      await adjust.mutateAsync({ feeAssignId: editing.fee_assign_id, fineAmount, reason });
+      await adjust.mutateAsync({
+        feeAssignId: editing.fee_assign_id,
+        fineAmount,
+        reason,
+      });
       setEditing(null);
     } catch (e) {
       setError(e instanceof ApiError ? e.message : 'The fine could not be adjusted.');
@@ -126,11 +135,11 @@ export default function FineAdjustmentScreen() {
       />
 
       {error ? (
-        <View style={{ marginTop: space.lg }}>
+        <Section>
           <Panel tone="danger">
             <Text style={type.body}>{error}</Text>
           </Panel>
-        </View>
+        </Section>
       ) : null}
 
       {editing ? (
@@ -147,7 +156,7 @@ export default function FineAdjustmentScreen() {
         </Section>
       ) : null}
 
-      <Section title="Instalments carrying a fine" first={! editing}>
+      <Section title="Instalments carrying a fine" first={!editing}>
         <Toolbar
           filters={
             <FilterSelect
@@ -232,9 +241,9 @@ function AdjustForm({
         <Text style={type.body}>
           Currently {assign.fine_amount} on top of an instalment of {assign.instalment_amount}.
         </Text>
-        <Text tone="muted" style={{ ...type.rowMeta, marginTop: 4 }}>
-          Changing this changes what the member owes. It is recorded against your account
-          with the reason you give.
+        <Text tone="muted" style={type.rowMeta}>
+          Changing this changes what the member owes. It is recorded against your account with the
+          reason you give.
         </Text>
       </Panel>
 
@@ -261,7 +270,7 @@ function AdjustForm({
         </Button>
 
         <Button
-          isDisabled={pending || ! changed || reason.trim().length < 3}
+          isDisabled={pending || !changed || reason.trim().length < 3}
           onPress={() => onSubmit(amount.trim(), reason.trim())}
         >
           <Button.Label>{pending ? 'Saving…' : 'Adjust fine'}</Button.Label>

@@ -19,6 +19,7 @@ import {
   Form,
   FormActions,
   Icon,
+  Inline,
   InputField,
   Panel,
   PickerField,
@@ -26,6 +27,7 @@ import {
   ScreenHeader,
   Section,
   space,
+  Stack,
   StateView,
   Text,
   Toolbar,
@@ -73,13 +75,16 @@ export default function StaffUsersScreen() {
   const [notice, setNotice] = useState<string | null>(null);
 
   const rows = users.data?.data ?? [];
-  const roleOptions = (roles.data ?? []).map((r) => ({ value: r.name, label: r.name }));
+  const roleOptions = (roles.data ?? []).map((r) => ({
+    value: r.name,
+    label: r.name,
+  }));
 
   const superadmins = rows.filter((u) => u.role === 'superadmin').length;
 
   /** Mirrors the server's guards, so a button that would 403 is not offered. */
   const deletable = (user: StaffUser) =>
-    user.id !== session?.profile.id && ! (user.role === 'superadmin' && superadmins <= 1);
+    user.id !== session?.profile.id && !(user.role === 'superadmin' && superadmins <= 1);
 
   const columns = useMemo<Column<StaffUser>[]>(
     () => [
@@ -182,11 +187,11 @@ export default function StaffUsersScreen() {
       />
 
       {error ? (
-        <View style={{ marginTop: space.lg }}>
+        <Section>
           <Panel tone="danger">
             <Text style={type.body}>{error}</Text>
           </Panel>
-        </View>
+        </Section>
       ) : null}
 
       {/*
@@ -197,14 +202,14 @@ export default function StaffUsersScreen() {
         person looking for one that already existed.
       */}
       {notice ? (
-        <View style={{ marginTop: space.lg }}>
+        <Section>
           <Panel tone="success">
             <Text style={type.rowTitle}>This person is also a member</Text>
             <Text tone="muted" style={type.body}>
               {notice}
             </Text>
           </Panel>
-        </View>
+        </Section>
       ) : null}
 
       {adding || editing ? (
@@ -226,14 +231,11 @@ export default function StaffUsersScreen() {
 
       {/* Headed only while a form is open above it; otherwise "Staff accounts"
           in the page header is already the name of this list. */}
-      <Section
-        title={adding || editing ? 'Accounts' : undefined}
-        first={! adding && ! editing}
-      >
+      <Section title={adding || editing ? 'Accounts' : undefined} first={!adding && !editing}>
         <Toolbar
           filters={null}
           actions={
-            can('users.create') && ! adding && ! editing ? (
+            can('users.create') && !adding && !editing ? (
               <Button size="sm" onPress={() => setAdding(true)}>
                 <Icon name="add" size={15} tone="inverse" />
                 <Button.Label>Add account</Button.Label>
@@ -259,44 +261,37 @@ export default function StaffUsersScreen() {
           />
 
           {can('users.delete') ? (
-            <View style={{ marginTop: space.lg, gap: space.sm }}>
-              <Text tone="muted" style={type.section}>
-                REMOVE AN ACCOUNT
-              </Text>
+            <Section title="Remove an account">
+              <Stack gap="sm">
+                {rows.map((user) => (
+                  <Inline key={user.id} gap="md">
+                    <Text style={{ ...type.body, flex: 1 }} numberOfLines={1}>
+                      {user.name}
+                    </Text>
 
-              {rows.map((user) => (
-                <View
-                  key={user.id}
-                  style={{ flexDirection: 'row', alignItems: 'center', gap: space.md }}
-                >
-                  <Text style={{ ...type.body, flex: 1 }} numberOfLines={1}>
-                    {user.name}
-                  </Text>
-
-                  {deletable(user) ? (
-                    <Button
-                      size="sm"
-                      variant="danger"
-                      isDisabled={remove.isPending}
-                      onPress={() => void destroy(user)}
-                    >
-                      <Button.Label>Remove</Button.Label>
-                    </Button>
-                  ) : (
-                    /*
+                    {deletable(user) ? (
+                      <Button
+                        size="sm"
+                        variant="danger"
+                        isDisabled={remove.isPending}
+                        onPress={() => void destroy(user)}
+                      >
+                        <Button.Label>Remove</Button.Label>
+                      </Button>
+                    ) : (
+                      /*
                       Says WHY rather than showing a dead button. "You cannot
                       delete this" with no reason is the kind of thing that
                       sends somebody to look for a bug.
                     */
-                    <Text tone="muted" style={type.rowMeta}>
-                      {user.id === session?.profile.id
-                        ? 'Signed in as this'
-                        : 'Only superadmin'}
-                    </Text>
-                  )}
-                </View>
-              ))}
-            </View>
+                      <Text tone="muted" style={type.rowMeta}>
+                        {user.id === session?.profile.id ? 'Signed in as this' : 'Only superadmin'}
+                      </Text>
+                    )}
+                  </Inline>
+                ))}
+              </Stack>
+            </Section>
           ) : null}
         </StateView>
       </Section>
@@ -351,7 +346,7 @@ function AccountForm({
 
       <InputField
         label={user ? 'New password (leave blank to keep)' : 'Password'}
-        required={! user}
+        required={!user}
         value={password}
         onChangeText={setPassword}
         placeholder="At least 8 characters"
@@ -394,7 +389,7 @@ function AccountForm({
         </Button>
 
         <Button
-          isDisabled={! complete || pending}
+          isDisabled={!complete || pending}
           onPress={() =>
             onSubmit({
               id: user?.id,

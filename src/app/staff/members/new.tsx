@@ -36,7 +36,10 @@ import {
  */
 export default function NewMemberScreen() {
   const create = useCreateMember();
-  const [fields, setFields] = useState<NewMemberFields>({ name: '', mobile: '' });
+  const [fields, setFields] = useState<NewMemberFields>({
+    name: '',
+    mobile: '',
+  });
 
   const set = (key: keyof NewMemberFields) => (value: string) =>
     setFields((current) => ({ ...current, [key]: value }));
@@ -50,7 +53,9 @@ export default function NewMemberScreen() {
    * the same words in a banner at the top of a twelve-field form are a puzzle.
    */
   const fieldErrors =
-    create.error instanceof ApiError ? ((create.error.details ?? {}) as Record<string, string[]>) : {};
+    create.error instanceof ApiError
+      ? ((create.error.details ?? {}) as Record<string, string[]>)
+      : {};
 
   const submit = async () => {
     try {
@@ -82,7 +87,7 @@ export default function NewMemberScreen() {
         }
       />
 
-      <View style={{ marginTop: space.lg }}>
+      <Section>
         <Panel>
           <Text style={type.rowTitle}>They will not be active yet</Text>
           <Text style={type.body}>
@@ -90,10 +95,10 @@ export default function NewMemberScreen() {
             association has agreed to admit them — they cannot sign in until you do.
           </Text>
         </Panel>
-      </View>
+      </Section>
 
       {create.isError && Object.keys(fieldErrors).length === 0 ? (
-        <View style={{ marginTop: space.lg }}>
+        <Section>
           <Panel tone="danger">
             <Text style={type.body}>
               {create.error instanceof ApiError
@@ -101,7 +106,7 @@ export default function NewMemberScreen() {
                 : 'The member could not be created.'}
             </Text>
           </Panel>
-        </View>
+        </Section>
       ) : null}
 
       <Section title="Who they are">
@@ -172,7 +177,9 @@ export default function NewMemberScreen() {
           />
 
           <Stack gap="sm">
-            <Text tone="muted" style={type.rowMeta}>Gender</Text>
+            <Text tone="muted" style={type.rowMeta}>
+              Gender
+            </Text>
             <Inline gap="sm" align="stretch">
               {/* Chip is pressable itself; no wrapper needed. */}
               {(['male', 'female', 'other'] as const).map((option) => (

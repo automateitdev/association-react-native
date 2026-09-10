@@ -16,6 +16,7 @@ import {
   ScreenHeader,
   Section,
   space,
+  Stack,
   Text,
   type,
 } from '@/ui';
@@ -84,9 +85,7 @@ export default function NewFeeSetupScreen() {
         is_share: isShare,
         ledger_id: Number(ledgerId),
         fine_rate: fineRate.trim() === '' ? null : fineRate.trim(),
-        ...(neverFines || fineLedgerId === null
-          ? {}
-          : { fine_ledger_id: Number(fineLedgerId) }),
+        ...(neverFines || fineLedgerId === null ? {} : { fine_ledger_id: Number(fineLedgerId) }),
       });
 
       router.replace('/staff/fees');
@@ -107,7 +106,7 @@ export default function NewFeeSetupScreen() {
       />
 
       {create.isError && Object.keys(fieldErrors).length === 0 ? (
-        <View style={{ marginTop: space.lg }}>
+        <Section>
           <Panel tone="danger">
             <Text style={type.body}>
               {create.error instanceof ApiError
@@ -115,7 +114,7 @@ export default function NewFeeSetupScreen() {
                 : 'The fee head could not be created.'}
             </Text>
           </Panel>
-        </View>
+        </Section>
       ) : null}
 
       <Section title="What is charged" first>
@@ -154,7 +153,7 @@ export default function NewFeeSetupScreen() {
           Both of these are create-only. Saying so here is cheaper than a support
           call when someone tries to convert a one-off into a monthly fee.
         */}
-        <View style={{ marginTop: space.lg, gap: space.md }}>
+        <Stack gap="md">
           <Toggle
             selected={monthly}
             onToggle={() => setMonthly((v) => !v)}
@@ -172,13 +171,13 @@ export default function NewFeeSetupScreen() {
           <Text tone="muted" style={type.rowMeta}>
             Neither of these can be changed after the fee head is created.
           </Text>
-        </View>
+        </Stack>
       </Section>
 
       <Section title="Where the money posts">
-        <Text tone="muted" style={{ ...type.body, marginBottom: space.md }}>
-          Instalments and fines are separate income. They must post to different
-          accounts, so an income statement can tell subscription from penalty.
+        <Text tone="muted" style={type.body}>
+          Instalments and fines are separate income. They must post to different accounts, so an
+          income statement can tell subscription from penalty.
         </Text>
 
         {/* The gap belongs to Form, not to a marginTop on the second field. */}
@@ -268,12 +267,12 @@ function Toggle({
   return (
     <Inline gap="md" align="start">
       <Checkbox isSelected={selected} onSelectedChange={onToggle} />
-      <View style={{ flex: 1, gap: 2 }}>
+      <Stack gap="xs" grow>
         <Text style={type.rowTitle}>{title}</Text>
         <Text tone="muted" style={type.rowMeta}>
           {meta}
         </Text>
-      </View>
+      </Stack>
     </Inline>
   );
 }

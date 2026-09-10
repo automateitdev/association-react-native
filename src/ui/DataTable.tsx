@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Pressable, ScrollView, View, type LayoutChangeEvent, type ViewStyle } from 'react-native';
 import { Icon } from './Icon';
+import { Pager } from './Pager';
 import { Text } from './Text';
 import { space, type } from './tokens';
 
@@ -224,7 +225,11 @@ export function DataTable<T>({
   }, [rows, sort, columns, server]);
 
   const paged = server ? true : pageSize > 0;
-  const pageCount = server ? server.pageCount : paged ? Math.max(1, Math.ceil(sorted.length / pageSize)) : 1;
+  const pageCount = server
+    ? server.pageCount
+    : paged
+      ? Math.max(1, Math.ceil(sorted.length / pageSize))
+      : 1;
 
   // Clamped rather than trusted: a filter that shortens the report while the
   // reader is on the last page would otherwise show an empty table.
@@ -262,8 +267,7 @@ export function DataTable<T>({
     // column opts in the same way.
     if (!column.sort) return;
 
-    const apply = (next: SortState) =>
-      server ? server.onSortChange(next) : setLocalSort(next);
+    const apply = (next: SortState) => (server ? server.onSortChange(next) : setLocalSort(next));
 
     apply(
       sort?.key === column.key
@@ -283,7 +287,11 @@ export function DataTable<T>({
   const header = (subset: Column<T>[]) => (
     <View
       className="border-b border-separator"
-      style={{ flexDirection: 'row', height: HEADER_HEIGHT, alignItems: 'center' }}
+      style={{
+        flexDirection: 'row',
+        height: HEADER_HEIGHT,
+        alignItems: 'center',
+      }}
     >
       {subset.map((column) => (
         <Pressable
@@ -347,7 +355,11 @@ export function DataTable<T>({
             without drawing anything.
           */
           className={index % 2 === 1 ? 'bg-surface' : undefined}
-          style={{ flexDirection: 'row', height: ROW_HEIGHT, alignItems: 'center' }}
+          style={{
+            flexDirection: 'row',
+            height: ROW_HEIGHT,
+            alignItems: 'center',
+          }}
         >
           {subset.map((column) => (
             <View
@@ -370,7 +382,11 @@ export function DataTable<T>({
     hasTotals ? (
       <View
         className="border-t border-separator"
-        style={{ flexDirection: 'row', height: ROW_HEIGHT + 6, alignItems: 'center' }}
+        style={{
+          flexDirection: 'row',
+          height: ROW_HEIGHT + 6,
+          alignItems: 'center',
+        }}
       >
         {subset.map((column) => (
           <View
@@ -460,24 +476,9 @@ export function DataTable<T>({
           </Text>
         ) : null}
 
-        {paged && pageCount > 1 ? (
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm }}>
-            <PageButton
-              icon="back"
-              label="Previous page"
-              disabled={current === 0}
-              onPress={() => goTo(current - 1)}
-            />
-            <Text tone="muted" style={type.rowMeta}>
-              {current + 1} / {pageCount}
-            </Text>
-            <PageButton
-              icon="forward"
-              label="Next page"
-              disabled={current >= pageCount - 1}
-              onPress={() => goTo(current + 1)}
-            />
-          </View>
+        {/* One-based for the reader; `current` is an index. See ui/Pager. */}
+        {paged ? (
+          <Pager page={current + 1} pageCount={pageCount} onGoTo={(p) => goTo(p - 1)} />
         ) : null}
       </View>
     </View>
@@ -517,36 +518,6 @@ function TableRow({
   );
 }
 
-function PageButton({
-  icon,
-  label,
-  disabled,
-  onPress,
-}: {
-  icon: 'back' | 'forward';
-  label: string;
-  disabled: boolean;
-  onPress: () => void;
-}) {
-  return (
-    <Pressable
-      onPress={onPress}
-      disabled={disabled}
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      accessibilityState={{ disabled }}
-      className="border border-border rounded-md"
-      style={{
-        paddingHorizontal: space.sm,
-        paddingVertical: space.xs,
-        opacity: disabled ? 0.4 : 1,
-      }}
-    >
-      <Icon name={icon} size={15} tone={disabled ? 'muted' : 'default'} />
-    </Pressable>
-  );
-}
-
 /** A plain cell. */
 export function Cell({ children, bold = false }: { children: ReactNode; bold?: boolean }) {
   return (
@@ -572,7 +543,10 @@ export function NumberCell({ children, bold = false }: { children: ReactNode; bo
 }
 
 function compareText(a: string | number, b: string | number): number {
-  return String(a).localeCompare(String(b), undefined, { numeric: true, sensitivity: 'base' });
+  return String(a).localeCompare(String(b), undefined, {
+    numeric: true,
+    sensitivity: 'base',
+  });
 }
 
 /**
@@ -611,7 +585,11 @@ function compareDecimal(a: string | number, b: string | number): number {
   return sign * (leftFraction < rightFraction ? -1 : 1);
 }
 
-function split(value: string): { negative: boolean; whole: string; fraction: string } {
+function split(value: string): {
+  negative: boolean;
+  whole: string;
+  fraction: string;
+} {
   const negative = value.startsWith('-');
   const [whole = '0', fraction = ''] = value.replace(/^[-+]/, '').split('.');
 
