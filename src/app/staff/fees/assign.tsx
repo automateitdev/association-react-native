@@ -69,15 +69,6 @@ export default function AssignFeesScreen() {
   const [months, setMonths] = useState<number[]>([]);
   const [years, setYears] = useState<number[]>([new Date().getFullYear()]);
 
-  /*
-   * The window of years OFFERED, not the years assignable.
-   *
-   * The legacy dropdown ran range(2022, 5000) - three thousand options to pick
-   * this year from. A five-year window covers ordinary work, and the arrows
-   * move it, so no year is out of reach. Bounding what is SHOWN is fine;
-   * bounding what can be CHOSEN is the mistake this screen just came from.
-   */
-  const [yearBase, setYearBase] = useState(new Date().getFullYear() - 2);
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [memberIds, setMemberIds] = useState<Set<number>>(new Set());
@@ -137,26 +128,24 @@ export default function AssignFeesScreen() {
 
   const periods = useMemo(() => periodsFor(years, months), [years, months]);
 
-  /*
-   * The offered years, plus any already chosen that the window has since moved
-   * away from - a selection must never become invisible because the thing that
-   * shows it scrolled.
-   */
-  const yearChips = useMemo(() => {
-    const window = [0, 1, 2, 3, 4].map((i) => yearBase + i);
-
-    return [...new Set([...window, ...years])].sort((a, b) => a - b);
-  }, [yearBase, years]);
-
   const toggleMonth = (month: number) =>
     setMonths((current) =>
       current.includes(month) ? current.filter((m) => m !== month) : [...current, month],
     );
 
-  const toggleYear = (year: number) =>
-    setYears((current) =>
-      current.includes(year) ? current.filter((y) => y !== year) : [...current, year],
-    );
+  /*
+   * The stepper moves the FIRST year, keeping any extras. One year is what
+   * this screen is for; the extras exist for corrections and are managed
+   * separately below.
+   */
+  const stepYear = (by: number) =>
+    setYears(([first, ...rest]) => [first + by, ...rest].sort((a, b) => a - b));
+
+  const addYear = () =>
+    setYears((current) => [...current, Math.max(...current) + 1].sort((a, b) => a - b));
+
+  const removeYear = (year: number) =>
+    setYears((current) => current.filter((y) => y !== year));
 
   /*
    * THE SAME TABLE AS EVERY OTHER MEMBER LIST, with the approvals queue's
@@ -323,6 +312,18 @@ export default function AssignFeesScreen() {
           YEARS ARE A SECOND AXIS, not a prefix on each month. Twelve months
           times three years is thirty-six chips as one list and twelve plus
           three as two.
+
+          ONE YEAR AT A TIME, because that is what this screen is nearly always
+          for. This was a row of five year chips with arrows moving a window
+          over them, which put a rank of years on screen permanently to express
+          a choice that is normally just "this one" - and the chips shifted
+          under the hand as the window moved. A stepper says the same thing in
+          one control and never changes length.
+
+          A second year is still reachable, because assigning the same months
+          across several years is how a backdated correction is applied, and
+          the legacy screen allows it. It is behind a button rather than in
+          front of one, which is the right way round for something rare.
         */}
         <View
           style={{
@@ -336,30 +337,38 @@ export default function AssignFeesScreen() {
           <Button
             size="sm"
             variant="tertiary"
-            onPress={() => setYearBase((y) => y - 1)}
-            accessibilityLabel="Show earlier years"
+            onPress={() => stepYear(-1)}
+            accessibilityLabel="Previous year"
           >
             <Icon name="back" size={14} tone="muted" />
           </Button>
 
-          {yearChips.map((year) => (
-            <Chip
-              size="sm"
-              key={year}
-              variant={years.includes(year) ? 'primary' : 'secondary'}
-              onPress={() => toggleYear(year)}
-            >
-              <Chip.Label>{String(year)}</Chip.Label>
-            </Chip>
-          ))}
+          <Chip size="sm" variant="primary">
+            <Chip.Label>{String(years[0])}</Chip.Label>
+          </Chip>
 
           <Button
             size="sm"
             variant="tertiary"
-            onPress={() => setYearBase((y) => y + 1)}
-            accessibilityLabel="Show later years"
+            onPress={() => stepYear(1)}
+            accessibilityLabel="Next year"
           >
             <Icon name="chevron" size={14} tone="muted" />
+          </Button>
+
+          {/*
+            The extra years, each removable. Absent entirely in the ordinary
+            case, which is the point of putting them here rather than showing
+            every year all the time.
+          */}
+          {years.slice(1).map((year) => (
+            <Chip size="sm" key={year} variant="primary" onPress={() => removeYear(year)}>
+              <Chip.Label>{`${year} ×`}</Chip.Label>
+            </Chip>
+          ))}
+
+          <Button size="sm" variant="tertiary" onPress={addYear}>
+            <Button.Label>+ Year</Button.Label>
           </Button>
         </View>
 
