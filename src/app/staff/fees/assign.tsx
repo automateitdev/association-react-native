@@ -14,16 +14,15 @@ import {
   Button,
   Checkbox,
   Chip,
-  Input,
   Panel,
   PickerField,
   Row,
   Screen,
   ScreenHeader,
   Section,
+  SearchField,
   StateView,
   Text,
-  TextField,
   space,
   type,
 } from '@/ui';
@@ -196,16 +195,21 @@ export default function AssignFeesScreen() {
           separate decision.
         </Text>
 
-        <View style={{ maxWidth: 340 }}>
-          <TextField>
-            <Input
-              value={search}
-              onChangeText={setSearch}
-              placeholder="Search name or mobile"
-              autoCapitalize="none"
-            />
-          </TextField>
-        </View>
+        {/*
+          SearchField, like every other list in the app.
+
+          This was a raw TextField + Input at maxWidth 340 - which is precisely
+          the shape ui/SearchField was written to replace, in its own words: a
+          FORM field, 48pt tall, sitting half again the height of everything
+          around it. Six screens moved to SearchField and this one was missed,
+          so the only member list in the app that filters like a form rather
+          than like a filter was this one.
+        */}
+        <SearchField
+          value={search}
+          onChangeText={setSearch}
+          placeholder="Search name or mobile"
+        />
 
         <StateView
           loading={members.isLoading}
