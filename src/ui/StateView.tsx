@@ -1,5 +1,6 @@
 import { View } from 'react-native';
 import { Spinner } from 'heroui-native';
+import { Appear } from './Appear';
 import { Button } from './Button';
 import { Icon } from './Icon';
 import { Text } from './Text';
@@ -35,6 +36,20 @@ export function StateView({
   onRetry?: () => void;
   children?: React.ReactNode;
 }) {
+  /*
+   * EVERY BRANCH ARRIVES, and that is what makes this a crossfade rather than
+   * four separate animations.
+   *
+   * These four returns are mutually exclusive, so changing state unmounts one
+   * and mounts another - and a mount is exactly what Appear animates. The
+   * spinner fades out by being removed while the rows fade in, without either
+   * needing to know the other exists.
+   *
+   * The loading branch is deliberately NOT wrapped. A spinner that fades in
+   * over 200ms on a request that resolves in 80 is a flash of movement
+   * announcing nothing; the wait is the message, and it should start
+   * immediately or not be seen at all.
+   */
   if (loading) {
     return (
       <View style={{ paddingVertical: space.xxl, alignItems: 'center', gap: space.md }}>
@@ -47,29 +62,35 @@ export function StateView({
   }
 
   if (error) {
-    return <ErrorState error={error} onRetry={onRetry} />;
+    return (
+      <Appear>
+        <ErrorState error={error} onRetry={onRetry} />
+      </Appear>
+    );
   }
 
   if (empty) {
     return (
-      <View style={{ paddingVertical: space.xxl, alignItems: 'center', gap: space.sm }}>
-        {/*
-          An empty state that is only text reads as a page that failed to load.
-          A glyph makes it look deliberate - "there is nothing here" rather than
-          "something did not arrive".
-        */}
-        <Icon name="empty" size={30} tone="muted" />
-        <Text style={type.rowTitle}>{emptyTitle}</Text>
-        {emptyMessage ? (
-          <Text tone="muted" style={{ ...type.body, textAlign: 'center' }}>
-            {emptyMessage}
-          </Text>
-        ) : null}
-      </View>
+      <Appear>
+        <View style={{ paddingVertical: space.xxl, alignItems: 'center', gap: space.sm }}>
+          {/*
+            An empty state that is only text reads as a page that failed to
+            load. A glyph makes it look deliberate - "there is nothing here"
+            rather than "something did not arrive".
+          */}
+          <Icon name="empty" size={30} tone="muted" />
+          <Text style={type.rowTitle}>{emptyTitle}</Text>
+          {emptyMessage ? (
+            <Text tone="muted" style={{ ...type.body, textAlign: 'center' }}>
+              {emptyMessage}
+            </Text>
+          ) : null}
+        </View>
+      </Appear>
     );
   }
 
-  return <>{children}</>;
+  return <Appear>{children}</Appear>;
 }
 
 function ErrorState({ error, onRetry }: { error: unknown; onRetry?: () => void }) {

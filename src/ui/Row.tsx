@@ -1,8 +1,11 @@
 import type { ReactNode } from 'react';
-import { Pressable, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { useThemeColor } from 'heroui-native';
+import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { Text } from './Text';
 import { Icon } from './Icon';
 import { Divider } from './Section';
+import { useMotion } from './motion';
 import { space, type } from './tokens';
 
 /**
@@ -83,9 +86,57 @@ export function Row({
 
   return (
     <View>
-      {onPress ? <Pressable onPress={onPress}>{body}</Pressable> : body}
+      {onPress ? <PressableRow onPress={onPress}>{body}</PressableRow> : body}
       {divider ? <Divider /> : null}
     </View>
+  );
+}
+
+/**
+ * A row that answers the finger.
+ *
+ * WHY A TINT AND NOT AN OPACITY FADE. Dimming the content says "this is
+ * becoming unavailable"; lighting the surface behind it says "I have this
+ * one". They are opposite messages and the second is the true one - the row is
+ * about to do something, not about to stop.
+ *
+ * WHY NO SCALE. A full-width row scaling under a press drags every word in it
+ * a fraction sideways, and on the web that re-rasterises the text: a shimmer
+ * across the whole line, at exactly the moment somebody is looking at it.
+ * Scale belongs on things narrower than the screen.
+ *
+ * The tint arrives in `instant` and leaves in `quick`: a press should feel
+ * like a consequence of the finger, but the release is the end of something
+ * and can afford to be seen. Symmetric timing makes taps feel mechanical.
+ */
+function PressableRow({ children, onPress }: { children: ReactNode; onPress: () => void }) {
+  const { ms, duration, easing } = useMotion();
+  const tint = useThemeColor('surface-secondary');
+  const pressed = useSharedValue(0);
+
+  const overlay = useAnimatedStyle(() => ({ opacity: pressed.value }));
+
+  return (
+    <Pressable
+      onPress={onPress}
+      onPressIn={() => {
+        pressed.value = withTiming(1, { duration: ms(duration.instant), easing: easing.out });
+      }}
+      onPressOut={() => {
+        pressed.value = withTiming(0, { duration: ms(duration.quick), easing: easing.inOut });
+      }}
+    >
+      {/*
+        Behind the content rather than over it, and inert to pointers - an
+        overlay that swallowed the press would be a highlight that stops the
+        row working.
+      */}
+      <Animated.View
+        style={[StyleSheet.absoluteFill, { backgroundColor: tint, pointerEvents: 'none' }, overlay]}
+      />
+
+      {children}
+    </Pressable>
   );
 }
 

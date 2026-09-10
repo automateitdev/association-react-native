@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { View } from 'react-native';
+import { Appear } from './Appear';
 import { Icon, type IconName } from './Icon';
 import { Text } from './Text';
 import { useIsDesktop } from './breakpoint';
@@ -108,21 +109,36 @@ export function Panel({
   children: ReactNode;
   tone?: 'neutral' | 'danger';
 }) {
+  /*
+   * A PANEL ARRIVES rather than appearing.
+   *
+   * Most panels in this app are the result of something the person just did -
+   * a payment recorded, a transfer refused, a warning about what a screen is
+   * about to change. Those are answers, and an answer that is simply present
+   * on the next frame is indistinguishable from one that was always there. The
+   * eye misses it, and on a long form the miss is total: the refusal is above
+   * the fold and nobody scrolls back up to look.
+   *
+   * No travel. A panel that slides has to slide from somewhere, and there is
+   * no honest direction for "the server said no" to come from. It fades.
+   */
   return (
-    <View
-      className={
-        tone === 'danger'
-          ? 'bg-danger-soft border border-danger'
-          : 'bg-background-secondary border border-border'
-      }
-      style={{
-        padding: space.lg,
-        borderRadius: 14,
-        gap: space.sm,
-      }}
-    >
-      {children}
-    </View>
+    <Appear distance={0}>
+      <View
+        className={
+          tone === 'danger'
+            ? 'bg-danger-soft border border-danger'
+            : 'bg-background-secondary border border-border'
+        }
+        style={{
+          padding: space.lg,
+          borderRadius: 14,
+          gap: space.sm,
+        }}
+      >
+        {children}
+      </View>
+    </Appear>
   );
 }
 

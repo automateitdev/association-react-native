@@ -104,4 +104,12 @@ export { useThemeColorReader, type ThemeToken } from './themeColor';
 
 // Shared measurements, for the cases a screen genuinely needs one directly.
 export { space, type, font } from './tokens';
+
+/*
+ * Motion, on the same footing as the spacing and type scales: two numbers -
+ * how long and on what curve - that everything animated reads from, so the
+ * portals move alike without anybody having to remember to make them.
+ */
+export { Appear } from './Appear';
+export { duration, easing, useMotion, useReducedMotion } from './motion';
 export { useIsDesktop, useContentWidth, DESKTOP_BREAKPOINT } from './breakpoint';
