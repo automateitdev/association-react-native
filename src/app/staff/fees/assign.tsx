@@ -17,6 +17,7 @@ import {
   Checkbox,
   Chip,
   DataTable,
+  Form,
   Icon,
   Panel,
   PickerField,
@@ -278,15 +279,26 @@ export default function AssignFeesScreen() {
       ) : null}
 
       <Section title="1 · Which fee" first>
-        <PickerField
-          label="Fee head"
-          value={feeSetupId}
-          onChange={setFeeSetupId}
-          options={options}
-          placeholder={setups.isLoading ? 'Loading…' : 'Choose a fee head'}
-          isDisabled={setups.isLoading}
-          hint="Only fee heads in use can be assigned."
-        />
+        {/*
+          IN A Form, like every other labelled field in the app.
+
+          Outside one it had no width of its own and stretched to the content
+          column - measured at 1103pt for a dropdown reading "Monthly
+          Subscription", against 460 for the same control on the fee and member
+          forms. ui/Form caps at 460 for the reason its own note gives: a field
+          drawn the width of a desktop window is harder to use, not easier.
+        */}
+        <Form dense>
+          <PickerField
+            label="Fee head"
+            value={feeSetupId}
+            onChange={setFeeSetupId}
+            options={options}
+            placeholder={setups.isLoading ? 'Loading…' : 'Choose a fee head'}
+            isDisabled={setups.isLoading}
+            hint="Only fee heads in use can be assigned."
+          />
+        </Form>
       </Section>
 
       <Section
@@ -336,16 +348,24 @@ export default function AssignFeesScreen() {
           A closed dropdown is one line saying "2026", and every year it offers
           is one press away without anything else moving.
         */}
-        <View style={{ maxWidth: 260, marginTop: space.md }}>
-          <PickerField
-            label="Years"
-            options={yearOptions}
-            value={null}
-            onChange={() => {}}
-            values={years.map(String)}
-            onToggleValue={toggleYear}
-            placeholder="Choose a year"
-          />
+        {/*
+          The same Form, so the two labelled fields on this screen match each
+          other and the rest of the app. This one had been hand-capped at 260 -
+          a number chosen for it alone, which is how a screen ends up with
+          three field widths and no rule.
+        */}
+        <View style={{ marginTop: space.md }}>
+          <Form dense>
+            <PickerField
+              label="Years"
+              options={yearOptions}
+              value={null}
+              onChange={() => {}}
+              values={years.map(String)}
+              onToggleValue={toggleYear}
+              placeholder="Choose a year"
+            />
+          </Form>
         </View>
 
         {/*
