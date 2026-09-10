@@ -318,11 +318,7 @@ async function parse<T>(response: Response): Promise<T> {
     // Not JSON at all - a proxy error page, a 502 from the edge. Treat it as a
     // server failure rather than pretending to understand it.
     if (!response.ok) {
-      throw new ApiError(
-        ErrorCode.UNKNOWN,
-        fallbackMessage(ErrorCode.UNKNOWN),
-        response.status,
-      );
+      throw new ApiError(ErrorCode.UNKNOWN, fallbackMessage(ErrorCode.UNKNOWN), response.status);
     }
   }
 

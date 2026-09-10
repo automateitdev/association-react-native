@@ -15,9 +15,7 @@ import { fetchDataUri, request } from '@/api/client';
 /** Which record's documents. Three shapes, because the paths differ. */
 export type DocumentOwner =
   /** The signed-in member's own. Read only - see the note on useUploadDocument. */
-  | { kind: 'me' }
-  | { kind: 'member'; id: number }
-  | { kind: 'nominee'; id: number };
+  { kind: 'me' } | { kind: 'member'; id: number } | { kind: 'nominee'; id: number };
 
 export type DocumentSlot = {
   /** `nid_front`, `signature` … the server's own name for it. */

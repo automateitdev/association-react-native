@@ -102,13 +102,13 @@ export function Icon({
         ? danger
         : tone === 'warning'
           ? warning
-        : tone === 'success'
-          ? success
-        : tone === 'accent'
-          ? accent
-          : tone === 'inverse'
-            ? inverse
-            : foreground);
+          : tone === 'success'
+            ? success
+            : tone === 'accent'
+              ? accent
+              : tone === 'inverse'
+                ? inverse
+                : foreground);
 
   return (
     <RNText

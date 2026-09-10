@@ -318,7 +318,13 @@ function FormColumns({
  * `minWidth` rather than a column count, so the same markup is two-up on a
  * desktop and stacked on a phone with nothing to configure.
  */
-export function FormRow({ children, minWidth = 150 }: { children: React.ReactNode; minWidth?: number }) {
+export function FormRow({
+  children,
+  minWidth = 150,
+}: {
+  children: React.ReactNode;
+  minWidth?: number;
+}) {
   return (
     <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space.md }}>
       {React.Children.map(children, (child) => (

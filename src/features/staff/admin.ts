@@ -138,18 +138,15 @@ export function useSaveRole() {
   return useMutation({
     mutationFn: async (input: { id?: number; name: string; permissions: string[] }) =>
       (
-        await request<{ data: StaffRole }>(
-          input.id ? `/staff/roles/${input.id}` : '/staff/roles',
-          {
-            method: input.id ? 'PUT' : 'POST',
-            body: input.id
-              ? // A seeded role cannot be renamed, so an edit sends only what
-                // it is allowed to change. Sending the unchanged name would be
-                // refused with ROLE_NOT_RENAMEABLE.
-                { permissions: input.permissions }
-              : { name: input.name, permissions: input.permissions },
-          },
-        )
+        await request<{ data: StaffRole }>(input.id ? `/staff/roles/${input.id}` : '/staff/roles', {
+          method: input.id ? 'PUT' : 'POST',
+          body: input.id
+            ? // A seeded role cannot be renamed, so an edit sends only what
+              // it is allowed to change. Sending the unchanged name would be
+              // refused with ROLE_NOT_RENAMEABLE.
+              { permissions: input.permissions }
+            : { name: input.name, permissions: input.permissions },
+        })
       ).data,
     onSuccess: () => void queryClient.invalidateQueries({ queryKey: adminKeys.roles }),
   });

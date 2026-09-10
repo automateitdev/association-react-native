@@ -253,7 +253,7 @@ export default function DueReportScreen() {
             <ExportButtons
               path="/staff/reports/due-info/export"
               name="outstanding-dues"
-                scope="Every row in the report, with the totals."
+              scope="Every row in the report, with the totals."
               query={{
                 ...(assigned.from ? { from: assigned.from } : {}),
                 ...(assigned.to ? { as_of: assigned.to } : {}),

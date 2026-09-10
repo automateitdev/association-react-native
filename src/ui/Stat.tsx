@@ -81,7 +81,13 @@ export function Stat({
     </View>
   );
 
-  return onPress ? <Pressable onPress={onPress} style={{ flex: 1, minWidth: 190 }}>{body}</Pressable> : body;
+  return onPress ? (
+    <Pressable onPress={onPress} style={{ flex: 1, minWidth: 190 }}>
+      {body}
+    </Pressable>
+  ) : (
+    body
+  );
 }
 
 /**
@@ -91,9 +97,7 @@ export function Stat({
  * per line on a phone, without a breakpoint being consulted anywhere.
  */
 export function StatGrid({ children }: { children: React.ReactNode }) {
-  return (
-    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space.md }}>{children}</View>
-  );
+  return <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space.md }}>{children}</View>;
 }
 
 /**

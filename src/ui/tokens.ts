@@ -129,7 +129,12 @@ export const type = {
   label: { fontFamily: font.medium, fontSize: 12.5, lineHeight: 16, fontWeight: '500' as const },
 
   /** The primary line of a row: a member's name, a fee head. */
-  rowTitle: { fontFamily: font.semibold, fontSize: 13.5, lineHeight: 18, fontWeight: '600' as const },
+  rowTitle: {
+    fontFamily: font.semibold,
+    fontSize: 13.5,
+    lineHeight: 18,
+    fontWeight: '600' as const,
+  },
 
   /** Supporting detail under it. */
   rowMeta: { fontFamily: font.regular, fontSize: 12, lineHeight: 16, fontWeight: '400' as const },

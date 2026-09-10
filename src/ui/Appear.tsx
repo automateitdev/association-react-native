@@ -76,9 +76,12 @@ export function Appear({
      * The general rule this is an instance of: an entrance may decide HOW
      * content appears, never WHETHER it does.
      */
-    const safety = setTimeout(() => {
-      progress.value = 1;
-    }, ms(delay) + ms(duration.base) + 600);
+    const safety = setTimeout(
+      () => {
+        progress.value = 1;
+      },
+      ms(delay) + ms(duration.base) + 600,
+    );
 
     return () => clearTimeout(safety);
     // Mount only. Re-running this on a prop change would replay the entrance

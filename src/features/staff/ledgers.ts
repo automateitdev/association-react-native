@@ -69,7 +69,8 @@ export function useLedgers(includeInactive = false) {
 export function useAccountGroups() {
   return useQuery({
     queryKey: ledgerKeys.groups,
-    queryFn: async () => (await request<{ data: AccountGroupOption[] }>('/staff/account-groups')).data,
+    queryFn: async () =>
+      (await request<{ data: AccountGroupOption[] }>('/staff/account-groups')).data,
     staleTime: 5 * 60_000,
   });
 }

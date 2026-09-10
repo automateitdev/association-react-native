@@ -93,8 +93,7 @@ export const shareKeys = {
   all: ['staff', 'shares'] as const,
   transfers: (page: number) => ['staff', 'shares', 'transfers', page] as const,
   member: (memberId: number) => ['staff', 'shares', 'member', memberId] as const,
-  memberTransfers: (memberId: number) =>
-    ['staff', 'shares', 'member-transfers', memberId] as const,
+  memberTransfers: (memberId: number) => ['staff', 'shares', 'member-transfers', memberId] as const,
 };
 
 export function useShareTransfers(page: number) {

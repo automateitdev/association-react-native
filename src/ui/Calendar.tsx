@@ -41,8 +41,18 @@ import { space, type } from './tokens';
 const WEEKDAYS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
 const MONTHS = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December',
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
 ];
 
 /** `2026-09-03`. The only date format that crosses the API boundary. */
@@ -99,7 +109,10 @@ export function Calendar({
   };
 
   return (
-    <View className="bg-surface border border-border rounded-lg" style={{ padding: space.md, gap: space.sm }}>
+    <View
+      className="bg-surface border border-border rounded-lg"
+      style={{ padding: space.md, gap: space.sm }}
+    >
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
         <Arrow icon="back" label="Previous month" onPress={() => step(-1)} />
 

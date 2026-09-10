@@ -115,8 +115,8 @@ export default function AdminScreen() {
           concluding the app has hidden them.
         */}
         <Text tone="muted" style={type.body}>
-          Association details and the signature used on generated documents are not
-          editable here yet.
+          Association details and the signature used on generated documents are not editable here
+          yet.
         </Text>
       </Section>
     </Screen>

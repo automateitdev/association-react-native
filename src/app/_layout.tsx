@@ -50,8 +50,6 @@ export default function RootLayout() {
     MaterialSymbols_400Regular,
   });
 
-
-
   /*
    * Hold the first frame until the fonts are in.
    *
@@ -231,4 +229,3 @@ function NavigationTheme({
 
   return <ThemeProvider value={theme}>{children}</ThemeProvider>;
 }
-

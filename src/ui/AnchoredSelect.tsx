@@ -175,7 +175,9 @@ export function AnchoredSelect({
 
         <Text
           numberOfLines={1}
-          tone={multiple ? (values.length > 0 ? 'default' : 'muted') : selected ? 'default' : 'muted'}
+          tone={
+            multiple ? (values.length > 0 ? 'default' : 'muted') : selected ? 'default' : 'muted'
+          }
           style={{ ...type.body, flex: 1 }}
         >
           {multiple ? summarise(values, options, placeholder) : (selected?.label ?? placeholder)}
@@ -252,7 +254,11 @@ export function AnchoredSelect({
               {shown.length === 0 ? (
                 <Text
                   tone="muted"
-                  style={{ ...type.rowMeta, paddingHorizontal: space.md, paddingVertical: space.sm }}
+                  style={{
+                    ...type.rowMeta,
+                    paddingHorizontal: space.md,
+                    paddingVertical: space.sm,
+                  }}
                 >
                   Nothing matches.
                 </Text>
@@ -316,9 +322,7 @@ export function AnchoredSelect({
                             {active ? <Icon name="check" size={14} tone="accent" /> : null}
                           </View>
 
-                          {option.icon ? (
-                            <Icon name={option.icon} size={14} tone="muted" />
-                          ) : null}
+                          {option.icon ? <Icon name={option.icon} size={14} tone="muted" /> : null}
 
                           <Text numberOfLines={1} style={{ ...type.body, flex: 1 }}>
                             {option.label}
@@ -348,9 +352,7 @@ function summarise(values: string[], options: SelectOption[], placeholder: strin
   if (values.length === 0) return placeholder;
 
   if (values.length <= 3) {
-    return values
-      .map((v) => options.find((o) => o.value === v)?.label ?? v)
-      .join(', ');
+    return values.map((v) => options.find((o) => o.value === v)?.label ?? v).join(', ');
   }
 
   return `${values.length} selected`;

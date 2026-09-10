@@ -52,8 +52,8 @@ export default function ReportsScreen() {
       {can('reports.export') ? (
         <Section title="Downloads">
           <Text tone="muted" style={type.body}>
-            Open a report to download it as Excel, CSV or PDF. The file follows
-            the filters you have set, and carries the same totals.
+            Open a report to download it as Excel, CSV or PDF. The file follows the filters you have
+            set, and carries the same totals.
           </Text>
         </Section>
       ) : null}

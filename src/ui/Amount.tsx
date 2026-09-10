@@ -22,8 +22,7 @@ export function Amount({
   size?: 'sm' | 'md' | 'lg';
   muted?: boolean;
 }) {
-  const style =
-    size === 'lg' ? type.stat : size === 'sm' ? type.rowMeta : type.amount;
+  const style = size === 'lg' ? type.stat : size === 'sm' ? type.rowMeta : type.amount;
 
   return (
     <Text

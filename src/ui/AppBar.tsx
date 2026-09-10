@@ -99,11 +99,7 @@ export function AppBar({
         >
           <Icon
             name={
-              themePreference === 'light'
-                ? 'light'
-                : themePreference === 'dark'
-                  ? 'dark'
-                  : 'auto'
+              themePreference === 'light' ? 'light' : themePreference === 'dark' ? 'dark' : 'auto'
             }
             size={18}
             tone="muted"

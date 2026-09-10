@@ -1,8 +1,8 @@
-import { Pressable } from "react-native";
-import { Icon } from "./Icon";
-import { Inline } from "./Layout";
-import { Text } from "./Text";
-import { space, type } from "./tokens";
+import { Pressable } from 'react-native';
+import { Icon } from './Icon';
+import { Inline } from './Layout';
+import { Text } from './Text';
+import { space, type } from './tokens';
 
 /**
  * Which page of how many, and the two ways off it.
@@ -66,7 +66,7 @@ function PageButton({
   disabled,
   onPress,
 }: {
-  icon: "back" | "forward";
+  icon: 'back' | 'forward';
   label: string;
   disabled: boolean;
   onPress: () => void;
@@ -85,7 +85,7 @@ function PageButton({
         opacity: disabled ? 0.4 : 1,
       }}
     >
-      <Icon name={icon} size={15} tone={disabled ? "muted" : "default"} />
+      <Icon name={icon} size={15} tone={disabled ? 'muted' : 'default'} />
     </Pressable>
   );
 }

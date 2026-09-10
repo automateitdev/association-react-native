@@ -140,9 +140,7 @@ export default function RegisterScreen() {
               query={{ q: q.trim() === '' ? undefined : q.trim() }}
               disabled={register.isLoading || rows.length === 0}
               scope={
-                q.trim() === ''
-                  ? 'Everyone on the register'
-                  : `Everyone matching “${q.trim()}”`
+                q.trim() === '' ? 'Everyone on the register' : `Everyone matching “${q.trim()}”`
               }
             />
           }

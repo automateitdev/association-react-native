@@ -126,7 +126,7 @@ export function Screen({
   const measure = {
     width: '100%' as const,
     maxWidth,
-    alignSelf: (isDesktop && ! center ? 'flex-start' : 'center') as 'flex-start' | 'center',
+    alignSelf: (isDesktop && !center ? 'flex-start' : 'center') as 'flex-start' | 'center',
   };
 
   /*

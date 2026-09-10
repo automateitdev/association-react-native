@@ -300,10 +300,7 @@ function DocumentRow({
           ) : null}
 
           {showingPending && slot.pending ? (
-            <Preview
-              query={pendingImage}
-              label={`${slot.label}, waiting to be reviewed`}
-            />
+            <Preview query={pendingImage} label={`${slot.label}, waiting to be reviewed`} />
           ) : null}
 
           {open && slot.uploaded ? <Preview query={image} label={slot.label} /> : null}
