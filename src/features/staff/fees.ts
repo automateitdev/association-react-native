@@ -284,13 +284,55 @@ export function useAssignFees() {
  * it means. The legacy dropdown stops at 30 and pastes its date together as a
  * string, so 30 in February silently becomes the 2nd of March.
  */
+/**
+ * What "the association's usual grace period" comes out as, said in days.
+ *
+ * WHY IT IS SPELLED OUT. The default option on the assign form named the
+ * setting and not its value, so the one thing an officer needed - when the
+ * fine actually starts - was the one thing the screen would not say. Finding
+ * out meant leaving a half-filled form for Admin -> Settings.
+ *
+ * It matters most where it is easiest to miss: the seeded default is ZERO
+ * days, which means an instalment is fineable from the first of its own month.
+ * The legacy system waits until the 21st. An association that has never opened
+ * its settings is fining from day one and nothing on this screen said so.
+ *
+ * THE ARITHMETIC IS NOT THE SAME AS THE OVERRIDE'S, which is why this does not
+ * just return a day number. The override sets a day OF THE MONTH and clamps to
+ * the month's length; the grace period adds days to the first and is allowed to
+ * roll past the end - 31 days of grace on a 30-day month lands in the next one.
+ * Below 28 the two coincide and the day can be named; at or above it, only the
+ * count is honest.
+ */
+export function graceSummary(graceDays: number): string {
+  if (graceDays === 0) return 'from the 1st';
+
+  if (graceDays >= 28) return `${graceDays} days in`;
+
+  return `from the ${ordinal(graceDays + 1)}`;
+}
+
+/** The same fact, at length, for the hint under the field. */
+export function graceNote(graceDays: number): string {
+  if (graceDays === 0) {
+    return 'No grace: an instalment is fineable from the first of its month.';
+  }
+
+  if (graceDays >= 28) {
+    return `${graceDays} days after the first of each month.`;
+  }
+
+  return `${graceDays} days after the first — the ${ordinal(graceDays + 1)} of each month.`;
+}
+
+/** 1st, 2nd, 3rd, 4th. Shared by the grace note and the day picker. */
+function ordinal(n: number): string {
+  if (n % 100 >= 11 && n % 100 <= 13) return `${n}th`;
+
+  return `${n}${({ 1: 'st', 2: 'nd', 3: 'rd' } as Record<number, string>)[n % 10] ?? 'th'}`;
+}
+
 export function fineDayOptions(): { value: string; label: string }[] {
-  const ordinal = (n: number) => {
-    if (n % 100 >= 11 && n % 100 <= 13) return `${n}th`;
-
-    return `${n}${({ 1: 'st', 2: 'nd', 3: 'rd' } as Record<number, string>)[n % 10] ?? 'th'}`;
-  };
-
   return Array.from({ length: 31 }, (_, i) => ({
     value: String(i + 1),
     label: ordinal(i + 1),
@@ -312,12 +354,6 @@ export function fineDayOptions(): { value: string; label: string }[] {
  */
 export function fineDayNote(periods: string[], day: number | null): string | null {
   if (day === null || periods.length === 0) return null;
-
-  const ordinal = (n: number) => {
-    if (n % 100 >= 11 && n % 100 <= 13) return `${n}th`;
-
-    return `${n}${({ 1: 'st', 2: 'nd', 3: 'rd' } as Record<number, string>)[n % 10] ?? 'th'}`;
-  };
 
   const short = periods.filter((period) => {
     const [year, month] = period.split('-').map(Number);

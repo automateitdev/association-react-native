@@ -95,9 +95,17 @@ export const settingsKeys = {
   all: ['staff', 'settings'] as const,
 };
 
-export function useSettings() {
+export function useSettings({ enabled = true }: { enabled?: boolean } = {}) {
   return useQuery({
     queryKey: settingsKeys.all,
+    /*
+     * OFF WHERE THE READER CANNOT READ IT. `settings.view` covers the bank
+     * account and the gateway summary as well as the fine rules, so a clerk
+     * who assigns fees usually does not hold it. The fee-assign screen wants
+     * one number out of this - the grace period - and asking for it without
+     * the permission would put a 403 on a screen that is not about settings.
+     */
+    enabled,
     queryFn: async () => (await request<{ data: Settings }>('/staff/settings')).data,
   });
 }

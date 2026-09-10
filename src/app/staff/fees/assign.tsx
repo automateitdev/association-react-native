@@ -2,10 +2,14 @@ import { router } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { View } from 'react-native';
 import { ApiError } from '@/api/errors';
+import { useSession } from '@/features/auth/session';
 import { useMembers } from '@/features/staff/members';
+import { useSettings } from '@/features/staff/settings';
 import {
   fineDayNote,
   fineDayOptions,
+  graceNote,
+  graceSummary,
   MONTH_NAMES,
   periodsFor,
   periodSummary,
@@ -63,6 +67,21 @@ import {
  */
 export default function AssignFeesScreen() {
   const setups = useFeeSetups();
+
+  /*
+   * THE ASSOCIATION'S OWN GRACE PERIOD, so the default option can say what it
+   * resolves to rather than only naming the setting it comes from.
+   *
+   * Behind `settings.view`, which a fee clerk usually does not have - the
+   * permission covers the bank account and the fine rate as well. Asking
+   * without it would be a 403 on a screen that has nothing to do with
+   * settings, so it is not asked, and the field falls back to the wording it
+   * had before. Better a vaguer sentence than a broken request.
+   */
+  const { can } = useSession();
+  const maySeeSettings = can('settings.view');
+  const settings = useSettings({ enabled: maySeeSettings });
+  const graceDays = settings.data?.fine.grace_days ?? null;
   const assign = useAssignFees();
 
   const [feeSetupId, setFeeSetupId] = useState<string | null>(null);
@@ -604,7 +623,19 @@ export default function AssignFeesScreen() {
                   options={[
                     {
                       value: '',
-                      label: 'The association’s usual grace period',
+                      /*
+                        THE VALUE, not just the name of the setting.
+                        "The association's usual grace period" is a label for a
+                        number the officer cannot see, and the number is the
+                        whole of what they are choosing between. Named where a
+                        clerk without settings.view cannot read it - which is
+                        most of them - it falls back to the old wording rather
+                        than to a wrong one.
+                      */
+                      label:
+                        graceDays === null
+                          ? 'The association’s usual grace period'
+                          : `The association’s usual grace period · ${graceSummary(graceDays)}`,
                     },
                     ...fineDayOptions(),
                   ]}
@@ -619,7 +650,9 @@ export default function AssignFeesScreen() {
                 */
                   hint={
                     fineDayNote(periods, fineDay === '' ? null : Number(fineDay)) ??
-                    'Only for this assignment. Change the usual one in Admin → Settings.'
+                    (graceDays === null
+                      ? 'Only for this assignment. Change the usual one in Admin → Settings.'
+                      : `${graceNote(graceDays)} Change it in Admin → Settings; a day chosen here applies to this assignment only.`)
                   }
                 />
               </Form>
