@@ -13,18 +13,20 @@ import {
 import {
   Actions,
   Button,
+  Cell,
   Checkbox,
   Chip,
+  DataTable,
   Icon,
   Panel,
   PickerField,
-  Row,
   Screen,
   ScreenHeader,
   Section,
   SearchField,
   StateView,
   Text,
+  type Column,
   space,
   type,
 } from '@/ui';
@@ -131,6 +133,67 @@ export default function AssignFeesScreen() {
     setYears((current) =>
       current.includes(year) ? current.filter((y) => y !== year) : [...current, year],
     );
+
+  /*
+   * THE SAME TABLE AS EVERY OTHER MEMBER LIST, with the approvals queue's
+   * checkbox column in front of it.
+   *
+   * This was a list of Row + Checkbox, on the reasoning that choosing from a
+   * list is a different act from reading one. That reasoning survives contact
+   * with neither this app nor the legacy one. ui/DataTable already supports a
+   * checkbox first column - its own docblock cites the approvals queue's 46pt
+   * one - and the legacy fee-assign screen is a table with a select-all
+   * checkbox, a name, a member id, an email and a mobile.
+   *
+   * So the Row list was not a considered pattern. It was the screen nobody
+   * converted: the only member list in the app showing a name and a number
+   * where every other one shows a number, a mobile and a status.
+   */
+  const memberColumns = useMemo<Column<(typeof rows)[number]>[]>(
+    () => [
+      {
+        key: 'select',
+        header: '',
+        width: 46,
+        frozen: true,
+        // No `sort`: ordering a list by which rows happen to be ticked is not
+        // a question anybody asks.
+        render: (row) => (
+          <Checkbox
+            isSelected={memberIds.has(row.id)}
+            onSelectedChange={() => toggleMember(row.id)}
+          />
+        ),
+      },
+      {
+        key: 'name',
+        header: 'Member',
+        width: 200,
+        frozen: true,
+        render: (row) => <Cell bold>{row.name}</Cell>,
+      },
+      {
+        key: 'membership_no',
+        header: 'No.',
+        width: 90,
+        render: (row) => <Cell>{row.membership_no || '—'}</Cell>,
+      },
+      {
+        key: 'mobile',
+        header: 'Mobile',
+        width: 130,
+        render: (row) => <Cell>{row.mobile ?? '—'}</Cell>,
+      },
+      {
+        key: 'email',
+        header: 'Email',
+        width: 210,
+        render: (row) => <Cell>{row.email || '—'}</Cell>,
+      },
+    ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [memberIds],
+  );
 
   const toggleMember = (id: number) =>
     setMemberIds((current) => {
@@ -337,23 +400,17 @@ export default function AssignFeesScreen() {
           emptyMessage="Nobody matches this search."
           onRetry={() => void members.refetch()}
         >
-          {rows.map((member, index) => (
-            <Row
-              key={member.id}
-              title={member.name}
-              meta={member.membership_no ? `No. ${member.membership_no}` : 'No number yet'}
-              leading={
-                <Checkbox
-                  isSelected={memberIds.has(member.id)}
-                  onSelectedChange={() => toggleMember(member.id)}
-                />
-              }
-              onPress={() => toggleMember(member.id)}
-              // Selects, does not navigate. The checkbox says what tapping does.
-              chevron={false}
-              divider={index < rows.length - 1}
-            />
-          ))}
+          <DataTable
+            columns={memberColumns}
+            rows={rows}
+            keyExtractor={(member) => member.id}
+            /*
+              Everything already loaded, rather than paged again. The query
+              below is an infinite one with its own "Load more"; a pager inside
+              the table would be paging a page.
+            */
+            pageSize={0}
+          />
 
           {members.hasNextPage ? (
             <View style={{ marginTop: space.md }}>
