@@ -1,5 +1,6 @@
+import * as ImagePicker from 'expo-image-picker';
 import { useEffect, useMemo, useState } from 'react';
-import { View } from 'react-native';
+import { Alert as RNAlert, View } from 'react-native';
 import { formatMoney } from '@/api/money';
 import { useSession } from '@/features/auth/session';
 import {
@@ -18,6 +19,7 @@ import {
   Divider,
   FilterSelect,
   Icon,
+  Inline,
   NumberCell,
   Panel,
   Row,
@@ -54,6 +56,17 @@ export default function CollectScreen() {
   const [memberId, setMemberId] = useState<number | null>(null);
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [ledgerId, setLedgerId] = useState<string | null>(null);
+
+  /**
+   * The slip, when somebody brought one to the counter.
+   *
+   * OPTIONAL HERE, where a member's own manual payment requires one - the split
+   * the legacy system makes. A member filing a payment is asserting that money
+   * left their account; a clerk recording a collection took the money
+   * themselves. But often there IS a slip - paid at the bank, brought in - and
+   * until now there was nowhere to put it at the moment it was in their hand.
+   */
+  const [slips, setSlips] = useState<ImagePicker.ImagePickerAsset[]>([]);
   const [done, setDone] = useState<{ invoice: string; total: string } | null>(null);
 
   /*
@@ -200,6 +213,32 @@ export default function CollectScreen() {
     [meta, selected, lines],
   );
 
+  const addSlip = async () => {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+    if (!permission.granted) {
+      RNAlert.alert(
+        'Photo access needed',
+        'The app needs access to your photos so you can attach the slip.',
+      );
+
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      // Compressed, like the member's own: a bank slip photographed on a phone
+      // is several megabytes of a sheet of paper.
+      quality: 0.7,
+      allowsMultipleSelection: true,
+      selectionLimit: 5 - slips.length,
+    });
+
+    if (result.canceled) return;
+
+    setSlips((current) => [...current, ...result.assets].slice(0, 5));
+  };
+
   const submit = async () => {
     if (memberId === null || ledgerId === null || selected.size === 0) return;
 
@@ -209,6 +248,7 @@ export default function CollectScreen() {
         feeAssignIds: [...selected],
         ledgerId: Number(ledgerId),
         idempotencyKey: attemptKey,
+        slips,
       });
 
       setDone({
@@ -216,6 +256,7 @@ export default function CollectScreen() {
         total: collection.total_amount,
       });
       setSelected(new Set());
+      setSlips([]);
 
       // The next collection is a new attempt and needs its own key.
       setAttemptKey(newIdempotencyKey());
@@ -390,6 +431,33 @@ export default function CollectScreen() {
               The amount is calculated by the server when the collection is recorded, and shown on
               the receipt.
             </Text>
+
+            {/*
+              The slip, if there is one. Below the note and above the button,
+              because it is the last thing the clerk does with what is in their
+              hand before recording - and it is not a step they must complete,
+              which is why nothing here blocks the button.
+            */}
+            <Inline gap="sm" wrap>
+              {slips.map((slip, index) => (
+                <Text key={slip.uri} tone="muted" style={type.rowMeta}>
+                  {slip.fileName ?? `Slip ${index + 1}`}
+                </Text>
+              ))}
+
+              {slips.length < 5 ? (
+                <Button size="sm" variant="tertiary" onPress={() => void addSlip()}>
+                  <Icon name="add" size={15} tone="muted" />
+                  <Button.Label>{slips.length === 0 ? 'Attach slip' : 'Add another'}</Button.Label>
+                </Button>
+              ) : null}
+
+              {slips.length > 0 ? (
+                <Button size="sm" variant="tertiary" onPress={() => setSlips([])}>
+                  <Button.Label>Clear</Button.Label>
+                </Button>
+              ) : null}
+            </Inline>
 
             <Button
               isDisabled={ledgerId === null || collect.isPending}

@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import type { ImagePickerAsset } from 'expo-image-picker';
 import { newIdempotencyKey, request } from '@/api/client';
 import type { Money } from '@/api/money';
 import { memberKeys } from './members';
@@ -83,18 +84,64 @@ export function useCollect() {
       feeAssignIds: number[];
       ledgerId: number;
       idempotencyKey: string;
-    }) =>
-      (
+      /**
+       * The slip, when somebody brought one to the counter.
+       *
+       * OPTIONAL HERE, where a member's own manual payment requires it - the
+       * split the legacy system makes, and for a reason. A member filing a
+       * payment is asserting that money left their account; a clerk recording a
+       * collection took the money themselves. But often there IS a slip, and
+       * until now there was nowhere to put it at the moment it was in the
+       * clerk's hand.
+       */
+      slips?: ImagePickerAsset[];
+    }) => {
+      const slips = input.slips ?? [];
+
+      /*
+       * FormData only when there is a file. A multipart body for the common
+       * case - a clerk taking cash, with nothing to attach - would make every
+       * ordinary collection a larger request for no reason, and the JSON path
+       * is the one every existing test and client exercises.
+       */
+      if (slips.length === 0) {
+        return (
+          await request<{ data: Collection }>('/staff/collections', {
+            method: 'POST',
+            idempotencyKey: input.idempotencyKey,
+            body: {
+              member_id: input.memberId,
+              fee_assign_ids: input.feeAssignIds,
+              ledger_id: input.ledgerId,
+            },
+          })
+        ).data;
+      }
+
+      const form = new FormData();
+
+      form.append('member_id', String(input.memberId));
+      form.append('ledger_id', String(input.ledgerId));
+      input.feeAssignIds.forEach((id) => form.append('fee_assign_ids[]', String(id)));
+
+      slips.forEach((asset, index) => {
+        // The three keys React Native's FormData needs for a file; the cast is
+        // unavoidable and is the same one the member's pay screen uses.
+        form.append('documents[]', {
+          uri: asset.uri,
+          name: asset.fileName ?? `slip-${index + 1}.jpg`,
+          type: asset.mimeType ?? 'image/jpeg',
+        } as unknown as Blob);
+      });
+
+      return (
         await request<{ data: Collection }>('/staff/collections', {
           method: 'POST',
           idempotencyKey: input.idempotencyKey,
-          body: {
-            member_id: input.memberId,
-            fee_assign_ids: input.feeAssignIds,
-            ledger_id: input.ledgerId,
-          },
+          formData: form,
         })
-      ).data,
+      ).data;
+    },
 
     onSuccess: (_collection, input) => {
       /*
