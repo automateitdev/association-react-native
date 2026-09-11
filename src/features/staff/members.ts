@@ -36,6 +36,15 @@ export type MemberSummary = {
   id: number;
   name: string;
   mobile: string;
+
+  /**
+   * Which country the mobile belongs to (ISO 3166-1 alpha-2, `BD` by default).
+   *
+   * IN THE SUMMARY, beside the number, because it is part of reading it:
+   * `12025550123` is a wrong number in Dhaka and a correct one in Washington,
+   * and a list that shows one without the other invites somebody to dial it.
+   */
+  country_code: string;
   email: string | null;
   status: MemberStatus;
 

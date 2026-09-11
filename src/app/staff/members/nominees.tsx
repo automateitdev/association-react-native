@@ -192,7 +192,11 @@ export default function NomineesScreen() {
                   nominee.relation,
                   parentage(nominee),
                   nominee.share_percentage ? `${nominee.share_percentage}%` : 'no share set',
-                  nominee.mobile,
+                  // Only when it is NOT the default. "BD" on three hundred
+                  // rows is noise; "US" on eight is the finding.
+                  nominee.mobile && nominee.country_code !== 'BD'
+                    ? `${nominee.mobile} (${nominee.country_code})`
+                    : nominee.mobile,
                 ]
                   .filter(Boolean)
                   .join(' · ')}
@@ -240,6 +244,7 @@ function NomineeForm({
   const [birthDate, setBirthDate] = useState(nominee?.birth_date ?? '');
   const [nid, setNid] = useState(nominee?.nid ?? '');
   const [mobile, setMobile] = useState(nominee?.mobile ?? '');
+  const [country, setCountry] = useState(nominee?.country_code ?? 'BD');
   const [address, setAddress] = useState(nominee?.address ?? '');
   const [share, setShare] = useState(nominee?.share_percentage ?? '');
 
@@ -313,6 +318,27 @@ function NomineeForm({
 
       <InputField label="Mobile" value={mobile} onChangeText={setMobile} keyboardType="phone-pad" />
 
+      {/*
+        Beside the number, because it is part of reading it: `12025550123` is a
+        wrong number in Dhaka and a correct one in Washington. Eight of the
+        association's nominees are `US`, which is the whole reason this field
+        exists rather than being assumed.
+
+        A two-letter box rather than a country picker. A list of every country
+        is a control the office would scroll past every single time to leave it
+        on BD, and the API validates the shape.
+      */}
+      <InputField
+        label="Country of the number"
+        value={country}
+        // Two characters, upper case, enforced here rather than by another
+        // prop on the shared field: this is the only control in the app that
+        // wants either, and the API validates the shape regardless.
+        onChangeText={(value) => setCountry(value.toUpperCase().slice(0, 2))}
+        autoCapitalize="characters"
+        placeholder="BD"
+      />
+
       <InputField label="Address" value={address} onChangeText={setAddress} />
 
       {/* A job and a workplace together, which is how it is written down:
@@ -341,6 +367,7 @@ function NomineeForm({
               birth_date: birthDate || null,
               nid: nid.trim() || null,
               mobile: mobile.trim() || null,
+              country_code: country.trim() || 'BD',
               address: address.trim() || null,
               profession: profession.trim() || null,
               share_percentage: share.trim() === '' ? null : Number(share),

@@ -35,6 +35,15 @@ export type Nominee = {
   birth_date: string | null;
   nid: string | null;
   mobile: string | null;
+
+  /**
+   * Eight of the association's nominees are `US`.
+   *
+   * A nominee living abroad is an ordinary case in a cooperative of civil
+   * servants, and it is the reason this column survived the sweep at all -
+   * which had it down as "one distinct value, costs nothing".
+   */
+  country_code: string;
   address: string | null;
   /** A job and a workplace together: "Lecturer, Noakhali S&T University". */
   profession: string | null;
@@ -51,6 +60,7 @@ export type NomineeInput = {
   birth_date?: string | null;
   nid?: string | null;
   mobile?: string | null;
+  country_code?: string | null;
   address?: string | null;
   profession?: string | null;
   share_percentage?: number | null;

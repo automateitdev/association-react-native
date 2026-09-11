@@ -176,7 +176,13 @@ export function InputField({
    */
   keyboardType?: 'phone-pad' | 'decimal-pad' | 'email-address';
   secureTextEntry?: boolean;
-  autoCapitalize?: 'none' | 'sentences';
+  /**
+   * `characters` is here for the two-letter country code beside a mobile
+   * number - the one field in this app that is upper case by nature. The
+   * screen forces the case anyway; this is what puts a phone keyboard in caps
+   * rather than making somebody hold shift twice.
+   */
+  autoCapitalize?: 'none' | 'sentences' | 'characters';
   required?: boolean;
   hint?: string;
   error?: string;
