@@ -297,6 +297,12 @@ export default function StaffLayout() {
           {/*
         Reached from a list, not chosen from the bar. Without href: null every
         file in this tree becomes its own tab.
+
+        SO THIS LIST GROWS WITH THE TREE. Adding a screen under staff/ and not
+        adding a line here puts a tab in the bar named after its path - which is
+        exactly what `reports/income-statement` did the day it was written. The
+        bar is the one place a new route announces itself whether or not anybody
+        meant it to.
       */}
           <Tabs.Screen name="admin/users" options={{ href: null }} />
           <Tabs.Screen name="admin/roles" options={{ href: null }} />
@@ -316,6 +322,7 @@ export default function StaffLayout() {
           <Tabs.Screen name="fees/assign" options={{ href: null }} />
           <Tabs.Screen name="reports/due" options={{ href: null }} />
           <Tabs.Screen name="reports/paid" options={{ href: null }} />
+          <Tabs.Screen name="reports/income-statement" options={{ href: null }} />
         </Tabs>
       </View>
     </View>
