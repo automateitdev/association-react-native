@@ -4,6 +4,7 @@ import { View } from 'react-native';
 import { ApiError } from '@/api/errors';
 import { formatMoney } from '@/api/money';
 import { useSession } from '@/features/auth/session';
+import { MemberProfileButton } from '@/features/staff/MemberProfileButton';
 import { DocumentsSection } from '@/features/DocumentsSection';
 import {
   TRANSITIONS,
@@ -88,8 +89,16 @@ export default function MemberDetailScreen() {
         {member.data ? (
           <>
             <Section first>
-              <Inline gap="sm" align="start">
+              {/*
+                The status, and the one thing a person does with this screen
+                that produces a file. It sits beside the status rather than in
+                the header because the header already carries Back, and because
+                what the PDF says about this member depends on the status
+                standing right next to the button that prints it.
+              */}
+              <Inline gap="sm" align="center" justify="between">
                 <StatusBadge status={member.data.status} />
+                <MemberProfileButton memberId={member.data.id} />
               </Inline>
             </Section>
 
