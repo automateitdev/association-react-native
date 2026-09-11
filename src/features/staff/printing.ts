@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { download, request } from '@/api/client';
+import type { ImagePickerAsset } from 'expo-image-picker';
+import { download, fetchDataUri, request } from '@/api/client';
 
 /**
  * Share certificates, ID cards, and who signs them (legacy `certificate`,
@@ -34,6 +35,7 @@ export type Signatory = {
 
 export const printingKeys = {
   signatories: () => ['staff', 'signatories'] as const,
+  signature: (role: string) => ['staff', 'signatories', role, 'image'] as const,
 };
 
 export function useSignatories() {
@@ -56,6 +58,85 @@ export function useSaveSignatory() {
         })
       ).data,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: printingKeys.signatories() }),
+  });
+}
+
+/**
+ * The signature image, for looking at.
+ *
+ * WITHOUT IT THE UPLOAD IS UNVERIFIABLE. An association files a scan and then
+ * prints forty certificates with it; seeing what was filed, before rather than
+ * after, is the difference between a mistake caught and a batch reprinted.
+ * `has_signature` says one exists - it cannot say it is the right way up.
+ *
+ * Fetched only when somebody opens the row: a signature nobody is looking at is
+ * a picture downloaded to render a line of text.
+ */
+export function useSignatureImage(role: string, enabled: boolean) {
+  return useQuery({
+    queryKey: printingKeys.signature(role),
+    enabled,
+    staleTime: 60 * 60 * 1000,
+    retry: false,
+    queryFn: () => fetchDataUri(`/staff/signatories/${role}/signature`),
+  });
+}
+
+export function useUploadSignature() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ role, asset }: { role: string; asset: ImagePickerAsset }) => {
+      const form = new FormData();
+
+      /*
+       * The three keys React Native's FormData needs for a file. The cast is
+       * unavoidable: RN accepts this shape and the DOM typings do not describe
+       * it - the same trick the document uploads use.
+       */
+      form.append('file', {
+        uri: asset.uri,
+        name: asset.fileName ?? `${role}-signature.png`,
+        type: asset.mimeType ?? 'image/png',
+      } as unknown as Blob);
+
+      return (
+        await request<{ data: Signatory[] }>(`/staff/signatories/${role}/signature`, {
+          method: 'POST',
+          formData: form,
+        })
+      ).data;
+    },
+
+    onSuccess: (_data, variables) => {
+      void queryClient.invalidateQueries({ queryKey: printingKeys.signatories() });
+
+      /*
+       * And the picture itself. The list and the image are separate queries, so
+       * invalidating the list alone would leave the OLD signature on screen
+       * under a row that says a new one was filed - which reads as the upload
+       * having silently failed.
+       */
+      void queryClient.removeQueries({ queryKey: printingKeys.signature(variables.role) });
+    },
+  });
+}
+
+export function useRemoveSignature() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (role: string) =>
+      (
+        await request<{ data: Signatory[] }>(`/staff/signatories/${role}/signature`, {
+          method: 'DELETE',
+        })
+      ).data,
+
+    onSuccess: (_data, role) => {
+      void queryClient.invalidateQueries({ queryKey: printingKeys.signatories() });
+      void queryClient.removeQueries({ queryKey: printingKeys.signature(role) });
+    },
   });
 }
 

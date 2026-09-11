@@ -1,12 +1,22 @@
+import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
+import { Alert as RNAlert, Image } from 'react-native';
 import { ApiError } from '@/api/errors';
-import { useSaveSignatory, useSignatories } from '@/features/staff/printing';
+import {
+  useRemoveSignature,
+  useSaveSignatory,
+  useSignatories,
+  useSignatureImage,
+  useUploadSignature,
+} from '@/features/staff/printing';
 import { useSettings, useUpdateSettings } from '@/features/staff/settings';
 import {
   Button,
   Form,
   FormActions,
+  Icon,
+  Inline,
   InputField,
   Panel,
   Row,
@@ -16,6 +26,7 @@ import {
   Stack,
   StateView,
   Text,
+  space,
   type,
 } from '@/ui';
 
@@ -207,7 +218,8 @@ export default function SocietyScreen() {
           <Panel>
             <Text tone="muted" style={type.rowMeta}>
               A certificate prints the secretary on the left and the chairman on the right. The name
-              goes under the line; the signature image is uploaded separately.
+              goes under the line, and the signature above it — a scan of a signature on white paper
+              reproduces best.
             </Text>
           </Panel>
 
@@ -219,6 +231,7 @@ export default function SocietyScreen() {
                 label={signatory.label}
                 name={signatory.name}
                 hasSignature={signatory.has_signature}
+                onError={setError}
                 onSave={(name) =>
                   saveSignatory.mutate(
                     { role: signatory.role, name },
@@ -231,18 +244,6 @@ export default function SocietyScreen() {
               />
             ))}
           </Stack>
-
-          {/*
-            Uploading an image is not something this screen does yet, and saying
-            so beats a button that opens a file picker leading nowhere. The API
-            takes it - POST /staff/signatories/{role}/signature - so a
-            certificate signed in ink and scanned once is a step away rather
-            than a rebuild.
-          */}
-          <Text tone="muted" style={type.rowMeta}>
-            Uploading the signature image is not on this screen yet. Until it is, certificates print
-            the name and the line, and are signed by hand.
-          </Text>
         </Section>
       </StateView>
     </Screen>
@@ -255,18 +256,126 @@ function SignatoryRow({
   name,
   hasSignature,
   onSave,
+  onError,
 }: {
   role: string;
   label: string;
   name: string | null;
   hasSignature: boolean;
   onSave: (name: string) => void;
+  onError: (message: string | null) => void;
 }) {
   const [editing, setEditing] = useState(false);
+  const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState(name ?? '');
 
-  if (!editing) {
+  const upload = useUploadSignature();
+  const remove = useRemoveSignature();
+
+  /*
+   * Only while the row is open. A signature nobody is looking at is a picture
+   * downloaded to render a line of text - the same reasoning as the document
+   * previews.
+   */
+  const image = useSignatureImage(role, open && hasSignature);
+
+  const busy = upload.isPending || remove.isPending;
+
+  const pick = async () => {
+    onError(null);
+
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+    if (!permission.granted) {
+      RNAlert.alert(
+        'Photo access needed',
+        'The app needs access to your photos so you can attach the signature.',
+      );
+
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      /*
+       * Barely compressed, unlike an NID photograph. A signature is thin dark
+       * strokes on white, which is exactly what JPEG artefacts destroy - and
+       * this one is printed at 14mm on a document somebody keeps.
+       */
+      quality: 1,
+      allowsMultipleSelection: false,
+    });
+
+    if (result.canceled) return;
+
+    try {
+      await upload.mutateAsync({ role, asset: result.assets[0] });
+
+      // Opened afterwards, so the person sees what they filed rather than a row
+      // that merely says it worked. An upside-down scan is caught here or on
+      // forty printed certificates.
+      setOpen(true);
+    } catch (e) {
+      onError(e instanceof ApiError ? e.message : 'That signature could not be uploaded.');
+    }
+  };
+
+  const confirmRemove = () => {
+    onError(null);
+
+    RNAlert.alert(
+      `Remove the ${label.toLowerCase()}'s signature?`,
+      'The image is deleted. Certificates will print the name and the line, unsigned.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Remove',
+          style: 'destructive',
+          onPress: () => {
+            remove.mutate(role, {
+              onError: (e) =>
+                onError(e instanceof ApiError ? e.message : 'That could not be removed.'),
+            });
+
+            setOpen(false);
+          },
+        },
+      ],
+    );
+  };
+
+  if (editing) {
     return (
+      <Form maxWidth={null} dense columns={1}>
+        <InputField
+          label={label}
+          value={draft}
+          onChangeText={setDraft}
+          placeholder="Full name as it should be printed"
+        />
+
+        <FormActions>
+          <Button variant="secondary" onPress={() => setEditing(false)}>
+            <Button.Label>Cancel</Button.Label>
+          </Button>
+
+          <Button
+            onPress={() => {
+              // An empty name clears the role AND its signature - the next
+              // holder must not inherit the last one's.
+              onSave(draft.trim());
+              setEditing(false);
+            }}
+          >
+            <Button.Label>Save</Button.Label>
+          </Button>
+        </FormActions>
+      </Form>
+    );
+  }
+
+  return (
+    <Stack gap="xs">
       <Row
         title={label}
         meta={
@@ -275,47 +384,77 @@ function SignatoryRow({
             : 'Nobody recorded'
         }
         trailing={
-          <Button
-            size="sm"
-            variant="tertiary"
-            onPress={() => {
-              setDraft(name ?? '');
-              setEditing(true);
-            }}
-          >
-            <Button.Label>{name ? 'Change' : 'Record'}</Button.Label>
-          </Button>
+          <Inline gap="xs">
+            {/*
+              Uploading needs somebody to attach it to, and the server says so
+              too - a signature belongs to a person, not to a role standing
+              empty. So the button only appears once there is a name.
+            */}
+            {name ? (
+              <Button size="sm" variant="tertiary" isDisabled={busy} onPress={() => void pick()}>
+                <Icon name="add" size={15} tone="muted" />
+                <Button.Label>
+                  {upload.isPending ? 'Filing…' : hasSignature ? 'Replace' : 'Signature'}
+                </Button.Label>
+              </Button>
+            ) : null}
+
+            {hasSignature ? (
+              <Button size="sm" variant="tertiary" onPress={() => setOpen((current) => !current)}>
+                <Button.Label>{open ? 'Hide' : 'View'}</Button.Label>
+              </Button>
+            ) : null}
+
+            <Button
+              size="sm"
+              variant="tertiary"
+              onPress={() => {
+                setDraft(name ?? '');
+                setEditing(true);
+              }}
+            >
+              <Button.Label>{name ? 'Change' : 'Record'}</Button.Label>
+            </Button>
+          </Inline>
         }
         divider={false}
       />
-    );
-  }
 
-  return (
-    <Form maxWidth={null} dense columns={1}>
-      <InputField
-        label={label}
-        value={draft}
-        onChangeText={setDraft}
-        placeholder="Full name as it should be printed"
-      />
+      {open && hasSignature ? (
+        <Panel>
+          <StateView
+            loading={image.isLoading}
+            error={image.error}
+            onRetry={() => void image.refetch()}
+          >
+            {image.data ? (
+              <Stack gap="sm" align="start">
+                {/*
+                  On a pale panel, because a signature is dark strokes on white
+                  and the app's dark theme would otherwise show a white block
+                  with the strokes lost inside it.
+                */}
+                <Image
+                  source={{ uri: image.data }}
+                  style={{
+                    width: 220,
+                    height: 80,
+                    resizeMode: 'contain',
+                    backgroundColor: '#fffdf7',
+                    borderRadius: space.xs,
+                  }}
+                  accessibilityLabel={`${label}'s signature`}
+                />
 
-      <FormActions>
-        <Button variant="secondary" onPress={() => setEditing(false)}>
-          <Button.Label>Cancel</Button.Label>
-        </Button>
-
-        <Button
-          onPress={() => {
-            // An empty name clears the role AND its signature - the next holder
-            // must not inherit the last one's.
-            onSave(draft.trim());
-            setEditing(false);
-          }}
-        >
-          <Button.Label>Save</Button.Label>
-        </Button>
-      </FormActions>
-    </Form>
+                <Button size="sm" variant="tertiary" isDisabled={busy} onPress={confirmRemove}>
+                  <Icon name="close" size={15} tone="danger" />
+                  <Button.Label>Remove</Button.Label>
+                </Button>
+              </Stack>
+            ) : null}
+          </StateView>
+        </Panel>
+      ) : null}
+    </Stack>
   );
 }
