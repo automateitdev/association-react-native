@@ -130,10 +130,85 @@ export type StatementMeta = {
   net_surplus: Money;
 };
 
+/**
+ * The three statements that go with the income statement.
+ *
+ * TWO ARE POSITIONS, ONE IS A PERIOD, and the types say so rather than leaving
+ * a caller to pass the wrong pair of dates. A balance sheet and a trial balance
+ * are what is true on ONE day; a cash summary, like the income statement, is
+ * what happened between two.
+ *
+ * `balanced` is the answer a trial balance exists to give, and it is a boolean
+ * rather than something the screen derives by comparing two totals - the server
+ * did the arithmetic with bcmath and the app does not re-do money.
+ */
+export type TrialBalanceRow = {
+  ledger: string;
+  account_group: string;
+  category: string;
+  /** One of these is a figure and the other is 0.00; never both. */
+  debit: Money;
+  credit: Money;
+};
+
+export type TrialBalanceMeta = {
+  as_of: string;
+  accounts: number;
+  total_debit: Money;
+  total_credit: Money;
+  balanced: boolean;
+  /** What to go looking for when it is not. */
+  difference: Money;
+};
+
+export type BalanceSheetRow = {
+  section: 'asset' | 'liability' | 'equity';
+  account_group: string;
+  ledger: string;
+  amount: Money;
+};
+
+export type BalanceSheetMeta = {
+  as_of: string;
+  total_assets: Money;
+  total_liabilities: Money;
+  total_equity: Money;
+  /**
+   * Everything earned less everything spent, since the beginning. Part of what
+   * the association is worth, and its own line rather than folded into share
+   * capital - nobody subscribed for it.
+   */
+  accumulated_surplus: Money;
+  balanced: boolean;
+  difference: Money;
+};
+
+export type CashSummaryRow = {
+  ledger: string;
+  account_group: string;
+  opening: Money;
+  received: Money;
+  paid: Money;
+  closing: Money;
+};
+
+export type CashSummaryMeta = {
+  from: string;
+  to: string;
+  accounts: number;
+  total_opening: Money;
+  total_received: Money;
+  total_paid: Money;
+  total_closing: Money;
+};
+
 export const reportKeys = {
   paid: (range: DateRange, q: string | undefined) =>
     ['staff', 'reports', 'paid', range, q ?? ''] as const,
   statement: (from: string, to: string) => ['staff', 'reports', 'statement', from, to] as const,
+  trial: (asOf: string) => ['staff', 'reports', 'trial-balance', asOf] as const,
+  sheet: (asOf: string) => ['staff', 'reports', 'balance-sheet', asOf] as const,
+  cash: (from: string, to: string) => ['staff', 'reports', 'cash-summary', from, to] as const,
   due: (assigned: DateRange, status: string | null, q: string | undefined) =>
     [
       'staff',
@@ -161,6 +236,42 @@ export function useIncomeStatement(from: string, to: string) {
     queryFn: async () =>
       await request<{ data: StatementRow[]; meta: StatementMeta }>(
         '/staff/reports/income-statement',
+        { query: { from, to } },
+      ),
+  });
+}
+
+/** As at one day, because a trial balance over a range is not a thing. */
+export function useTrialBalance(asOf: string) {
+  return useQuery({
+    queryKey: reportKeys.trial(asOf),
+    queryFn: async () =>
+      await request<{ data: TrialBalanceRow[]; meta: TrialBalanceMeta }>(
+        '/staff/reports/trial-balance',
+        { query: { as_of: asOf } },
+      ),
+  });
+}
+
+/** The same: what the association owns and owes on ONE day. */
+export function useBalanceSheet(asOf: string) {
+  return useQuery({
+    queryKey: reportKeys.sheet(asOf),
+    queryFn: async () =>
+      await request<{ data: BalanceSheetRow[]; meta: BalanceSheetMeta }>(
+        '/staff/reports/balance-sheet',
+        { query: { as_of: asOf } },
+      ),
+  });
+}
+
+/** A period, like the income statement: what moved, and what is left. */
+export function useCashSummary(from: string, to: string) {
+  return useQuery({
+    queryKey: reportKeys.cash(from, to),
+    queryFn: async () =>
+      await request<{ data: CashSummaryRow[]; meta: CashSummaryMeta }>(
+        '/staff/reports/cash-summary',
         { query: { from, to } },
       ),
   });

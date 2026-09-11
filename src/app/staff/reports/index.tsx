@@ -35,7 +35,11 @@ export default function ReportsScreen() {
    * account with an empty second group is the ordinary case, not an edge one.
    */
   const members = can('reports.due') || can('reports.paid');
-  const accounts = can('reports.income-statement');
+  const accounts =
+    can('reports.income-statement') ||
+    can('reports.balance-sheet') ||
+    can('reports.trial-balance') ||
+    can('reports.cash-summary');
 
   return (
     <Screen>
@@ -72,24 +76,50 @@ export default function ReportsScreen() {
 
       {accounts ? (
         <Section title="The association's accounts" first={!members}>
-          <StatGrid>
-            <Tile
-              title="Income statement"
-              description="What the association earned and spent over a period, and the surplus between them"
-              icon="reports"
-              onPress={() => router.push('/staff/reports/income-statement')}
-            />
-          </StatGrid>
-
           {/*
-            Named rather than left absent. An association's treasurer opens this
-            group looking for four statements, and "not built yet" is a better
-            answer than a group that appears to hold one report by choice - the
-            same reason the Admin screen says what it does not have.
+            THE ORDER IS HOW AN ACCOUNTANT READS THEM, not alphabetical. The
+            income statement says what happened, the balance sheet what is left
+            because of it, the cash summary what of that is money, and the trial
+            balance is the check underneath all three - which is why it is last
+            rather than first: it is the one you open when something is wrong.
           */}
-          <Text tone="muted" style={type.rowMeta}>
-            Balance sheet, trial balance and cash summary are not built yet.
-          </Text>
+          <StatGrid>
+            {can('reports.income-statement') ? (
+              <Tile
+                title="Income statement"
+                description="What the association earned and spent over a period, and the surplus between them"
+                icon="reports"
+                onPress={() => router.push('/staff/reports/income-statement')}
+              />
+            ) : null}
+
+            {can('reports.balance-sheet') ? (
+              <Tile
+                title="Balance sheet"
+                description="What the association owns, owes and is worth — as at any date"
+                icon="reports"
+                onPress={() => router.push('/staff/reports/balance-sheet')}
+              />
+            ) : null}
+
+            {can('reports.cash-summary') ? (
+              <Tile
+                title="Cash summary"
+                description="What was in the till and the bank, what moved, and what is left"
+                icon="pay"
+                onPress={() => router.push('/staff/reports/cash-summary')}
+              />
+            ) : null}
+
+            {can('reports.trial-balance') ? (
+              <Tile
+                title="Trial balance"
+                description="Every account's balance, and whether the books balance at all"
+                icon="dues"
+                onPress={() => router.push('/staff/reports/trial-balance')}
+              />
+            ) : null}
+          </StatGrid>
         </Section>
       ) : null}
 

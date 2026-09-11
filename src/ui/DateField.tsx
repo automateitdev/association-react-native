@@ -153,6 +153,19 @@ export function DateField({
 
 /** What the trigger says. */
 function describe(value: DateRange, placeholder: string): string {
+  /*
+   * A RANGE OF ONE DAY IS A DAY. "11 Sep 2026 – 11 Sep 2026" is a correct
+   * description of the value and a silly thing to read, and it is what an "as
+   * at" date looks like through this control - the balance sheet and the trial
+   * balance both ask for one.
+   *
+   * The FIX IS THE LABEL, not a single-date mode. This component's own note
+   * says why that mode was removed: two controls that look identical must not
+   * need a different number of presses. Reading a one-day range back as one
+   * date keeps that rule and stops the field looking broken.
+   */
+  if (value.from && value.from === value.to) return humanDate(value.from);
+
   if (value.from && value.to) return `${humanDate(value.from)} – ${humanDate(value.to)}`;
 
   // Mid-selection: the start is chosen and the end is not yet.
