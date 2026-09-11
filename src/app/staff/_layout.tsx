@@ -326,6 +326,8 @@ export default function StaffLayout() {
           <Tabs.Screen name="reports/trial-balance" options={{ href: null }} />
           <Tabs.Screen name="reports/balance-sheet" options={{ href: null }} />
           <Tabs.Screen name="reports/cash-summary" options={{ href: null }} />
+          <Tabs.Screen name="reports/voucherwise/index" options={{ href: null }} />
+          <Tabs.Screen name="reports/voucherwise/[trace]" options={{ href: null }} />
         </Tabs>
       </View>
     </View>

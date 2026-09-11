@@ -18,11 +18,12 @@ import { Screen, ScreenHeader, Section, StatGrid, Text, Tile, type } from '@/ui'
  * had to read all three descriptions to find out which one was not about
  * members.
  *
- * The grouping is also what makes room for what is coming. The legacy keeps a
+ * The grouping is also what made room for what was coming. The legacy keeps a
  * `Core Report` menu of four - balance sheet, trial balance, income statement,
- * cash summary - and only one of them exists here. When the other three arrive
- * they join the second group; without it, this screen would become two
- * unrelated families sharing one heading.
+ * cash summary - of which only the income statement existed here when this
+ * screen was split in two. All four are now in the second group, with the
+ * voucher-wise report under them; without the split this screen would have
+ * become two unrelated families sharing one heading.
  */
 export default function ReportsScreen() {
   const { can } = useSession();
@@ -39,7 +40,8 @@ export default function ReportsScreen() {
     can('reports.income-statement') ||
     can('reports.balance-sheet') ||
     can('reports.trial-balance') ||
-    can('reports.cash-summary');
+    can('reports.cash-summary') ||
+    can('reports.voucherwise');
 
   return (
     <Screen>
@@ -80,8 +82,11 @@ export default function ReportsScreen() {
             THE ORDER IS HOW AN ACCOUNTANT READS THEM, not alphabetical. The
             income statement says what happened, the balance sheet what is left
             because of it, the cash summary what of that is money, and the trial
-            balance is the check underneath all three - which is why it is last
-            rather than first: it is the one you open when something is wrong.
+            balance is the check underneath all three - which is why it is
+            fourth rather than first: it is the one you open when something is
+            wrong. The voucher-wise report is under it for the same reason and
+            one step further: the trial balance says the books are out, and this
+            is where you go to find which document did it.
           */}
           <StatGrid>
             {can('reports.income-statement') ? (
@@ -117,6 +122,15 @@ export default function ReportsScreen() {
                 description="Every account's balance, and whether the books balance at all"
                 icon="dues"
                 onPress={() => router.push('/staff/reports/trial-balance')}
+              />
+            ) : null}
+
+            {can('reports.voucherwise') ? (
+              <Tile
+                title="Voucher-wise report"
+                description="Every payment and voucher that reached the ledger, one row each — open one to see its entries"
+                icon="document"
+                onPress={() => router.push('/staff/reports/voucherwise')}
               />
             ) : null}
           </StatGrid>

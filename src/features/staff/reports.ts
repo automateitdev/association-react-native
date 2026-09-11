@@ -202,6 +202,115 @@ export type CashSummaryMeta = {
   total_closing: Money;
 };
 
+/**
+ * The voucher-wise report: the ledger read document by document.
+ *
+ * A DOCUMENT IS NOT AN ENTRY, and this is the whole point of the type. Every
+ * trace records what produced it, so a payment of three instalments is ONE row
+ * here with six entries behind it. The legacy report returns one row per entry
+ * while showing each of them the document's full total - 15,720 rows standing
+ * for 3,378 documents in COCSOL's data - so a reader adding up its amounts
+ * would count the same money several times over.
+ *
+ * `kind` IS A WORD, NOT A CLASS NAME. The server groups on the source's class,
+ * which names its own namespace layout and changes when a model moves. The wire
+ * carries `payment` / `voucher` / `other`, and `kind_label` carries the same
+ * thing spelled for a person.
+ *
+ * IT IS PAGINATED, unlike the four statements. Those return every row because a
+ * statement that cannot be totalled is not a statement; this is a listing, and
+ * three years of it runs to tens of thousands of documents. `total_amount`
+ * covers the whole RANGE rather than the page in hand - a footer that changed
+ * as you paged through would look like a total and answer nothing.
+ */
+export type DocumentKind = 'payment' | 'voucher' | 'other';
+
+export type VoucherwiseRow = {
+  /**
+   * The drill-in key, and a trace rather than the document.
+   *
+   * A document's real key is a class name and an id, which is not something to
+   * put in a URL. A trace id identifies the group unambiguously and is the one
+   * identifier a reader has in front of them.
+   */
+  trace_id: number;
+  posted_on: string;
+  kind: DocumentKind;
+  kind_label: string;
+  /** Invoice number or voucher number - whichever this document has. */
+  number: string;
+  /** The member who paid, or what the person who wrote the voucher said. */
+  description: string;
+  /** Present on a payment, so the row can lead to the member. */
+  member_id: number | null;
+  entries: number;
+  amount: Money;
+  is_reversal: boolean;
+  balanced: boolean;
+  /**
+   * The flags as one phrase, computed by the SERVER.
+   *
+   * So the download and the screen cannot come to disagree about which
+   * documents were worth remarking on - the same rule as the column totals.
+   */
+  note: string;
+};
+
+export type VoucherwiseMeta = {
+  from: string;
+  to: string;
+  /** Over the range, not the page. */
+  total_amount: Money;
+  current_page: number;
+  last_page: number;
+  per_page: number;
+  /** Documents in the range - the paginator's count, not a row count. */
+  total: number;
+};
+
+export type VoucherwiseLine = {
+  ledger: string;
+  account_group: string;
+  /** One is a figure and the other is 0.00; never both. */
+  debit: Money;
+  credit: Money;
+  narration: string;
+};
+
+/**
+ * One document in full - what the legacy's single-voucher page was.
+ *
+ * THE HEADING IS THE PART THE LEGACY HAS NONE OF. That page lists ledger, debit
+ * and credit and says nothing about the document they belong to: not its date,
+ * its number, its kind, nor whether it was later reversed. A page of figures
+ * with no heading cannot be filed, checked or disputed afterwards.
+ */
+export type VoucherwiseDocument = {
+  kind: DocumentKind;
+  kind_label: string;
+  number: string;
+  posted_on: string;
+  description: string;
+  member_id: number | null;
+  entries: number;
+  /** This document undoes another one. */
+  is_reversal: boolean;
+  /** Another document has since undone THIS one. */
+  reversed: boolean;
+  lines: VoucherwiseLine[];
+  total_debit: Money;
+  total_credit: Money;
+  balanced: boolean;
+  /**
+   * How far apart the two sides are, as a positive figure.
+   *
+   * From the server, with bcmath, because the app does not do money arithmetic
+   * - the same rule that puts every column total in `meta`. "Does not balance"
+   * without the figure sends the reader to add up the column themselves.
+   */
+  difference: Money;
+};
+
 export const reportKeys = {
   paid: (range: DateRange, q: string | undefined) =>
     ['staff', 'reports', 'paid', range, q ?? ''] as const,
@@ -209,6 +318,10 @@ export const reportKeys = {
   trial: (asOf: string) => ['staff', 'reports', 'trial-balance', asOf] as const,
   sheet: (asOf: string) => ['staff', 'reports', 'balance-sheet', asOf] as const,
   cash: (from: string, to: string) => ['staff', 'reports', 'cash-summary', from, to] as const,
+  voucherwise: (from: string, to: string, kind: string | null, q: string, page: number) =>
+    ['staff', 'reports', 'voucherwise', from, to, kind, q, page] as const,
+  document: (trace: number | null) =>
+    ['staff', 'reports', 'voucherwise', 'document', trace] as const,
   due: (assigned: DateRange, status: string | null, q: string | undefined) =>
     [
       'staff',
@@ -274,6 +387,49 @@ export function useCashSummary(from: string, to: string) {
         '/staff/reports/cash-summary',
         { query: { from, to } },
       ),
+  });
+}
+
+/**
+ * A page of documents over a period.
+ *
+ * NO SORT PARAMETER, deliberately. The order is the one this report is read in
+ * - newest first - and it is the server's. Offering to sort by amount would
+ * mean paging through an ordering the reader did not ask for on every other
+ * column, which is how a listing stops being a record of what happened.
+ */
+export function useVoucherwise(
+  from: string,
+  to: string,
+  kind: DocumentKind | null,
+  q: string,
+  page: number,
+) {
+  return useQuery({
+    queryKey: reportKeys.voucherwise(from, to, kind, q, page),
+    queryFn: async () =>
+      await request<{ data: VoucherwiseRow[]; meta: VoucherwiseMeta }>(
+        '/staff/reports/voucherwise',
+        {
+          query: {
+            from,
+            to,
+            page,
+            ...(kind ? { kind } : {}),
+            ...(q ? { q } : {}),
+          },
+        },
+      ),
+  });
+}
+
+/** One document, by a trace that belongs to it. */
+export function useVoucherwiseDocument(trace: number | null) {
+  return useQuery({
+    queryKey: reportKeys.document(trace),
+    queryFn: async () =>
+      await request<{ data: VoucherwiseDocument }>(`/staff/reports/voucherwise/${trace}`),
+    enabled: trace !== null,
   });
 }
 
