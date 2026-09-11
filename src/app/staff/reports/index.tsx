@@ -5,9 +5,8 @@ import { Screen, ScreenHeader, Section, StatGrid, Text, Tile, type } from '@/ui'
 /**
  * The reports available, and what each one answers.
  *
- * Two, and each gets a sentence saying what question it settles. A list of
- * report names tells staff nothing about which to open; "who owes what, right
- * now" does.
+ * Each gets a sentence saying what question it settles. A list of report names
+ * tells staff nothing about which to open; "who owes what, right now" does.
  */
 export default function ReportsScreen() {
   const { can } = useSession();
@@ -38,6 +37,15 @@ export default function ReportsScreen() {
               description="What each member actually paid over a period — instalments and fines apart"
               icon="pay"
               onPress={() => router.push('/staff/reports/paid')}
+            />
+          ) : null}
+
+          {can('reports.income-statement') ? (
+            <Tile
+              title="Income statement"
+              description="What the association earned and spent over a period, and the surplus between them"
+              icon="reports"
+              onPress={() => router.push('/staff/reports/income-statement')}
             />
           ) : null}
         </StatGrid>

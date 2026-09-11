@@ -98,9 +98,42 @@ import type { DateRange } from '@/ui';
 
 export type { DateRange };
 
+/**
+ * One account's contribution to a period's result (parity P-9).
+ *
+ * `amount` IS SIGNED - income positive, expense negative - and that is the
+ * server's single representation rather than a display choice made here. A
+ * column of signed amounts sums to the surplus, so the figure a reader adds up
+ * in the downloaded spreadsheet and the one the server printed are the same
+ * number. The screen still shows the two subtotals as plain positive figures,
+ * because those arrive named in `meta` rather than being re-derived.
+ */
+export type StatementRow = {
+  section: 'income' | 'expense';
+  account_group: string;
+  ledger: string;
+  amount: Money;
+};
+
+export type StatementMeta = {
+  from: string;
+  to: string;
+  /** How many accounts moved in the period, not how many exist. */
+  accounts: number;
+  total_income: Money;
+  total_expense: Money;
+  /**
+   * SURPLUS, not profit. A cooperative society does not trade for profit and
+   * its own rules call what is left a surplus - which is the word its committee
+   * will be looking for on the page.
+   */
+  net_surplus: Money;
+};
+
 export const reportKeys = {
   paid: (range: DateRange, q: string | undefined) =>
     ['staff', 'reports', 'paid', range, q ?? ''] as const,
+  statement: (from: string, to: string) => ['staff', 'reports', 'statement', from, to] as const,
   due: (assigned: DateRange, status: string | null, q: string | undefined) =>
     [
       'staff',
@@ -112,6 +145,26 @@ export const reportKeys = {
       q ?? '',
     ] as const,
 };
+
+/**
+ * The income statement over a period (P-9).
+ *
+ * BOTH BOUNDS ARE REQUIRED, which is why this takes two strings rather than the
+ * `DateRange` the listings use. "All time" is a reasonable thing to ask of a
+ * list of members and a meaningless thing to ask of a statement: the answer
+ * only means anything over a stated period, and the API refuses a request
+ * without one.
+ */
+export function useIncomeStatement(from: string, to: string) {
+  return useQuery({
+    queryKey: reportKeys.statement(from, to),
+    queryFn: async () =>
+      await request<{ data: StatementRow[]; meta: StatementMeta }>(
+        '/staff/reports/income-statement',
+        { query: { from, to } },
+      ),
+  });
+}
 
 export function useMemberwisePaid(range: DateRange, q?: string) {
   return useQuery({
