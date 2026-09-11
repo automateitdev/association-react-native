@@ -20,10 +20,24 @@ export type Nominee = {
   member_id: number;
   name: string;
   relation: string | null;
+  /*
+   * WHO THIS PERSON IS, not merely what they are called.
+   *
+   * A person is identified here by their parents' names as much as by their
+   * own, and the association may have to make that identification in front of
+   * a bank or a court - which is the whole point of recording a nominee. Every
+   * one of the association's 315 nominees carries all three in the legacy
+   * system, and this app had nowhere to put them.
+   */
+  father_name: string | null;
+  mother_name: string | null;
+  gender: 'male' | 'female' | 'other' | null;
   birth_date: string | null;
   nid: string | null;
   mobile: string | null;
   address: string | null;
+  /** A job and a workplace together: "Lecturer, Noakhali S&T University". */
+  profession: string | null;
   /** A string, like every figure the app displays - never arithmetic here. */
   share_percentage: string | null;
 };
@@ -31,10 +45,14 @@ export type Nominee = {
 export type NomineeInput = {
   name: string;
   relation?: string | null;
+  father_name?: string | null;
+  mother_name?: string | null;
+  gender?: string | null;
   birth_date?: string | null;
   nid?: string | null;
   mobile?: string | null;
   address?: string | null;
+  profession?: string | null;
   share_percentage?: number | null;
 };
 
