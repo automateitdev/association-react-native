@@ -332,14 +332,31 @@ function SocietyRecord({ member, editable }: { member: MemberDetail; editable: b
           folding that into a panel of single-line inputs would bury it.
         */}
         <Stack align="start">
-          <Button
-            size="sm"
-            variant="secondary"
-            onPress={() => router.push(`/staff/members/nominees?member=${member.id}`)}
-          >
-            <Icon name="members" size={15} tone="muted" />
-            <Button.Label>Nominees</Button.Label>
-          </Button>
+          <Inline gap="sm" wrap>
+            <Button
+              size="sm"
+              variant="secondary"
+              onPress={() => router.push(`/staff/members/nominees?member=${member.id}`)}
+            >
+              <Icon name="members" size={15} tone="muted" />
+              <Button.Label>Nominees</Button.Label>
+            </Button>
+
+            {/*
+              What this member wants from the association's housing. Beside the
+              nominees because both are lists of the member's own answers rather
+              than office record-keeping, and neither belongs in a panel of
+              single-line inputs.
+            */}
+            <Button
+              size="sm"
+              variant="secondary"
+              onPress={() => router.push(`/staff/members/preferences?member=${member.id}`)}
+            >
+              <Icon name="document" size={15} tone="muted" />
+              <Button.Label>Housing preferences</Button.Label>
+            </Button>
+          </Inline>
         </Stack>
 
         {/*
