@@ -304,6 +304,8 @@ function SocietyRecord({ member, editable }: { member: MemberDetail; editable: b
         <Field label="Shares held" value={String(member.shares)} />
         <Field label="Employer" value={member.company} />
         <Field label="Designation" value={member.designation} />
+
+        <Introducer member={member} />
       </Section>
     );
   }
@@ -588,5 +590,50 @@ function TransferHistory({ member }: { member: MemberDetail }) {
         })}
       </StateView>
     </Section>
+  );
+}
+
+/**
+ * Who brought this member in, and how many they have brought in themselves.
+ *
+ * A LINK, WHICH IS THE WHOLE IMPROVEMENT. The legacy writes the introducer's
+ * name, mobile and membership number into three text columns beside each
+ * member, so one person becomes many strings - the association's own data
+ * already holds "Md. Riaz uddin" and "Md. Riaz Uddin" as though they were two
+ * people. Here the name is read from that member's record, so it cannot drift,
+ * and the row opens them.
+ *
+ * THE COUNT ANSWERS A QUESTION THE OLD COLUMNS COULD NOT. Eleven members
+ * introduced 63 between them - a fifth of the register - and until now there
+ * was no way to see that from anywhere, let alone from the page of the person
+ * who did it.
+ *
+ * Silent when there is neither: most members were not introduced by anybody,
+ * and a row reading "Introduced by —" is noise on every one of their pages.
+ */
+function Introducer({ member }: { member: MemberDetail }) {
+  const by = member.introduced_by;
+
+  if (!by && member.introduced_count === 0) return null;
+
+  return (
+    <>
+      {by ? (
+        by.member_id === null ? (
+          // Not a member, so there is nobody to open - the name is the record.
+          <Field label="Introduced by" value={by.name} />
+        ) : (
+          <Row
+            title={by.name ?? 'Unknown member'}
+            meta={by.membership_no ? `Introduced by · no. ${by.membership_no}` : 'Introduced by'}
+            onPress={() => router.push(`/staff/members/${by.member_id}`)}
+          />
+        )
+      ) : null}
+
+      {member.introduced_count > 0 ? (
+        <Field label="Members introduced" value={String(member.introduced_count)} />
+      ) : null}
+    </>
   );
 }

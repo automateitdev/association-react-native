@@ -69,6 +69,23 @@ export type MemberDetail = MemberSummary & {
   nid: string | null;
   present_address: string | null;
   permanent_address: string | null;
+
+  /**
+   * Who brought this member in, resolved by the server.
+   *
+   * `member_id` is null when the introducer never joined - then the name is
+   * all there is. When it is set, the name and membership number come from
+   * that member's own record rather than from a copy taken when the form was
+   * filled in, which is what stops one person becoming two spellings.
+   */
+  introduced_by: {
+    member_id: number | null;
+    name: string | null;
+    membership_no: string | null;
+  } | null;
+
+  /** How many members this one has brought in. */
+  introduced_count: number;
 };
 
 /**
@@ -84,6 +101,8 @@ export type UpdatableMemberFields = {
   father_name?: string | null;
   present_address?: string | null;
   permanent_address?: string | null;
+  introduced_by_member_id?: number | null;
+  introduced_by_name?: string | null;
 };
 
 export type NewMemberFields = {
