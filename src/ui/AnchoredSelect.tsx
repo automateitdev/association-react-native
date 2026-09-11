@@ -225,7 +225,7 @@ export function AnchoredSelect({
           <View
             {...reveal}
             accessibilityRole="menu"
-            className="bg-surface border border-border rounded-lg"
+            className="bg-surface border border-border rounded-field"
             style={{
               // Overlaid for a filter, in the flow for a form field - see the
               // note at the top of this file for why they cannot both overlay.

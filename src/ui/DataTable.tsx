@@ -411,7 +411,7 @@ export function DataTable<T>({
 
   return (
     <View onLayout={measure}>
-      <View className="border border-border rounded-lg overflow-hidden">
+      <View className="border border-border rounded-field overflow-hidden">
         <View style={{ flexDirection: 'row' }}>
           {/* The frozen pane, outside the ScrollView so it cannot move. */}
           {frozen.length > 0 ? (

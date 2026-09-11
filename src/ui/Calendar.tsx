@@ -110,7 +110,7 @@ export function Calendar({
 
   return (
     <View
-      className="bg-surface border border-border rounded-lg"
+      className="bg-surface border border-border rounded-field"
       style={{ padding: space.md, gap: space.sm }}
     >
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>

@@ -168,10 +168,9 @@ export function Panel({
   return (
     <Appear distance={0}>
       <View
-        className={skin.className}
+        className={`${skin.className} rounded-field`}
         style={{
           padding: space.lg,
-          borderRadius: 14,
           gap: space.sm,
         }}
       >

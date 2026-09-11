@@ -164,6 +164,26 @@ export const type = {
  */
 
 /**
+ * ONE CORNER FOR EVERY BORDERED CONTAINER THIS DESIGN SYSTEM DRAWS.
+ *
+ * Not a constant - a class, `rounded-field`, resolving to HeroUI's own
+ * `--radius-field`. It is named for fields because that is where the value
+ * comes from, and it is used for the panels, menus, the calendar and the table
+ * frame as well, because those all sit next to fields and a second radius
+ * beside the first is a difference with nothing behind it.
+ *
+ * It was six values before anybody counted: fields at 8, panels hard-coded to
+ * 14, menus at 8, the table frame at 8 - and then the field fix took the
+ * triggers to 14 and left the menu dropping out of one at 8, so a control and
+ * its own dropdown disagreed.
+ *
+ * WHAT KEEPS ITS OWN: the membership card at 16, the photograph box, the
+ * sign-in mark. Those are drawings of objects rather than containers of
+ * content, and a card that matches a table frame has stopped looking like a
+ * card. If you are adding a container, it takes `rounded-field`.
+ */
+
+/**
  * The inside edge of a field, matching HeroUI's own inputs.
  *
  * Its input.css sets `padding-inline: calc(var(--spacing) * 3)` - 12 - while
