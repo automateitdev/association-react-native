@@ -308,9 +308,11 @@ export default function StaffLayout() {
           <Tabs.Screen name="admin/roles" options={{ href: null }} />
           <Tabs.Screen name="admin/settings" options={{ href: null }} />
           <Tabs.Screen name="admin/ledgers" options={{ href: null }} />
+          <Tabs.Screen name="admin/society" options={{ href: null }} />
           <Tabs.Screen name="admin/register" options={{ href: null }} />
           <Tabs.Screen name="members/nominees" options={{ href: null }} />
           <Tabs.Screen name="members/preferences" options={{ href: null }} />
+          <Tabs.Screen name="members/print" options={{ href: null }} />
           <Tabs.Screen name="members/shares" options={{ href: null }} />
           <Tabs.Screen name="members/profile-updates" options={{ href: null }} />
           <Tabs.Screen name="members/document-reviews" options={{ href: null }} />

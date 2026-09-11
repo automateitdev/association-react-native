@@ -140,10 +140,19 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
  */
 export async function download(
   path: string,
-  options: { query?: RequestOptions['query']; fallbackName: string } & Pick<
-    RequestOptions,
-    'signal'
-  >,
+  options: {
+    query?: RequestOptions['query'];
+    fallbackName: string;
+    /**
+     * POST, for the one download whose input does not fit a query string.
+     *
+     * Printing forty ID cards sends forty member ids, and a URL is the wrong
+     * place for a list. It is still a READ - nothing is recorded by printing -
+     * so this is a POST for the request body's sake and nothing else.
+     */
+    method?: 'GET' | 'POST';
+    body?: unknown;
+  } & Pick<RequestOptions, 'signal'>,
 ): Promise<void> {
   if (Platform.OS !== 'web') {
     throw new ApiError(
@@ -177,9 +186,12 @@ export async function download(
   let response: Response;
 
   try {
+    if (options.body !== undefined) headers['Content-Type'] = 'application/json';
+
     response = await fetch(`${BASE_URL}${path}${buildQuery(options.query)}`, {
-      method: 'GET',
+      method: options.method ?? 'GET',
       headers,
+      body: options.body === undefined ? undefined : JSON.stringify(options.body),
       signal: controller.signal,
     });
   } catch {

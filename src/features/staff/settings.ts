@@ -50,6 +50,28 @@ export type Settings = {
     routing_number: string | null;
     instructions: string | null;
   };
+  /**
+   * Who the association IS, on anything it prints.
+   *
+   * The legacy certificate and ID card templates carry COCSOL's name,
+   * registration number, email, authorised capital and return address as
+   * literals - so a second association printing from them would hand its
+   * members a card belonging to somebody else. Seeded empty: a blank line is a
+   * question an association can answer, a wrong registration number is one
+   * nobody thinks to ask.
+   */
+  society: {
+    name: string | null;
+    registration_no: string | null;
+    registered_on: string | null;
+    address: string | null;
+    email: string | null;
+    website: string | null;
+    /** Money as a STRING, like every figure here - a certificate is a legal statement. */
+    authorised_capital: string | null;
+    total_shares: string | null;
+    share_value: string | null;
+  };
   gateway: GatewaySummary;
 };
 
@@ -88,6 +110,17 @@ export type SettingsUpdate = {
     branch: string | null;
     routing_number: string | null;
     instructions: string | null;
+  }>;
+  society?: Partial<{
+    name: string | null;
+    registration_no: string | null;
+    registered_on: string | null;
+    address: string | null;
+    email: string | null;
+    website: string | null;
+    authorised_capital: string | null;
+    total_shares: string | null;
+    share_value: string | null;
   }>;
 };
 

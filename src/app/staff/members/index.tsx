@@ -243,6 +243,21 @@ export default function MembersScreen() {
           }
           actions={
             <Inline gap="sm">
+              {/*
+                Printing is a batch job over the members you can see, so it
+                starts from the list rather than from one member's page.
+              */}
+              {can('reports.export') ? (
+                <Button
+                  size="sm"
+                  variant="tertiary"
+                  onPress={() => router.push('/staff/members/print')}
+                >
+                  <Icon name="print" size={15} tone="muted" />
+                  <Button.Label>Print</Button.Label>
+                </Button>
+              ) : null}
+
               {can('reports.export') ? (
                 <ExportButtons
                   path="/staff/members/export"

@@ -105,19 +105,16 @@ export default function AdminScreen() {
               onPress={() => router.push('/staff/admin/ledgers')}
             />
           ) : null}
-        </StatGrid>
-      </Section>
 
-      <Section title="Not built yet">
-        {/*
-          Said rather than left as an absence. An association setting itself up
-          will look for these, and knowing they are coming is better than
-          concluding the app has hidden them.
-        */}
-        <Text tone="muted" style={type.body}>
-          Association details and the signature used on generated documents are not editable here
-          yet.
-        </Text>
+          {can('settings.view') ? (
+            <Tile
+              title="The association"
+              description="Name, registration and signatories — what appears on certificates and cards"
+              icon="bank"
+              onPress={() => router.push('/staff/admin/society')}
+            />
+          ) : null}
+        </StatGrid>
       </Section>
     </Screen>
   );
