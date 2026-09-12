@@ -368,13 +368,16 @@ const RELATED: RelatedScreen[] = [
     // Same permission as deciding a profile change, because it is the same
     // authority over the same record - one is read, the other is looked at.
     permission: 'profile-updates.decide',
-    icon: 'approvals',
+    // Not `approvals` - that is the chip beside it. Two adjacent doors were
+    // wearing the same tray glyph, which is the one place a repeated icon
+    // actually costs a reader something.
+    icon: 'review',
     label: 'Document reviews',
     href: '/staff/members/document-reviews',
   },
   {
     permission: 'shares.view',
-    icon: 'fees',
+    icon: 'shares',
     label: 'Shares',
     href: '/staff/members/shares',
   },

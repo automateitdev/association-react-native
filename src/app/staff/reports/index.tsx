@@ -102,7 +102,7 @@ export default function ReportsScreen() {
               <Tile
                 title="Balance sheet"
                 description="What the association owns, owes and is worth — as at any date"
-                icon="reports"
+                icon="balance"
                 onPress={() => router.push('/staff/reports/balance-sheet')}
               />
             ) : null}
@@ -111,7 +111,7 @@ export default function ReportsScreen() {
               <Tile
                 title="Cash summary"
                 description="What was in the till and the bank, what moved, and what is left"
-                icon="pay"
+                icon="cash"
                 onPress={() => router.push('/staff/reports/cash-summary')}
               />
             ) : null}
@@ -120,7 +120,7 @@ export default function ReportsScreen() {
               <Tile
                 title="Trial balance"
                 description="Every account's balance, and whether the books balance at all"
-                icon="dues"
+                icon="trialBalance"
                 onPress={() => router.push('/staff/reports/trial-balance')}
               />
             ) : null}
@@ -129,7 +129,7 @@ export default function ReportsScreen() {
               <Tile
                 title="Voucher-wise report"
                 description="Every payment and voucher that reached the ledger, one row each — open one to see its entries"
-                icon="document"
+                icon="voucher"
                 onPress={() => router.push('/staff/reports/voucherwise')}
               />
             ) : null}

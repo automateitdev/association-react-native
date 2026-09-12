@@ -206,7 +206,7 @@ export default function LedgersScreen() {
                   options={typeOptions}
                   value={type_}
                   onChange={setType}
-                  icon="reports"
+                  icon="chartOfAccounts"
                   width={180}
                 />
               ) : null}

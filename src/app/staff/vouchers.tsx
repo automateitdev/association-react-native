@@ -147,7 +147,7 @@ export default function VouchersScreen() {
                 setStatus(value);
                 setPage(1);
               }}
-              icon="reports"
+              icon="voucher"
               width={170}
             />
           }

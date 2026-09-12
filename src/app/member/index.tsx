@@ -113,17 +113,18 @@ export default function DuesScreen() {
               value={String(summary.data.instalments_paid_count)}
               icon="check"
             />
-            <Stat label="Shares held" value={String(summary.data.shares)} icon="members" />
+            {/*
+              `shares`, which is the same glyph the staff side uses for the
+              same idea. This said `members` here and `fees` over there - one
+              concept wearing a different face depending on who signed in.
+            */}
+            <Stat label="Shares held" value={String(summary.data.shares)} icon="shares" />
             <Stat
               label="Instalments"
               value={formatMoney(summary.data.instalments_paid_amount)}
               icon="pay"
             />
-            <Stat
-              label="Fines"
-              value={formatMoney(summary.data.fines_paid_amount)}
-              icon="warning"
-            />
+            <Stat label="Fines" value={formatMoney(summary.data.fines_paid_amount)} icon="fine" />
           </StatGrid>
         </Section>
       ) : null}

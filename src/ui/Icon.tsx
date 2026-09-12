@@ -27,7 +27,7 @@ export const ICONS = {
   members: 'group',
   fees: 'receipt_long',
   reports: 'bar_chart',
-  settings: 'manage_accounts',
+  admin: 'admin_panel_settings',
 
   // Member surface
   dues: 'account_balance_wallet',
@@ -49,7 +49,36 @@ export const ICONS = {
   check: 'check',
   close: 'close',
 
+  // Money, and the four things it is never allowed to be confused with
+  //
+  // ONE CONCEPT, ONE GLYPH - and the reverse, which is the half that kept
+  // going wrong. A fine wore the warning triangle, so "Fines this month" -
+  // money the association has successfully COLLECTED - was set in the same
+  // glyph as a failed request; and shares wore `fees` on the staff side and
+  // `members` on the member side, which is one idea with two faces depending
+  // on who signed in.
+  fine: 'gavel',
+  shares: 'pie_chart',
+  voucher: 'receipt',
+  cash: 'savings',
+
+  // The books
+  chartOfAccounts: 'account_tree',
+  balance: 'balance',
+  trialBalance: 'rule',
+
+  // Administration
+  staff: 'badge',
+  roles: 'manage_accounts',
+  settings: 'tune',
+  review: 'fact_check',
+
   // Status and meaning
+  //
+  // `warning` means SOMETHING IS WRONG and nothing else. It is the state a
+  // screen falls into when a request fails and the tone a note takes when it
+  // has to be heeded - see StateView and Section. It stopped meaning "fine"
+  // when `fine` was added above.
   warning: 'warning',
   suspended: 'block',
   awaiting: 'schedule',

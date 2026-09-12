@@ -276,7 +276,7 @@ export default function StaffLayout() {
           <Tabs.Screen
             name="admin/index"
             options={{
-              tabBarIcon: tabIcon('settings'),
+              tabBarIcon: tabIcon('admin'),
               title: 'Admin',
               /*
             Any of the four things the hub holds is enough to make it worth

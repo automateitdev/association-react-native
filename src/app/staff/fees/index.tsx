@@ -151,7 +151,7 @@ export default function FeeSetupsScreen() {
             : []),
           {
             permission: 'fines.adjust',
-            icon: 'fees' as const,
+            icon: 'fine' as const,
             label: 'Adjust fines',
             href: '/staff/fees/fines',
           },

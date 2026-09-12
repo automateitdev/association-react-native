@@ -37,7 +37,7 @@ export default function AdminScreen() {
                   ? `${users.data.meta.total} account${users.data.meta.total === 1 ? '' : 's'} · who can sign in`
                   : 'Who can sign in to this association'
               }
-              icon="members"
+              icon="staff"
               onPress={() => router.push('/staff/admin/users')}
             />
           ) : null}
@@ -50,7 +50,7 @@ export default function AdminScreen() {
                   ? `${roles.data.length} role${roles.data.length === 1 ? '' : 's'} · what each one may do`
                   : 'What each kind of account may do'
               }
-              icon="settings"
+              icon="roles"
               onPress={() => router.push('/staff/admin/roles')}
             />
           ) : null}
@@ -88,7 +88,7 @@ export default function AdminScreen() {
             <Tile
               title="Vouchers"
               description="Payments, receipts and journals the association writes by hand"
-              icon="fees"
+              icon="voucher"
               onPress={() => router.push('/staff/vouchers')}
             />
           ) : null}
@@ -101,7 +101,7 @@ export default function AdminScreen() {
                   ? `${ledgers.data.length} ledger${ledgers.data.length === 1 ? '' : 's'} · where money posts`
                   : 'The accounts fee heads post into'
               }
-              icon="reports"
+              icon="chartOfAccounts"
               onPress={() => router.push('/staff/admin/ledgers')}
             />
           ) : null}

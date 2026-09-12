@@ -172,7 +172,7 @@ export default function FineAdjustmentScreen() {
                 setPage(1);
                 setEditing(null);
               }}
-              icon="fees"
+              icon="fine"
               width={170}
             />
           }

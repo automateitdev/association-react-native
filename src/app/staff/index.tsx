@@ -196,7 +196,7 @@ export default function DashboardScreen() {
                     <Stat
                       label="Fines this month"
                       value={money(data.collections.this_month.fines)}
-                      icon="warning"
+                      icon="fine"
                       meta="Since the 1st"
                       onPress={
                         can('reports.paid') ? () => router.push('/staff/reports/paid') : undefined
@@ -263,7 +263,7 @@ export default function DashboardScreen() {
                     <Stat
                       label="Fines"
                       value={money(data.outstanding.fines)}
-                      icon="warning"
+                      icon="fine"
                       meta="Owed now"
                       onPress={
                         can('reports.due') ? () => router.push('/staff/reports/due') : undefined
