@@ -19,21 +19,62 @@ import type { Money } from '@/api/money';
  * reports carry.
  */
 
+/**
+ * EVERY BLOCK IS OPTIONAL, and which arrived is in `meta.visible`.
+ *
+ * Each figure is gated on the permission that owns the report behind it -
+ * `members.view`, `reports.paid`, `reports.due`, `payments.view` - because a
+ * dashboard figure is that report's information, smaller. Until 2026-09-12 one
+ * `dashboard.view` returned all of it, which made this endpoint a way round
+ * every other permission on the platform.
+ *
+ * The screen needs `visible` rather than inferring from absent keys: "you may
+ * not see this" and "there is nothing to show" are different sentences, and a
+ * client guessing between them would get it wrong the first time a figure came
+ * back legitimately empty.
+ */
+export type DashboardBlock = 'members' | 'collections' | 'outstanding' | 'approvals';
+
+export type MonthlyCollection = {
+  /** `2026-09`, for keys and ordering. */
+  month: string;
+  /** `Sep`, for the axis. */
+  label: string;
+  /** Instalments only - fines are a different thing and are not charted with them. */
+  instalments: Money;
+};
+
 export type DashboardData = {
-  members: {
+  members?: {
     active: number;
     inactive: number;
     suspended: number;
   };
-  collections: {
+  collections?: {
+    instalments: Money;
+    fines: Money;
+    /**
+     * THE FIGURE THAT MAKES THE OTHERS MEAN SOMETHING. All-time collections
+     * against all-time arrears reads as a failing association when it may be a
+     * new one: the two cover different spans and are not comparable.
+     */
+    this_month: {
+      instalments: Money;
+      fines: Money;
+    };
+    /** Six months, oldest first, with the quiet ones present as zero. */
+    by_month: MonthlyCollection[];
+  };
+  outstanding?: {
     instalments: Money;
     fines: Money;
   };
-  outstanding: {
-    instalments: Money;
-    fines: Money;
-  };
-  payments_pending_approval: number;
+  payments_pending_approval?: number;
+};
+
+export type Dashboard = {
+  data: DashboardData;
+  meta: { visible: DashboardBlock[] };
 };
 
 export const dashboardKeys = {
@@ -43,7 +84,7 @@ export const dashboardKeys = {
 export function useDashboard() {
   return useQuery({
     queryKey: dashboardKeys.all,
-    queryFn: async () => (await request<{ data: DashboardData }>('/staff/dashboard')).data,
+    queryFn: async () => await request<Dashboard>('/staff/dashboard'),
 
     // Staff leave this open on a desk. Approving a payment elsewhere should be
     // reflected here without a manual reload.

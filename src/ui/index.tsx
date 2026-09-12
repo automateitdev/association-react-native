@@ -106,6 +106,13 @@ export { DateField } from './DateField';
 // Content
 export { Amount, AmountBreakdown } from './Amount';
 export { Stat, StatGrid, Tile } from './Stat';
+
+/*
+  A short series as bars. Six rectangles and six labels, hand-drawn: a charting
+  library would bring axes, tooltips, animation and a second theming system to
+  do that much.
+*/
+export { Trend } from './Trend';
 export { MoneyRow } from './MoneyRow';
 export { StateView } from './StateView';
 export { StatusBadge } from './StatusBadge';

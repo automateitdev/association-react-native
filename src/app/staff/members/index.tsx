@@ -1,4 +1,4 @@
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { View } from 'react-native';
 import { useSession } from '@/features/auth/session';
@@ -60,8 +60,27 @@ const STATUS_OPTIONS = [
 export default function MembersScreen() {
   const { can } = useSession();
 
+  /*
+   * `?status=` opens this screen already filtered.
+   *
+   * The Overview's cards count members in one state and now land on exactly
+   * those - "2 to admit" opening onto the whole register and leaving somebody
+   * to find the filter is how a figure and the screen behind it come to
+   * disagree about what they are describing.
+   *
+   * Read ONCE, as the initial value. Making the filter follow the URL
+   * afterwards would mean changing the filter navigated, and going back would
+   * undo a choice somebody had just made.
+   */
+  const params = useLocalSearchParams<{ status?: string }>();
+  const initialStatus = (['active', 'inactive', 'suspended'] as const).includes(
+    params.status as MemberStatus,
+  )
+    ? (params.status as MemberStatus)
+    : null;
+
   const [search, setSearch] = useState('');
-  const [status, setStatus] = useState<MemberStatus | null>(null);
+  const [status, setStatus] = useState<MemberStatus | null>(initialStatus);
   const [added, setAdded] = useState<DateRange>({});
   const [draft, setDraft] = useState<DateRange>({});
   const [page, setPage] = useState(1);
