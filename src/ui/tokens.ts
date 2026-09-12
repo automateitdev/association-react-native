@@ -153,6 +153,23 @@ export const type = {
     fontWeight: '700' as const,
     letterSpacing: -0.5,
   },
+
+  /**
+   * The figure on a card that LEADS a screen.
+   *
+   * A dashboard where every number is the same size says every number matters
+   * the same amount, which is never true: "4 payments waiting for you" and
+   * "43 members on the register" are an instruction and a fact, and they were
+   * being set in the same type. One step up is enough to separate them - two
+   * would make the rest look like a footnote.
+   */
+  statLead: {
+    fontFamily: font.bold,
+    fontSize: 32,
+    lineHeight: 38,
+    fontWeight: '700' as const,
+    letterSpacing: -0.8,
+  },
 } as const;
 
 /**

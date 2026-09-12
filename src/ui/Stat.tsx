@@ -25,6 +25,7 @@ export function Stat({
   value,
   icon,
   tone = 'neutral',
+  emphasis = 'normal',
   meta,
   onPress,
 }: {
@@ -33,29 +34,55 @@ export function Stat({
   value: string;
   icon: IconName;
   /**
-   * `attention` for a figure someone has to act on, `danger` for money owed.
-   * Colour here is meaning, not decoration - if every card were tinted, none of
-   * them would say anything.
+   * `attention` for a figure someone has to act on, `danger` for one that is
+   * wrong. Colour here is meaning, not decoration - if every card were tinted,
+   * none of them would say anything.
+   *
+   * NOT FOR MONEY OWED, which is what this used to say. Arrears are the normal
+   * condition of a cooperative, not an emergency, and a permanently red
+   * ৳1,24,000 spends the one signal the screen has on a number that is simply
+   * large. Red is kept for a suspended membership - something a person has to
+   * put right.
    */
   tone?: 'neutral' | 'attention' | 'danger';
+  /**
+   * How much of the screen this figure is entitled to.
+   *
+   * `lead` for the cards a screen exists to raise - what is waiting, what is
+   * wrong. Everything else is `normal`, and the difference is the whole answer
+   * to a dashboard where every card looked identical and therefore ranked
+   * nothing. A screen with no `lead` cards is fine; a screen where they ALL
+   * lead is a screen back where it started.
+   */
+  emphasis?: 'lead' | 'normal';
   meta?: string;
   onPress?: () => void;
 }) {
   const iconTone = tone === 'danger' ? 'danger' : tone === 'attention' ? 'accent' : 'muted';
+  const leads = emphasis === 'lead';
+
+  /*
+   * A tinted card is a card with something to say, and the tint follows the
+   * TONE rather than the emphasis - a lead card whose figure is zero
+   * ("nothing waiting") is good news and should look like the others, which is
+   * why the screens pass `neutral` in that case.
+   */
+  const surface =
+    tone === 'attention'
+      ? 'bg-accent-soft border border-accent'
+      : tone === 'danger'
+        ? 'bg-danger-soft border border-danger'
+        : 'bg-surface border border-border';
 
   const body = (
     <View
-      className={
-        tone === 'attention'
-          ? 'bg-accent-soft border border-accent'
-          : 'bg-surface border border-border'
-      }
+      className={surface}
       style={{
         flex: 1,
         minWidth: 190,
-        padding: space.lg,
+        padding: leads ? space.xl : space.lg,
         borderRadius: 12,
-        gap: space.sm,
+        gap: leads ? space.md : space.sm,
       }}
     >
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm }}>
@@ -68,7 +95,7 @@ export function Stat({
 
       <Text
         tone={tone === 'danger' ? 'danger' : 'default'}
-        style={{ ...type.stat, fontVariant: ['tabular-nums'] }}
+        style={{ ...(leads ? type.statLead : type.stat), fontVariant: ['tabular-nums'] }}
       >
         {value}
       </Text>
