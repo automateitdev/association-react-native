@@ -92,16 +92,20 @@ export function ExportButtons({
       the edge everything else lines up against.
     */
     <View style={{ alignItems: 'flex-end' }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm }}>
-        {/*
-          The buttons carry no words, so one label does the job for all three.
-          Three icons alone are recognisable as file types but say nothing about
-          what pressing one DOES.
-        */}
-        <Text tone="muted" style={{ ...type.rowMeta, marginRight: space.xs }}>
-          Download
-        </Text>
+      {/*
+        NO "Download" LABEL, which this carried for a while on the theory that
+        three file-type icons say what a file IS and not what pressing one
+        does. In practice the word appeared beside the same three icons on
+        eleven screens, and a label repeated everywhere stops being read - the
+        icons in the top-right corner of a table are already the download
+        controls by convention, and the scope line beneath says what the file
+        will hold.
 
+        The format in words survives where it is actually needed: in
+        `accessibilityLabel`, which is what a screen reader announces and the
+        only place an icon genuinely cannot speak for itself.
+      */}
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm }}>
         {FORMATS.map((format) => (
           <Pressable
             key={format.key}
@@ -138,11 +142,12 @@ export function ExportButtons({
                 file types already carry everywhere else, which is what lets
                 three icons replace three words.
 
-                Worth being deliberate about the red: `danger` in this palette
-                otherwise means destructive. It reads as PDF rather than as
-                "delete" only because it sits in a row of three file-type
-                glyphs under a Download label - which is why that label is not
-                optional.
+                The red is deliberate and slightly uncomfortable: `danger` in
+                this palette otherwise means destructive. It reads as PDF
+                rather than as "delete" because it sits between the other two
+                file glyphs and because nothing on this row deletes anything -
+                and because red IS the PDF colour nearly everywhere a person
+                has met one.
               */
               <Icon name={format.icon} size={16} tone={format.tone} />
             )}

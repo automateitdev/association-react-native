@@ -263,6 +263,15 @@ export default function MembersScreen() {
           actions={
             <Inline gap="sm">
               {/*
+                NAMED BY WHAT COMES OUT, not by the verb.
+
+                This said "Print", which answers nothing - print what? - and
+                sat next to a PDF download that a reader would reasonably
+                assume was the printing one. What it opens is the batch
+                certificate and ID-card screen, so that is what the button
+                says. The printer glyph stays: it is the one thing about the
+                old label that was carrying meaning.
+
                 Printing is a batch job over the members you can see, so it
                 starts from the list rather than from one member's page.
               */}
@@ -273,7 +282,7 @@ export default function MembersScreen() {
                   onPress={() => router.push('/staff/members/print')}
                 >
                   <Icon name="print" size={15} tone="muted" />
-                  <Button.Label>Print</Button.Label>
+                  <Button.Label>Certificates &amp; ID cards</Button.Label>
                 </Button>
               ) : null}
 
