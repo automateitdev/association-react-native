@@ -1,11 +1,10 @@
-import { useState } from 'react';
-import { Pressable, ScrollView, TextInput, View } from 'react-native';
+import { useRef, useState } from 'react';
+import { Modal, Pressable, ScrollView, TextInput, View, useWindowDimensions } from 'react-native';
 import { useThemeColor } from 'heroui-native';
 import { Icon, type IconName } from './Icon';
 import { Text } from './Text';
 import { useControlHeight } from './breakpoint';
 import { useFormDensity } from './Form';
-import { useReveal } from './reveal';
 import { fieldPadding, space, type } from './tokens';
 
 export type SelectOption = {
@@ -26,37 +25,35 @@ export type SelectOption = {
  * - the corner of the window. On a toolbar it was worse, landing at y=-209,
  * entirely above the top of the page, so the control appeared to do nothing.
  *
- * That is the library's portal positioning under RN Web, not the way it was
- * called, and it is not something this side can configure away. This opens
- * against its own trigger instead - see the note on the two variants below for
- * exactly how, which differs between them for a reason worth reading.
- *
  * ONE COMPONENT FOR THE TOOLBAR AND THE FORM, because a filter and a form field
- * are the same decision - only the setting differs. `variant` is the whole of
- * the difference: a filter sits at control height beside a search box, a form
- * field is full width in a stack of labelled inputs. Having two
- * implementations of a dropdown is how one of them quietly stops matching the
- * other.
+ * are the same decision - only the setting differs. `variant` changes the
+ * trigger's size and nothing else. Having two implementations of a dropdown is
+ * how one of them quietly stops matching the other.
  *
- * THE TWO VARIANTS OPEN DIFFERENTLY, AND THAT IS NOT A STYLE CHOICE
- * ----------------------------------------------------------------
- * `compact` overlays; `field` pushes the content below it down.
+ * EVERY MENU OVERLAYS, AND THAT TOOK A PORTAL
+ * -------------------------------------------
+ * The form variant used to open IN THE FLOW - pushing everything below it down
+ * the page, which is an accordion rather than a dropdown, and was immediately
+ * recognisable as wrong by anyone using it.
  *
- * An overlay depends on z-index, and z-index cannot be owned by a component.
- * Measured on the fee form: with the menu open, the submit button below it
- * painted ON TOP of the options. Raising this component's own wrapper to
- * z-index 9999 changed nothing - the menu is sealed inside an ancestor's
- * stacking context - and it only came to the front once all TWENTY-ONE
- * ancestors were raised too. A control that needs every ancestor to cooperate
- * does not work; it happens to work where someone remembered.
+ * It did that because an overlay inside the page cannot win: z-index is not
+ * something a component owns. Measured on the fee form, with the menu open the
+ * submit button below it painted ON TOP of the options; raising this
+ * component's own wrapper to 9999 changed nothing, because the menu was sealed
+ * inside an ancestor's stacking context, and it only came to the front once all
+ * TWENTY-ONE ancestors were raised too.
  *
- * So the form variant does not try. A form is a vertical stack of fields, so
- * pushing the rest down costs nothing and cannot be defeated by a parent.
+ * The answer is not to fight that but to leave it. `Modal` renders at the root
+ * of the app - a portal on React Native Web, a window above the activity on
+ * iOS and Android - so the menu has no ancestors to be trapped by and no
+ * parent's overflow to be clipped against. It is the mechanism a native picker
+ * already uses, and the reason this works on all three platforms rather than on
+ * whichever one it was last looked at.
  *
- * The toolbar variant does overlay, because a filter bar is a horizontal row
- * where pushing content down would reflow the bar itself - and there the
- * container (ui/Toolbar) raises the stacking context deliberately, which is
- * noted on it.
+ * The cost is that a portalled menu no longer moves with its trigger, so the
+ * trigger is MEASURED IN WINDOW COORDINATES each time it opens, and the
+ * backdrop covers the page while it is open - which stops the page scrolling
+ * out from under it and gives "I opened this by accident" a way out.
  */
 export function AnchoredSelect({
   options,
@@ -113,10 +110,24 @@ export function AnchoredSelect({
   values?: string[];
   onToggleValue?: (value: string) => void;
 }) {
-  const [open, setOpen] = useState(false);
-  // Opening near the foot of the page scrolls the menu into view. See
-  // ui/reveal, which also says why this is not a flip-up.
-  const reveal = useReveal(open);
+  const trigger = useRef<View>(null);
+
+  /**
+   * Where the trigger sits in the WINDOW, not in its parent.
+   *
+   * Null means closed. The two are deliberately one piece of state: a menu
+   * open without a measurement would paint at the top-left corner for a frame,
+   * which is the exact bug this component was written to escape.
+   */
+  const [anchor, setAnchor] = useState<{
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  } | null>(null);
+
+  const open = anchor !== null;
+  const window = useWindowDimensions();
   const placeholderColor = useThemeColor('field-placeholder');
   const dense = useFormDensity();
   const controlHeight = useControlHeight();
@@ -158,10 +169,31 @@ export function AnchoredSelect({
     if (!groups.includes(key)) groups.push(key);
   }
 
+  /*
+   * MEASURED ON EVERY OPEN, not once and remembered.
+   *
+   * A toolbar wraps, a form scrolls, a window resizes - the trigger is rarely
+   * where it was last time. measureInWindow is asynchronous, so the menu opens
+   * in its callback rather than beside it: opening first and measuring after is
+   * a frame of menu in the corner of the screen.
+   */
+  const openMenu = () => {
+    if (isDisabled) return;
+
+    trigger.current?.measureInWindow((x, y, w, h) => {
+      setAnchor({ x, y, width: w, height: h });
+    });
+  };
+
+  const close = () => setAnchor(null);
+
+  const placement = anchor ? place(anchor, window, compact ? width : anchor.width) : null;
+
   return (
-    <View style={{ zIndex: 20, width: compact ? undefined : '100%' }}>
+    <View style={{ width: compact ? undefined : '100%' }}>
       <Pressable
-        onPress={() => !isDisabled && setOpen((o) => !o)}
+        ref={trigger}
+        onPress={() => (open ? close() : openMenu())}
         disabled={isDisabled}
         accessibilityRole="button"
         accessibilityState={{ expanded: open, disabled: isDisabled }}
@@ -195,52 +227,54 @@ export function AnchoredSelect({
         <Icon name={open ? 'chevronUp' : 'chevronDown'} size={15} tone="muted" />
       </Pressable>
 
-      {open ? (
-        <>
+      {placement ? (
+        <Modal
+          visible
+          transparent
+          // No slide, no fade. A menu that animates in is a menu that is not
+          // yet under the finger that asked for it.
+          animationType="none"
+          // Android's hardware back, and Escape on web.
+          onRequestClose={close}
+        >
           {/*
-            A press anywhere else closes it, for the OVERLAID variant only.
+            A press anywhere else closes it.
 
-            An overlay hides what is under it, so without this the only way out
-            is to choose something - which makes "I opened this by accident" an
-            unrecoverable state. The in-flow variant pushes content down rather
-            than covering it, nothing is hidden, and a full-window backdrop
-            there would swallow the first press aimed at the field below.
+            Full-window, which is what a portalled menu needs and what the
+            in-flow version could never have: there is no longer a field
+            directly below whose first press this would swallow, because the
+            menu is no longer in that column.
           */}
-          {compact ? (
-            <Pressable
-              onPress={() => setOpen(false)}
-              accessibilityElementsHidden
-              importantForAccessibility="no-hide-descendants"
-              style={{
-                position: 'absolute',
-                top: -2000,
-                left: -2000,
-                right: -2000,
-                bottom: -2000,
-                zIndex: -1,
-              }}
-            />
-          ) : null}
+          <Pressable
+            onPress={close}
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants"
+            style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+          />
 
           <View
-            {...reveal}
             accessibilityRole="menu"
             className="bg-surface border border-border rounded-field"
             style={{
-              // Overlaid for a filter, in the flow for a form field - see the
-              // note at the top of this file for why they cannot both overlay.
-              ...(compact
-                ? { position: 'absolute' as const, top: height + space.xs, left: 0 }
-                : { marginTop: space.xs }),
-              minWidth: compact ? (width ?? 180) : undefined,
+              position: 'absolute',
+              left: placement.left,
+              width: placement.width,
+              ...(placement.flip ? { bottom: placement.bottom } : { top: placement.top }),
               paddingVertical: space.xs,
+
+              /*
+                A portalled menu has nothing of the page behind it, so it
+                carries its own lift - without this it reads as options printed
+                onto whatever it covers. The shadow is what says "above", which
+                is the one thing the accordion could never say.
+              */
+              shadowColor: '#000',
+              shadowOpacity: 0.18,
+              shadowRadius: 16,
+              shadowOffset: { width: 0, height: 6 },
+              elevation: 8,
             }}
           >
-            {/*
-              Capped and scrollable: a chart of accounts can run to dozens of
-              ledgers, and a menu taller than the window cannot be reached at
-              its far end.
-            */}
             {searchable ? (
               <View style={{ paddingHorizontal: space.sm, paddingBottom: space.xs }}>
                 <TextInput
@@ -255,7 +289,16 @@ export function AnchoredSelect({
               </View>
             ) : null}
 
-            <ScrollView style={{ maxHeight: 260 }} keyboardShouldPersistTaps="handled">
+            {/*
+              Capped to what the window can actually show - measured, not a
+              constant. A chart of accounts runs to dozens of ledgers, and a
+              menu taller than the space it opened into cannot be reached at
+              its far end.
+            */}
+            <ScrollView
+              style={{ maxHeight: placement.maxHeight - (searchable ? 52 : 0) }}
+              keyboardShouldPersistTaps="handled"
+            >
               {/*
                 Said, rather than left blank. An empty menu after typing looks
                 exactly like one that is still loading.
@@ -309,7 +352,7 @@ export function AnchoredSelect({
                             }
 
                             onChange(option.value);
-                            setOpen(false);
+                            close();
                           }}
                           accessibilityRole="menuitem"
                           accessibilityState={{ selected: active }}
@@ -343,10 +386,62 @@ export function AnchoredSelect({
               ))}
             </ScrollView>
           </View>
-        </>
+        </Modal>
       ) : null}
     </View>
   );
+}
+
+/** The gap between a trigger and its menu, and the menu's margin from the edge. */
+const GAP = 4;
+const MARGIN = 8;
+const TALLEST = 320;
+
+/**
+ * Where the menu goes, given where the trigger is.
+ *
+ * FLIPPING UP IS ONLY POSSIBLE NOW THAT THE MENU IS PORTALLED, and its
+ * impossibility before is why the old one scrolled the page instead. An
+ * IN-FLOW panel rendered above its trigger pushes the trigger down by its own
+ * height, so "flipping up" a 270pt menu moved the thing you had just pressed
+ * 270pt further down the page - the control ran away from the finger that
+ * opened it. An absolutely positioned one moves nothing, so it can simply go
+ * wherever there is room.
+ *
+ * Measured on the fee-assign screen in a 586x415 window: pressing Months put
+ * the trigger at y=346 with twelve options needing 384pt below it, in a window
+ * that ends at 366. That menu now opens upwards.
+ */
+function place(
+  anchor: { x: number; y: number; width: number; height: number },
+  window: { width: number; height: number },
+  preferredWidth?: number,
+) {
+  const below = window.height - (anchor.y + anchor.height) - GAP - MARGIN;
+  const above = anchor.y - GAP - MARGIN;
+
+  /*
+   * Downwards unless upwards is genuinely roomier - NOT "whenever it does not
+   * all fit". A menu that flips for one option too many is a menu that jumps
+   * from one side of its trigger to the other as somebody types into it.
+   */
+  const flip = below < Math.min(TALLEST, above) && above > below;
+
+  const width = Math.min(
+    Math.max(preferredWidth ?? anchor.width, anchor.width, 180),
+    window.width - MARGIN * 2,
+  );
+
+  return {
+    flip,
+    width,
+    // Clamped to the window, so a control near the right edge opens inwards
+    // rather than off the side.
+    left: Math.min(Math.max(MARGIN, anchor.x), Math.max(MARGIN, window.width - width - MARGIN)),
+    top: anchor.y + anchor.height + GAP,
+    bottom: window.height - anchor.y + GAP,
+    maxHeight: Math.max(120, Math.min(TALLEST, flip ? above : below)),
+  };
 }
 
 /**

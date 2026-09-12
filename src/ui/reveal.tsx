@@ -13,18 +13,23 @@ import { space } from './tokens';
  * to open into nothing. Every form dropdown and every date field in the app has
  * the same shape, so it was never about the months.
  *
- * WHY NOT FLIP THE MENU ABOVE THE TRIGGER, WHICH IS THE USUAL ANSWER
- * -----------------------------------------------------------------
- * Because these menus are IN THE FLOW rather than overlaid - see the long note
- * at the top of ui/AnchoredSelect for why they have to be. An in-flow panel
+ * WHO STILL USES THIS
+ * -------------------
+ * ui/DateField, and only it. ui/AnchoredSelect used to, and now portals its
+ * menu into a Modal at the root of the app instead, where it can be placed
+ * anywhere in the window and simply flips above its trigger when there is no
+ * room below.
+ *
+ * WHY NOT FLIP, WHICH IS THE USUAL ANSWER
+ * ---------------------------------------
+ * Because this panel is IN THE FLOW rather than overlaid. An in-flow panel
  * rendered above its trigger pushes the trigger DOWN by its own height, so
- * "flipping up" a 270pt menu moves the thing you just pressed 270pt further
+ * "flipping up" a 270pt panel moves the thing you just pressed 270pt further
  * down the page: the control runs away from the finger that opened it, and on
  * a short window it lands off the bottom edge anyway. Flipping is an answer for
- * absolutely positioned popovers, and only one of these two variants is.
+ * absolutely positioned popovers, which is the road the select took.
  *
- * So the page scrolls instead - which is what a native picker does, and what
- * the panel needs whether it is overlaid or in the flow.
+ * So the page scrolls instead - which is what a native picker does.
  *
  * THE PANEL IS MEASURED, NOT ASSUMED. Its height depends on how many options it
  * has, whether it carries a search box, and whether the caller capped it; a

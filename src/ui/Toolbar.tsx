@@ -36,12 +36,17 @@ export function Toolbar({ filters, actions }: { filters: ReactNode; actions?: Re
         marginBottom: space.md,
 
         /*
-          Above the table, and this is load-bearing.
+          Above the table, and still load-bearing - for the DATE FIELD.
 
-          A dropdown in this bar opens as an absolutely-positioned list that
-          overlaps the rows beneath. Without a stacking context here the table
-          - a later sibling - paints over it, and the menu appears with member
-          names showing through the middle of it.
+          A control in this bar that opens an absolutely-positioned panel
+          overlaps the rows beneath it, and without a stacking context here the
+          table - a later sibling - paints over that panel: the calendar
+          appeared with member names showing through the middle of it.
+
+          The selects no longer need this. They portal into a Modal at the root
+          of the app, which has no ancestors to be trapped by - see
+          ui/AnchoredSelect. ui/DateField still opens in place, so this stays
+          until it does the same.
         */
         zIndex: 30,
       }}
