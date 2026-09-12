@@ -35,11 +35,11 @@ import {
  * defect the legacy reports carry (D-1). Two cards is the correct answer here,
  * not a compromise.
  *
- * EVERY FIGURE THAT LEADS SOMEWHERE, LEADS THERE. A dashboard is a set of
- * questions and the answer to each is a screen this app already has. A card
- * showing ৳1,26,000 owed that cannot be opened makes a reader go and find the
- * report themselves - and the one they find may not be the one the figure came
- * from. Cards stop being doors only where this account may not walk through.
+ * A VISIBLE CARD IS NOT NECESSARILY A DOOR. Each card has its own permission -
+ * `dashboard.approvals`, `dashboard.members` and so on - precisely so a counter
+ * clerk can be shown how many payments are waiting without being handed the
+ * queue. Seeing a count and being allowed to open what it counts are different
+ * questions, so a card links somewhere only when this account may go there.
  */
 export default function DashboardScreen() {
   const { can } = useSession();
@@ -99,12 +99,14 @@ export default function DashboardScreen() {
                           : 'Review and decide'
                       }
                       /*
-                        No `can` check here any more. The figure only arrived
-                        because the server decided this account may see the
-                        queue, so the door and the number are one decision
-                        instead of two that can drift apart.
+                        Shown by `dashboard.approvals`, opened by
+                        `payments.view`. An operator can be given the first and
+                        not the second - which is the whole point of splitting
+                        them - so the card is a figure until it is also a door.
                       */
-                      onPress={() => router.push('/staff/approvals')}
+                      onPress={
+                        can('payments.view') ? () => router.push('/staff/approvals') : undefined
+                      }
                     />
                   ) : null}
 
@@ -117,11 +119,16 @@ export default function DashboardScreen() {
                         tone={data.members.inactive > 0 ? 'attention' : 'neutral'}
                         meta={data.members.inactive === 0 ? 'None' : 'Not yet admitted'}
                         /*
-                          Straight to the ones it counted. Landing on the whole
-                          register and leaving somebody to find the filter is
-                          how a figure and the screen behind it come to disagree.
+                          Straight to the ones it counted, when this account may
+                          open the register at all. Landing on the whole thing
+                          and leaving somebody to find the filter is how a figure
+                          and the screen behind it come to disagree.
                         */
-                        onPress={() => router.push('/staff/members?status=inactive')}
+                        onPress={
+                          can('members.view')
+                            ? () => router.push('/staff/members?status=inactive')
+                            : undefined
+                        }
                       />
                       <Stat
                         label="Suspended"
@@ -129,7 +136,11 @@ export default function DashboardScreen() {
                         icon="suspended"
                         tone={data.members.suspended > 0 ? 'danger' : 'neutral'}
                         meta={data.members.suspended === 0 ? 'None' : 'For arrears'}
-                        onPress={() => router.push('/staff/members?status=suspended')}
+                        onPress={
+                          can('members.view')
+                            ? () => router.push('/staff/members?status=suspended')
+                            : undefined
+                        }
                       />
                     </>
                   ) : null}
@@ -171,26 +182,30 @@ export default function DashboardScreen() {
                 {data.collections.by_month.length > 0 ? (
                   <Panel>
                     <Text tone="muted" style={{ ...type.section, textTransform: 'uppercase' }}>
-                      Instalments, last six months
+                      Collected, last six months
                     </Text>
 
                     <Trend
+                      legend={{ primary: 'Instalments', secondary: 'Fines' }}
                       points={data.collections.by_month.map((month) => ({
                         label: month.label,
                         /*
-                          Number() for a BAR HEIGHT, which is a proportion and
-                          not a figure anybody reads. Every amount printed on
-                          this screen is still formatted from the server's own
-                          decimal string.
+                          Number() for BAR HEIGHTS, which are proportions and
+                          not figures anybody reads. Every amount printed on
+                          this screen - including the caption below - is still
+                          formatted from the server's own decimal string.
                         */
                         value: Number(month.instalments),
+                        second: Number(month.fines),
+                        caption: `${month.label}: ${money(month.instalments)} in instalments, ${money(month.fines)} in fines`,
                       }))}
                     />
 
                     <Text tone="muted" style={type.rowMeta}>
-                      Scaled to the largest month, so the bars compare months rather than state
-                      amounts. {money(data.collections.instalments)} in instalments has been
-                      collected altogether; fines are not charted with them.
+                      Touch a month for its figures. Bars are scaled to the largest of them, so they
+                      compare months rather than state amounts — and the two are never added
+                      together. {money(data.collections.instalments)} in instalments has been
+                      collected altogether.
                     </Text>
                   </Panel>
                 ) : null}
@@ -237,7 +252,11 @@ export default function DashboardScreen() {
                     value={String(data.members.active)}
                     icon="members"
                     meta="Able to sign in and pay"
-                    onPress={() => router.push('/staff/members?status=active')}
+                    onPress={
+                      can('members.view')
+                        ? () => router.push('/staff/members?status=active')
+                        : undefined
+                    }
                   />
                   {/* Keeps a lone card to one column's width instead of letting
                       it stretch across the grid. */}

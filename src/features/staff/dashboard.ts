@@ -22,11 +22,15 @@ import type { Money } from '@/api/money';
 /**
  * EVERY BLOCK IS OPTIONAL, and which arrived is in `meta.visible`.
  *
- * Each figure is gated on the permission that owns the report behind it -
- * `members.view`, `reports.paid`, `reports.due`, `payments.view` - because a
- * dashboard figure is that report's information, smaller. Until 2026-09-12 one
- * `dashboard.view` returned all of it, which made this endpoint a way round
- * every other permission on the platform.
+ * ONE PERMISSION PER CARD - `dashboard.approvals`, `dashboard.members`,
+ * `dashboard.collections`, `dashboard.outstanding` - so an association composes
+ * its own landing page per role. A counter clerk can be shown how many payments
+ * are waiting and how many members are unadmitted without being handed the
+ * register or the arrears.
+ *
+ * WHICH MEANS A VISIBLE CARD IS NOT NECESSARILY A DOOR. Seeing a count and
+ * being allowed to open what it counts are different questions with different
+ * answers, so the screen still asks `can()` before it links anywhere.
  *
  * The screen needs `visible` rather than inferring from absent keys: "you may
  * not see this" and "there is nothing to show" are different sentences, and a
@@ -40,8 +44,13 @@ export type MonthlyCollection = {
   month: string;
   /** `Sep`, for the axis. */
   label: string;
-  /** Instalments only - fines are a different thing and are not charted with them. */
   instalments: Money;
+  /**
+   * BESIDE the instalments, never added to them. Two bars per month is
+   * comparison - "are penalties growing against subscriptions?" - where one bar
+   * would be the sum this platform never produces.
+   */
+  fines: Money;
 };
 
 export type DashboardData = {
