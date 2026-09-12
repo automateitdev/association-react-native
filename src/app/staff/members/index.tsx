@@ -190,11 +190,12 @@ export default function MembersScreen() {
       {/*
         WHERE THE OTHER MEMBER SCREENS LIVE.
 
-        These three were in the toolbar's actions, beside the download buttons,
-        which put five controls in a row that could not wrap - and they are not
-        actions on this list at all. Nothing here filters, sorts or exports
-        anything: each one leaves for another screen. Kept together, above the
-        list, they read as what they are.
+        Every one of these was once in the toolbar's actions, beside the
+        download buttons, which put a row of controls that could not wrap next
+        to three file-type icons - and they are not actions on this list at
+        all. Nothing here filters, sorts or exports anything: each one leaves
+        for another screen. Kept together, above the list, they read as what
+        they are.
       */}
       <RelatedScreens can={can} />
 
@@ -260,48 +261,29 @@ export default function MembersScreen() {
               />
             </>
           }
+          /*
+            THE TOOLBAR TAKES THIS LIST AWAY AS A FILE, and that is all it
+            does now. The certificate batch used to sit here too, which put a
+            printer glyph next to three file-type glyphs and invited the
+            reading that it was a fourth format. It is a screen, so it lives
+            with the other screens above.
+          */
           actions={
-            <Inline gap="sm">
-              {/*
-                NAMED BY WHAT COMES OUT, not by the verb.
-
-                This said "Print", which answers nothing - print what? - and
-                sat next to a PDF download that a reader would reasonably
-                assume was the printing one. What it opens is the batch
-                certificate and ID-card screen, so that is what the button
-                says. The printer glyph stays: it is the one thing about the
-                old label that was carrying meaning.
-
-                Printing is a batch job over the members you can see, so it
-                starts from the list rather than from one member's page.
-              */}
-              {can('reports.export') ? (
-                <Button
-                  size="sm"
-                  variant="tertiary"
-                  onPress={() => router.push('/staff/members/print')}
-                >
-                  <Icon name="print" size={15} tone="muted" />
-                  <Button.Label>Certificates &amp; ID cards</Button.Label>
-                </Button>
-              ) : null}
-
-              {can('reports.export') ? (
-                <ExportButtons
-                  path="/staff/members/export"
-                  name="members"
-                  scope="Every member matching these filters, not just this page."
-                  query={{
-                    ...(query ? { q: query } : {}),
-                    ...(status ? { status } : {}),
-                    ...(added.from ? { from: added.from } : {}),
-                    ...(added.to ? { to: added.to } : {}),
-                    ...(sort ? { sort: sort.key, direction: sort.direction } : {}),
-                  }}
-                  disabled={members.isLoading || rows.length === 0}
-                />
-              ) : null}
-            </Inline>
+            can('reports.export') ? (
+              <ExportButtons
+                path="/staff/members/export"
+                name="members"
+                scope="Every member matching these filters, not just this page."
+                query={{
+                  ...(query ? { q: query } : {}),
+                  ...(status ? { status } : {}),
+                  ...(added.from ? { from: added.from } : {}),
+                  ...(added.to ? { to: added.to } : {}),
+                  ...(sort ? { sort: sort.key, direction: sort.direction } : {}),
+                }}
+                disabled={members.isLoading || rows.length === 0}
+              />
+            ) : null
           }
         />
 
@@ -396,6 +378,21 @@ function RelatedScreens({ can }: { can: (permission: string) => boolean }) {
       icon: 'fees' as const,
       label: 'Shares',
       href: '/staff/members/shares',
+    },
+    {
+      /*
+       * This was in the toolbar beside the download icons, which read as a
+       * fourth export format - and it is not an export at all. Printing a
+       * batch of certificates is a job with its own screen, its own selection
+       * and its own warnings; what the toolbar offers is this list as a file.
+       *
+       * `reports.export` is the permission the print endpoint requires, so it
+       * is the one that decides whether the door is shown.
+       */
+      permission: 'reports.export',
+      icon: 'print' as const,
+      label: 'Certificates & ID cards',
+      href: '/staff/members/print',
     },
   ].filter((link) => can(link.permission));
 
