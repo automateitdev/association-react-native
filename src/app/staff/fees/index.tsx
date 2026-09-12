@@ -4,13 +4,13 @@ import { View } from 'react-native';
 import { formatMoney } from '@/api/money';
 import { useSession } from '@/features/auth/session';
 import { ExportButtons } from '@/features/staff/ExportButtons';
+import { RelatedScreens } from '@/features/staff/RelatedScreens';
 import { useFeeSetups, type FeeSetup } from '@/features/staff/fees';
 import {
   Button,
   Cell,
   DataTable,
   Icon,
-  Inline,
   NumberCell,
   Screen,
   ScreenHeader,
@@ -124,10 +124,38 @@ export default function FeeSetupsScreen() {
           can('fee-setups.create') ? (
             <Button onPress={() => router.push('/staff/fees/new')}>
               <Icon name="add" size={15} tone="inverse" />
-              <Button.Label>Add</Button.Label>
+              {/* "Add fee", not "Add" - the only bare verb among eight
+                  "Add <thing>" buttons, and the one screen where what gets
+                  added (a fee head) is not the same word as the title. */}
+              <Button.Label>Add fee</Button.Label>
             </Button>
           ) : undefined
         }
+      />
+
+      {/*
+        `active > 0` on the first, and it is not tidiness: assigning a fee to
+        members with no fee in use opens a screen whose only list is empty.
+      */}
+      <RelatedScreens
+        links={[
+          ...(active > 0
+            ? [
+                {
+                  permission: 'fee-assigns.create',
+                  icon: 'members' as const,
+                  label: 'Assign to members',
+                  href: '/staff/fees/assign',
+                },
+              ]
+            : []),
+          {
+            permission: 'fines.adjust',
+            icon: 'fees' as const,
+            label: 'Adjust fines',
+            href: '/staff/fees/fines',
+          },
+        ]}
       />
 
       <Section title="Fee heads" first>
@@ -142,24 +170,15 @@ export default function FeeSetupsScreen() {
           Filtering into a dead end is precisely when those controls are
           needed most.
         */}
+        {/*
+          NOTHING IN THE FILTER SLOT, because this screen has no filters and
+          never had any. What sat here was two links to other screens, which
+          made the left-hand side of a bar whose job is narrowing a list into
+          a pair of doors out of it. They are above the table now, with the
+          screens they lead to.
+        */}
         <Toolbar
-          filters={
-            <Inline gap="sm" align="stretch">
-              {can('fee-assigns.create') && active > 0 ? (
-                <Button variant="secondary" onPress={() => router.push('/staff/fees/assign')}>
-                  <Icon name="members" size={15} />
-                  <Button.Label>Assign to members</Button.Label>
-                </Button>
-              ) : null}
-
-              {can('fines.adjust') ? (
-                <Button variant="secondary" onPress={() => router.push('/staff/fees/fines')}>
-                  <Icon name="fees" size={15} />
-                  <Button.Label>Adjust fines</Button.Label>
-                </Button>
-              ) : null}
-            </Inline>
-          }
+          filters={null}
           actions={
             can('reports.export') ? (
               <ExportButtons

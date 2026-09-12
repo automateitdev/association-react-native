@@ -1,8 +1,8 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { View } from 'react-native';
 import { useSession } from '@/features/auth/session';
 import { ExportButtons } from '@/features/staff/ExportButtons';
+import { RelatedScreens, type RelatedScreen } from '@/features/staff/RelatedScreens';
 import { useMembers, type MemberStatus, type MemberSummary } from '@/features/staff/members';
 import {
   Button,
@@ -11,7 +11,6 @@ import {
   DateField,
   FilterSelect,
   Icon,
-  Inline,
   NumberCell,
   Screen,
   ScreenHeader,
@@ -187,17 +186,7 @@ export default function MembersScreen() {
         }
       />
 
-      {/*
-        WHERE THE OTHER MEMBER SCREENS LIVE.
-
-        Every one of these was once in the toolbar's actions, beside the
-        download buttons, which put a row of controls that could not wrap next
-        to three file-type icons - and they are not actions on this list at
-        all. Nothing here filters, sorts or exports anything: each one leaves
-        for another screen. Kept together, above the list, they read as what
-        they are.
-      */}
-      <RelatedScreens can={can} />
+      <RelatedScreens links={RELATED} />
 
       {/* No heading: the page header above already says Members, and how many. */}
       <Section first>
@@ -357,60 +346,42 @@ function useDebounced<T>(value: T, delayMs: number): T {
  * Hidden entirely when an account may reach none of them, rather than left as
  * an empty strip of whitespace nobody can explain.
  */
-function RelatedScreens({ can }: { can: (permission: string) => boolean }) {
-  const links = [
-    {
-      permission: 'profile-updates.view',
-      icon: 'approvals' as const,
-      label: 'Requested changes',
-      href: '/staff/members/profile-updates',
-    },
-    {
-      // Same permission as deciding a profile change, because it is the same
-      // authority over the same record - one is read, the other is looked at.
-      permission: 'profile-updates.decide',
-      icon: 'approvals' as const,
-      label: 'Document reviews',
-      href: '/staff/members/document-reviews',
-    },
-    {
-      permission: 'shares.view',
-      icon: 'fees' as const,
-      label: 'Shares',
-      href: '/staff/members/shares',
-    },
-    {
-      /*
-       * This was in the toolbar beside the download icons, which read as a
-       * fourth export format - and it is not an export at all. Printing a
-       * batch of certificates is a job with its own screen, its own selection
-       * and its own warnings; what the toolbar offers is this list as a file.
-       *
-       * `reports.export` is the permission the print endpoint requires, so it
-       * is the one that decides whether the door is shown.
-       */
-      permission: 'reports.export',
-      icon: 'print' as const,
-      label: 'Certificates & ID cards',
-      href: '/staff/members/print',
-    },
-  ].filter((link) => can(link.permission));
 
-  if (links.length === 0) return null;
-
-  return (
-    <Inline gap="sm" wrap>
-      {links.map((link) => (
-        <Button
-          key={link.href}
-          size="sm"
-          variant="secondary"
-          onPress={() => router.push(link.href as never)}
-        >
-          <Icon name={link.icon} size={15} tone="muted" />
-          <Button.Label>{link.label}</Button.Label>
-        </Button>
-      ))}
-    </Inline>
-  );
-}
+/**
+ * The other member screens.
+ *
+ * Every one of these was once in the toolbar - three among its actions beside
+ * the download buttons, and the certificate batch alongside them - where none
+ * of them belonged: nothing here filters, sorts or exports anything. Each one
+ * leaves for another screen.
+ *
+ * `reports.export` on the last is what the print endpoint itself requires.
+ */
+const RELATED: RelatedScreen[] = [
+  {
+    permission: 'profile-updates.view',
+    icon: 'approvals',
+    label: 'Requested changes',
+    href: '/staff/members/profile-updates',
+  },
+  {
+    // Same permission as deciding a profile change, because it is the same
+    // authority over the same record - one is read, the other is looked at.
+    permission: 'profile-updates.decide',
+    icon: 'approvals',
+    label: 'Document reviews',
+    href: '/staff/members/document-reviews',
+  },
+  {
+    permission: 'shares.view',
+    icon: 'fees',
+    label: 'Shares',
+    href: '/staff/members/shares',
+  },
+  {
+    permission: 'reports.export',
+    icon: 'print',
+    label: 'Certificates & ID cards',
+    href: '/staff/members/print',
+  },
+];
