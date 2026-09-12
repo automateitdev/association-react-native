@@ -60,7 +60,12 @@ export const ICONS = {
   fine: 'gavel',
   shares: 'pie_chart',
   voucher: 'receipt',
-  cash: 'savings',
+  // NOT `savings`, which is a piggy bank - the wrong register entirely for a
+  // cooperative's cash position. Not `currency_exchange`, `local_atm` or
+  // `price_change` either: every one of those draws a dollar sign, and this
+  // association's money is taka. A banknote with a generic coin is the only
+  // corporate one in the set that names no currency.
+  cash: 'universal_currency_alt',
 
   // The books
   chartOfAccounts: 'account_tree',
