@@ -220,12 +220,18 @@ export default function MemberLayout() {
           />
 
           {/*
-        Expo Router turns every file in this directory into a tab. The payment
-        detail screen is pushed from Pay and History, not chosen from the bar,
-        so `href: null` keeps it routable while hiding it - otherwise a
-        "payment/[id]" tab appears next to the three real ones.
+        Expo Router turns every file in this directory into a tab, so the two
+        routes that are not tabs have to say so. `href: null` keeps a route
+        reachable while keeping it out of the bar.
+
+        `payment/[id]` is pushed from Pay and History rather than chosen.
+        `pay` is not a screen at all any more - it redirects to this tab, and
+        exists only so a bookmarked /member/pay still lands somewhere. Without
+        these two, the bar grows a "payment/[id]" tab and a "pay" tab that
+        bounces to the first one.
       */}
           <Tabs.Screen name="payment/[id]" options={{ href: null }} />
+          <Tabs.Screen name="pay" options={{ href: null }} />
         </Tabs>
       </View>
     </View>
