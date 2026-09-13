@@ -84,6 +84,17 @@ export default function ProfileScreen() {
   const profile = session?.profile;
   const pending = updates.data?.data.find((u) => u.status === 'pending');
 
+  /*
+   * WHETHER THERE IS A NOMINEE TO DOCUMENT AT ALL - one on file, or one being
+   * asked for. The server accepts an attachment in either case, hanging it off
+   * the pending request until there is a person to own it.
+   */
+  const nomineeRequested = Object.keys(pending?.changes ?? {}).some((field) =>
+    field.startsWith('nominee_'),
+  );
+
+  const canSendNomineeDocuments = Boolean(profile?.nominee) || nomineeRequested;
+
   // Everything but the pending one, which has its own panel above.
   const decided = (updates.data?.data ?? []).filter((u) => u.status !== 'pending');
 
@@ -114,6 +125,28 @@ export default function ProfileScreen() {
         at the counter, so a new one is a request, not a swap.
       */}
       <DocumentsSection owner={{ kind: 'me' }} editable mode="submit" title="Your documents" />
+
+      {/*
+        THE NOMINEE'S, BESIDE THE MEMBER'S OWN - not buried in the form.
+
+        They were inside the nominee section of the change form, which put them
+        four levels down: Profile, Ask for a change, open the section, scroll
+        past eleven fields. Worse, the form is REPLACED by the pending panel
+        while a request is waiting - so the moment a member had named their
+        nominee and most wanted to attach the NID, the slots were unreachable.
+
+        Here they are next to "Your documents", which is where somebody looking
+        for an upload looks, and they survive a pending request because they no
+        longer live inside the thing that pending hides.
+      */}
+      {canSendNomineeDocuments ? (
+        <DocumentsSection
+          owner={{ kind: 'my-nominee' }}
+          editable
+          mode="submit"
+          title="Your nominee's documents"
+        />
+      ) : null}
 
       {asking ? (
         <RequestForm
@@ -946,19 +979,38 @@ function RequestForm({
               is right to - a file has to belong to somebody. Saying so beats
               four Send buttons that all answer "name them first".
             */}
-            {currentNominee ? (
-              <DocumentsSection
-                owner={{ kind: 'my-nominee' }}
-                editable
-                mode="submit"
-                title="Their documents"
-              />
-            ) : (
-              <Text tone="muted" style={type.rowMeta}>
-                Once the office has approved the name above, you can send their photograph and NID
-                here.
-              </Text>
-            )}
+            {/*
+              SHOWN ONCE THERE IS A NOMINEE *OR* A REQUEST NAMING ONE.
+
+              It used to be the first alone, and told the member to come back
+              after approval - two visits for what the legacy does in one
+              submission, and the second visit is the one nobody makes. The
+              server now hangs a submission off the pending request when there
+              is nobody to own it yet, and moves the files across when the
+              office approves.
+
+              Still not before the NAME IS SENT, though: a name typed in the
+              box above is not a request, and there is nothing for the files
+              to belong to until it is one. The line says which order, which
+              is cheaper than four Send buttons that all answer the same way.
+            */}
+            {/*
+              A POINTER, NOT A SECOND COPY OF THE SLOTS.
+
+              Their documents are a section of their own further up, beside the
+              member's. Rendering them here as well would be the same four Send
+              buttons in two places on one screen, and a member who used the
+              lower pair would have no idea the upper pair had changed.
+
+              What is left is the ordering, which is the part that is not
+              obvious: the files need a request to belong to, so the name goes
+              first.
+            */}
+            <Text tone="muted" style={type.rowMeta}>
+              {currentNominee
+                ? `Their photograph and NID are under "Your nominee's documents" above.`
+                : 'Send their name first. Their photograph and NID can then be attached above, before the office decides.'}
+            </Text>
           </Stack>
         </Disclosure>
 
