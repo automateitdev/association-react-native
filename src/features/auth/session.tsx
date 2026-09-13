@@ -39,6 +39,15 @@ export type Profile = {
    * what is held before somebody asks to change it.
    */
   editable?: Record<string, string | null>;
+  /**
+   * The nominee on file, or NULL when there is none.
+   *
+   * The absence is explicit on purpose: "add your nominee" and "correct these
+   * details" are different things to put in front of somebody, and an object
+   * of empty strings cannot tell them apart. Keyed by the server's own
+   * NOMINEE_ALLOWED list, like `editable` above.
+   */
+  nominee?: Record<string, string | null> | null;
 };
 
 export type Session = {

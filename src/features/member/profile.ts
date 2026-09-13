@@ -58,7 +58,13 @@ export function useRequestProfileUpdate() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (changes: Record<string, string>) =>
+    /*
+     * `nominee` travels NESTED and everything else flat, which is the shape
+     * the endpoint takes: it flattens the nominee to `nominee_*` before
+     * storing, so one pending row carries both halves and the office decides
+     * them together.
+     */
+    mutationFn: async (changes: Record<string, string | Record<string, string>>) =>
       (
         await request<{ data: ProfileUpdate }>('/me/profile-updates', {
           method: 'POST',
@@ -95,6 +101,36 @@ export function fieldLabel(field: string): string {
     permanent_address: 'Permanent address',
     office_address: 'Office address',
     emergency_contact: 'Emergency contact',
+    country_code: 'Country',
+
+    // The cadre service record - the legacy form's first tab.
+    bcs_batch: 'BCS batch',
+    cadre_id: 'Cadre ID',
+    joining_date: 'Joined the service',
+
+    // The reference who vouched for the applicant. Legacy `ref_name`,
+    // `ref_mobile`, `ref_memeber_id_no`.
+    introduced_by_name: 'Introduced by',
+    introduced_by_mobile: "Introducer's mobile",
+    introduced_by_member_id: "Introducer's member number",
+
+    /*
+     * The nominee, which the server sends back PREFIXED - one pending row
+     * carries `name` and `nominee_name` side by side, as the legacy does.
+     * Labelled so a decided request reads "Nominee's name" rather than
+     * "Nominee name", which is what the de-underscoring fallback would give.
+     */
+    nominee_name: "Nominee's name",
+    nominee_relation: 'Relationship to you',
+    nominee_father_name: "Nominee's father's name",
+    nominee_mother_name: "Nominee's mother's name",
+    nominee_gender: "Nominee's gender",
+    nominee_birth_date: "Nominee's date of birth",
+    nominee_nid: "Nominee's NID number",
+    nominee_mobile: "Nominee's mobile",
+    nominee_country_code: "Nominee's country",
+    nominee_address: "Nominee's address",
+    nominee_profession: "Nominee's profession",
   };
 
   return known[field] ?? field.replace(/_/g, ' ').replace(/^./, (c) => c.toUpperCase());

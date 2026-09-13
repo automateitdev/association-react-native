@@ -15,6 +15,7 @@ import {
 import {
   Actions,
   Button,
+  Divider,
   Field,
   Form,
   InputField,
@@ -114,6 +115,9 @@ export default function ProfileScreen() {
         <RequestForm
           fields={updates.data?.meta.editable_fields ?? []}
           current={profile?.editable ?? {}}
+          // `null` rather than `{}`: no nominee on file and a nominee with
+          // empty fields are different things to put in front of somebody.
+          currentNominee={profile?.nominee ?? null}
           onDone={() => setAsking(false)}
           onCancel={() => setAsking(false)}
         />
@@ -361,7 +365,7 @@ const GENDERS = [
 ];
 
 /**
- * The thirteen editable fields, in four groups.
+ * The editable fields, in groups that follow the legacy form's first tab.
  *
  * WHY GROUP THEM AT ALL. Rendered as one list they are thirteen identical
  * boxes, and a member looking for "mobile" reads every label on the way down.
@@ -380,7 +384,27 @@ const GROUPS: FieldGroup[] = [
     fields: ['name', 'father_name', 'mother_name', 'spouse_name'],
   },
   { title: 'Personal', fields: ['birth_date', 'gender', 'nid'] },
-  { title: 'Contact', fields: ['mobile', 'email', 'emergency_contact'] },
+  { title: 'Contact', fields: ['mobile', 'country_code', 'email', 'emergency_contact'] },
+
+  /*
+   * THE CADRE SERVICE RECORD, which is what makes somebody eligible for this
+   * kind of association at all. The legacy form asks for all three on its
+   * first tab under "BCS Batch & Cadre"; none of them could be corrected here
+   * until the API started accepting them.
+   *
+   * `joining_date` is the date they joined the SERVICE - the association's own
+   * join date is a different thing it records itself.
+   */
+  { title: 'Service record', fields: ['bcs_batch', 'cadre_id', 'joining_date'] },
+
+  /*
+   * THE REFERENCE - who vouched for this applicant. Legacy `ref_name`,
+   * `ref_mobile`, `ref_memeber_id_no`.
+   */
+  {
+    title: 'Introduced by',
+    fields: ['introduced_by_name', 'introduced_by_mobile', 'introduced_by_member_id'],
+  },
 
   /*
    * ONE PER ROW, unlike the rest. An address is a long value, and two side by
@@ -392,6 +416,31 @@ const GROUPS: FieldGroup[] = [
     fields: ['present_address', 'permanent_address', 'office_address'],
     stacked: true,
   },
+];
+
+/**
+ * The nominee's fields, in the legacy form's own order.
+ *
+ * NOT DRIVEN BY `editable_fields`, unlike the applicant's. That list names
+ * columns on the member's record; the nominee is a different row, sent nested
+ * and flattened to `nominee_*` by the server. So this is the one place the app
+ * holds a field list of its own - and it is checked against the server's
+ * answer at runtime by the `nominee` object on /me, which carries exactly the
+ * permitted keys.
+ */
+/** Where the member's own label reads wrong for somebody else's record. */
+const NOMINEE_LABELS: Record<string, string> = {
+  relation: 'Relationship to you',
+  address: 'Permanent address',
+  profession: 'Professional details',
+};
+
+const NOMINEE_FIELDS: FieldGroup[] = [
+  { title: 'Who they are', fields: ['name', 'relation', 'father_name', 'mother_name'] },
+  { title: 'Personal', fields: ['birth_date', 'gender', 'nid'] },
+  { title: 'Contact', fields: ['mobile', 'country_code'] },
+  // Long values, one per row - the same reason the member's addresses stack.
+  { title: 'Address and work', fields: ['address', 'profession'], stacked: true },
 ];
 
 function groupFields(fields: string[]): FieldGroup[] {
@@ -422,11 +471,14 @@ function groupFields(fields: string[]): FieldGroup[] {
 function RequestForm({
   fields,
   current,
+  currentNominee,
   onDone,
   onCancel,
 }: {
   fields: string[];
   current: Record<string, string | null>;
+  /** The nominee on file, or null when there is none yet. */
+  currentNominee: Record<string, string | null> | null;
   onDone: () => void;
   onCancel: () => void;
 }) {
@@ -435,17 +487,71 @@ function RequestForm({
     Object.fromEntries(fields.map((f) => [f, current[f] ?? ''])),
   );
 
+  /*
+   * The nominee's fields, held apart from the member's.
+   *
+   * Separate state because they are a separate row - the request nests them
+   * and the server flattens them to `nominee_*`. Keeping them in one map with
+   * the member's would mean prefixing here and stripping there, in a form
+   * whose whole job is to be legible.
+   */
+  const nomineeFields = NOMINEE_FIELDS.flatMap((group) => group.fields);
+  const [nominee, setNominee] = useState<Record<string, string>>(() =>
+    Object.fromEntries(nomineeFields.map((f) => [f, currentNominee?.[f] ?? ''])),
+  );
+
   const changed = fields.filter((f) => values[f] !== (current[f] ?? ''));
+  const nomineeChanged = nomineeFields.filter((f) => nominee[f] !== (currentNominee?.[f] ?? ''));
+
+  const total = changed.length + nomineeChanged.length;
   const error = submit.error instanceof ApiError ? submit.error : null;
 
+  /*
+   * A NOMINEE BEING ADDED NEEDS A NAME, and the button says so rather than
+   * letting the server say it.
+   *
+   * `nominees.name` is NOT NULL, so the API refuses this - but a member who
+   * has filled in a relation and a mobile and pressed Send has done the work
+   * before being told. Only when there is no nominee yet: correcting one field
+   * of an existing nominee is not naming anybody again.
+   */
+  const addingNominee = !currentNominee && nomineeChanged.length > 0;
+  const missingNomineeName = addingNominee && nominee.name?.trim() === '';
+
   const send = () => {
-    submit.mutate(Object.fromEntries(changed.map((f) => [f, values[f]])), {
-      onSuccess: onDone,
-    });
+    submit.mutate(
+      {
+        ...Object.fromEntries(changed.map((f) => [f, values[f]])),
+        ...(nomineeChanged.length > 0
+          ? { nominee: Object.fromEntries(nomineeChanged.map((f) => [f, nominee[f]])) }
+          : {}),
+      },
+      { onSuccess: onDone },
+    );
   };
 
-  /** One field, whichever control it needs. Shared by both layouts. */
-  const renderField = (field: string) =>
+  /**
+   * One field, whichever control it needs.
+   *
+   * Takes its own value map, so the member's fields and the nominee's share
+   * one renderer instead of two that drift. `gender` is a picker on both
+   * sides; `birth_date` carries its format hint on both.
+   */
+  const renderField = (
+    field: string,
+    read: Record<string, string> = values,
+    write: (f: string, v: string) => void = (f, v) =>
+      setValues((current) => ({ ...current, [f]: v })),
+    /*
+     * The nominee's fields are unprefixed here - they are sent nested - so
+     * `fieldLabel` gives them the member's own labels. Two of them read wrong
+     * that way: "Relation" answers nothing without saying to WHOM, and the
+     * server's own label for the prefixed key ("Nominee's relationship to
+     * you") is redundant under a heading that already says whose section this
+     * is.
+     */
+    labels: Record<string, string> = {},
+  ) =>
     field === 'gender' ? (
       /*
        * A PICKER, because gender is three values the server validates. As a
@@ -454,28 +560,40 @@ function RequestForm({
        */
       <PickerField
         key={field}
-        label={fieldLabel(field)}
+        label={labels[field] ?? fieldLabel(field)}
         options={GENDERS}
-        value={values[field] ?? ''}
-        onChange={(value) => setValues((v) => ({ ...v, [field]: value }))}
+        value={read[field] ?? ''}
+        onChange={(value) => write(field, value)}
         placeholder="Choose"
       />
     ) : (
       <InputField
         key={field}
-        label={fieldLabel(field)}
-        value={values[field] ?? ''}
-        onChangeText={(value) => setValues((v) => ({ ...v, [field]: value }))}
+        label={labels[field] ?? fieldLabel(field)}
+        value={read[field] ?? ''}
+        onChangeText={(value) => write(field, value)}
         keyboardType={
-          field === 'mobile' || field === 'emergency_contact'
+          field === 'mobile' || field === 'emergency_contact' || field === 'introduced_by_mobile'
             ? 'phone-pad'
             : field === 'email'
               ? 'email-address'
+              : field === 'cadre_id' || field === 'introduced_by_member_id'
+                ? // `phone-pad` rather than `number-pad`, which InputField's
+                  // union does not carry. Both give a digits keypad; this is
+                  // the one the design system actually offers.
+                  'phone-pad'
+                : undefined
+        }
+        // A date with no stated shape is a support call. Said once per field
+        // whose format is not obvious - and the two-letter country code, which
+        // the server validates and nothing on screen would otherwise explain.
+        hint={
+          field === 'birth_date' || field === 'joining_date'
+            ? 'As 1990-04-23 - year, month, day.'
+            : field === 'country_code'
+              ? 'Two letters, as BD or GB.'
               : undefined
         }
-        // A date with no stated shape is a support call. Said once, on the only
-        // field whose format is not obvious.
-        hint={field === 'birth_date' ? 'As 1990-04-23 - year, month, day.' : undefined}
       />
     );
 
@@ -520,6 +638,56 @@ function RequestForm({
             </Form>
           </Stack>
         ))}
+
+        {/*
+          THE NOMINEE, the legacy form's second tab.
+
+          Under a divider and its own heading rather than as one more group,
+          because it is somebody ELSE's details in a form about you - and the
+          fields repeat ("Name", "Father's name", "NID") exactly the ones
+          above. Without the break a member scrolling back up cannot tell whose
+          name they are looking at.
+
+          It goes in the same request: one pending row carries both halves and
+          the office decides them together, as the legacy does.
+        */}
+        <Divider />
+
+        <Stack gap="lg">
+          <Stack gap="xs">
+            <Text style={type.rowTitle}>{currentNominee ? 'Your nominee' : 'Add a nominee'}</Text>
+            <Text tone="muted" style={type.body}>
+              {currentNominee
+                ? 'The person your association would contact about your membership. Change only what is wrong.'
+                : 'The person your association would contact about your membership. You have not named one yet.'}
+            </Text>
+          </Stack>
+
+          {NOMINEE_FIELDS.map((group) => (
+            <Stack key={group.title} gap="sm">
+              <Text tone="muted" style={type.section}>
+                {group.title.toUpperCase()}
+              </Text>
+
+              <Form maxWidth={null} columns={group.stacked ? 1 : 2}>
+                {group.fields.map((field) =>
+                  renderField(
+                    field,
+                    nominee,
+                    (f, v) => setNominee((current) => ({ ...current, [f]: v })),
+                    NOMINEE_LABELS,
+                  ),
+                )}
+              </Form>
+            </Stack>
+          ))}
+
+          {missingNomineeName ? (
+            <Text tone="danger" style={type.rowMeta}>
+              A nominee needs a name.
+            </Text>
+          ) : null}
+        </Stack>
       </Stack>
 
       <Actions>
@@ -531,13 +699,13 @@ function RequestForm({
           Disabled until something differs, and it says how many. "Send request"
           on an unchanged form files nothing and reads as a broken button.
         */}
-        <Button isDisabled={changed.length === 0 || submit.isPending} onPress={send}>
+        <Button isDisabled={total === 0 || missingNomineeName || submit.isPending} onPress={send}>
           <Button.Label>
             {submit.isPending
               ? 'Sending…'
-              : changed.length === 0
+              : total === 0
                 ? 'Nothing changed yet'
-                : `Send ${changed.length} change${changed.length === 1 ? '' : 's'}`}
+                : `Send ${total} change${total === 1 ? '' : 's'}`}
           </Button.Label>
         </Button>
       </Actions>
