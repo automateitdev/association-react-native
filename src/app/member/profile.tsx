@@ -518,13 +518,32 @@ function ProjectPanel({
             onChange={(value) => onChange('areas', value)}
           />
         ) : (
-          <InputField
-            label="Areas"
-            value={answer.areas ?? ''}
-            onChangeText={(value) => onChange('areas', value)}
-            // Typed, separated by commas. Somebody who would take Uttara or
-            // Mohammadpur is answering one question, not two.
-            placeholder={options.dhaka_areas.slice(0, 3).join(', ')}
+          /*
+            A MULTI-SELECT, which is what the legacy form is - and what this
+            was not. It was a text box using the area list as a PLACEHOLDER,
+            so a member had to already know the names and type them exactly;
+            the list the server sends was decoration.
+
+            Several, because several is a real answer: one member in the
+            legacy data asked for Uttara, Basundhora/Purbachal AND Afteb
+            Nagar. Nobody ever picked two districts, which is why the other
+            project is still a single choice.
+          */
+          <PickerField
+            label="Preferred areas"
+            placeholder="Choose one or more"
+            value={null}
+            onChange={() => {}}
+            values={splitAreas(answer.areas ?? '')}
+            onToggleValue={(area) => {
+              const chosen = splitAreas(answer.areas ?? '');
+              const next = chosen.includes(area)
+                ? chosen.filter((a) => a !== area)
+                : [...chosen, area];
+
+              onChange('areas', next.join(', '));
+            }}
+            options={options.dhaka_areas.map((area) => ({ value: area, label: area }))}
           />
         )}
 

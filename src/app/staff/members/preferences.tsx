@@ -214,13 +214,45 @@ function PreferenceForm({
           onChange={setAreas}
         />
       ) : (
-        <InputField
-          label="Areas"
-          value={areas}
-          onChangeText={setAreas}
-          // Typed, and separated by commas. A member who wants Uttara or
-          // Mohammadpur is answering one question, not two.
-          placeholder={options.dhaka_areas.slice(0, 3).join(', ')}
+        /*
+          THE SAME MULTI-SELECT THE MEMBER GETS. This was a text box using the
+          area list as a placeholder, so a clerk recording an answer over the
+          phone had to type the name exactly as the member's own screen would
+          have written it - and any drift between the two spellings becomes two
+          places in the data.
+
+          Several, because several is a real answer: one member in the legacy
+          data asked for three. Nobody ever picked two districts, which is why
+          the other project above is still a single choice.
+        */
+        <PickerField
+          label="Preferred areas"
+          placeholder="Choose one or more"
+          value={null}
+          onChange={() => {}}
+          values={
+            areas
+              ? areas
+                  .split(',')
+                  .map((a) => a.trim())
+                  .filter(Boolean)
+              : []
+          }
+          onToggleValue={(area) => {
+            const chosen = areas
+              ? areas
+                  .split(',')
+                  .map((a) => a.trim())
+                  .filter(Boolean)
+              : [];
+
+            setAreas(
+              (chosen.includes(area) ? chosen.filter((a) => a !== area) : [...chosen, area]).join(
+                ', ',
+              ),
+            );
+          }}
+          options={options.dhaka_areas.map((area) => ({ value: area, label: area }))}
         />
       )}
 
