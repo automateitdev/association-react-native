@@ -41,6 +41,16 @@ export type Settings = {
   payment: {
     intent_ttl_minutes: number;
     online_enabled: boolean;
+    /**
+     * Whether a MEMBER may file an offline payment themselves.
+     *
+     * Not "does the association take cash" - staff collection at the counter
+     * is a different endpoint under a different permission and is unaffected
+     * by this. It governs the one route where the payment record is created by
+     * the person who benefits from it, and somebody then has to believe a
+     * photographed slip.
+     */
+    member_offline_enabled: boolean;
   };
   bank: {
     account_name: string | null;
@@ -102,7 +112,11 @@ export type GatewaySummary = {
 export type SettingsUpdate = {
   fine?: Partial<{ rate: string; grace_days: number; suspension_threshold: number }>;
   invoice?: Partial<{ format: string }>;
-  payment?: Partial<{ intent_ttl_minutes: number; online_enabled: boolean }>;
+  payment?: Partial<{
+    intent_ttl_minutes: number;
+    online_enabled: boolean;
+    member_offline_enabled: boolean;
+  }>;
   bank?: Partial<{
     account_name: string | null;
     account_number: string | null;

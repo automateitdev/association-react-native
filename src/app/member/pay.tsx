@@ -35,16 +35,23 @@ import {
 /**
  * Pay: choose instalments, then either pay online or transfer at the bank.
  *
- * TWO ROUTES, AND THE SECOND IS NOT A FALLBACK. Bank transfer is how most
- * members have always paid and how every member pays when an association has no
- * gateway; online payment is offered on top when there is one. So the screen
- * asks which, rather than hiding the bank behind a "having trouble?" link.
+ * EITHER ROUTE MAY BE SHUT, AND NEITHER IS A FALLBACK FOR THE OTHER.
  *
- * The choice only appears when online payment is genuinely available — the
- * association switched it on, a gateway is configured, and the deployment is not
- * forcing the fake. The server answers all three as one question, because a
- * "Pay now" button whose only outcome is a refusal three screens later is worse
- * than no button.
+ * Online needs the association to have switched it on, a gateway configured,
+ * and a deployment not forcing the fake. Offline needs the association to
+ * accept member-filed payments at all, and to have published an account to
+ * send the money to. The server answers each as one question, because a button
+ * whose only outcome is a refusal three screens later is worse than no button.
+ *
+ * OFFLINE USED TO BE ASSUMED OPEN - `method` fell back to 'manual' whenever
+ * online was unavailable, so an association that takes nothing but counter
+ * payments still showed its members a bank-transfer form and a Submit button
+ * the server would refuse. Both routes are now asked about, and the screen has
+ * a fourth state: neither, which says so instead of offering something.
+ *
+ * The choice between them only appears when BOTH are open. One open route is
+ * not a decision, and dressing it as one asks a member to confirm something
+ * they have no say in.
  *
  * The steps are Sections rather than stacked cards - a numbered heading already
  * says "step", and wrapping each one in a box as well made a single task look
@@ -201,8 +208,25 @@ export default function PayScreen() {
   const bank = instructions.data?.manual;
   const online = instructions.data?.online;
   const canPayOnline = online?.available === true;
+  const canPayManual = bank?.available === true;
+  const bothOpen = canPayOnline && canPayManual;
 
-  const method = chosenMethod ?? (canPayOnline ? 'online' : 'manual');
+  /*
+   * NEVER A ROUTE THAT IS SHUT, including one the member picked before the
+   * instructions arrived. `chosenMethod` is only honoured while it names
+   * something open, so a stale choice cannot survive an association turning a
+   * route off between two screens.
+   */
+  const method: 'online' | 'manual' =
+    chosenMethod && (chosenMethod === 'online' ? canPayOnline : canPayManual)
+      ? chosenMethod
+      : canPayOnline
+        ? 'online'
+        : 'manual';
+
+  // Said once here rather than recomputed at each of the four places that
+  // branch on it. Instructions still loading is NOT "no way to pay".
+  const noRouteOpen = instructions.data !== undefined && !canPayOnline && !canPayManual;
   const busy = createPayment.isPending || gatewaySession.isPending;
 
   const error =
@@ -236,7 +260,7 @@ export default function PayScreen() {
           ))}
         </Section>
 
-        {chosen.length > 0 && canPayOnline ? (
+        {chosen.length > 0 && bothOpen ? (
           <Section step={2} title="How would you like to pay?">
             {/* Server-computed. The app does not add money up. */}
             <SelectionTotal quote={quote.data} isLoading={quote.isPending} />
@@ -260,13 +284,11 @@ export default function PayScreen() {
           </Section>
         ) : null}
 
-        {chosen.length > 0 && method === 'manual' ? (
-          <Section title={canPayOnline ? '3 · Transfer this amount' : '2 · Transfer this amount'}>
+        {chosen.length > 0 && method === 'manual' && canPayManual ? (
+          <Section title={bothOpen ? '3 · Transfer this amount' : '2 · Transfer this amount'}>
             <Stack gap="lg">
               {/* Server-computed. The app does not add money up. */}
-              {canPayOnline ? null : (
-                <SelectionTotal quote={quote.data} isLoading={quote.isPending} />
-              )}
+              {bothOpen ? null : <SelectionTotal quote={quote.data} isLoading={quote.isPending} />}
 
               {instructions.isPending ? (
                 <Text tone="muted" style={type.body}>
@@ -286,12 +308,15 @@ export default function PayScreen() {
                   ) : null}
                 </View>
               ) : (
-                // The association has not filled its bank details in. Saying so
-                // is better than rendering an empty block that reads as a bug.
+                // Saying so is better than rendering an empty block that reads
+                // as a bug. WHICH thing is missing decides the sentence: one of
+                // these is something the office can give you, and the other is
+                // an answer they have already given.
                 <Panel>
                   <Text style={type.body}>
-                    Your association has not published its bank details yet. Please contact the
-                    office before transferring.
+                    {bank?.reason === 'disabled'
+                      ? 'Your association does not accept bank transfers filed here. Pay at the office instead.'
+                      : 'Your association has not published its bank details yet. Please contact the office before transferring.'}
                   </Text>
                 </Panel>
               )}
@@ -299,8 +324,8 @@ export default function PayScreen() {
           </Section>
         ) : null}
 
-        {chosen.length > 0 && method === 'manual' ? (
-          <Section title={canPayOnline ? '4 · Attach your slip' : '3 · Attach your slip'}>
+        {chosen.length > 0 && method === 'manual' && canPayManual ? (
+          <Section title={bothOpen ? '4 · Attach your slip' : '3 · Attach your slip'}>
             <Text tone="muted" style={type.body}>
               A photo of the deposit slip or a screenshot of the transfer. Staff approve against
               this.
@@ -349,7 +374,26 @@ export default function PayScreen() {
           </Section>
         ) : null}
 
-        {chosen.length > 0 ? (
+        {/*
+          NEITHER ROUTE OPEN is a real state, not an error: an association that
+          collects entirely at the counter is in it deliberately. So it is said
+          plainly and no Submit is offered - a disabled button with no
+          explanation reads as the app having failed.
+        */}
+        {chosen.length > 0 && noRouteOpen ? (
+          <Section>
+            <Panel>
+              <Text style={type.rowTitle}>Payments are taken at the office</Text>
+              <Text style={type.body}>
+                Your association is not accepting payments through the app at the moment. Your
+                instalments and any fines are still shown here, and staff can record a payment for
+                you when you pay them directly.
+              </Text>
+            </Panel>
+          </Section>
+        ) : null}
+
+        {chosen.length > 0 && !noRouteOpen ? (
           <Stack gap="sm">
             <Actions>
               {method === 'online' ? (

@@ -43,8 +43,23 @@ export type Summary = {
 
 export type PaymentInstructions = {
   manual: {
-    /** False when the association has not filled its bank details in. */
+    /**
+     * Whether a member may file an offline payment THEMSELVES.
+     *
+     * Two conditions behind one flag, and they are different questions: the
+     * association has switched member-filed offline payment on, AND it has
+     * published an account to send the money to. It used to be only the
+     * second, because the first did not exist - offline was simply always
+     * open, which is the wrong way round for the one route where the record is
+     * created by the person who benefits from it.
+     */
     available: boolean;
+    /**
+     * Why not, when it is not. The two closures need different words on
+     * screen: `no_bank_details` sends a member to the office to ask for them,
+     * and `disabled` does not - there is nothing to ask for.
+     */
+    reason: 'disabled' | 'no_bank_details' | null;
     bank: {
       account_name: string;
       account_number: string;

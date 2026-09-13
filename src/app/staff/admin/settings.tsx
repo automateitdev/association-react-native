@@ -271,22 +271,26 @@ function PaymentSection({ settings, editable }: { settings: Settings; editable: 
 
   const [ttl, setTtl] = useState(String(settings.payment.intent_ttl_minutes));
   const [online, setOnline] = useState(settings.payment.online_enabled);
+  const [memberOffline, setMemberOffline] = useState(settings.payment.member_offline_enabled);
   const [format, setFormat] = useState(settings.invoice.format);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     setTtl(String(settings.payment.intent_ttl_minutes));
     setOnline(settings.payment.online_enabled);
+    setMemberOffline(settings.payment.member_offline_enabled);
     setFormat(settings.invoice.format);
   }, [
     settings.payment.intent_ttl_minutes,
     settings.payment.online_enabled,
+    settings.payment.member_offline_enabled,
     settings.invoice.format,
   ]);
 
   const dirty =
     ttl !== String(settings.payment.intent_ttl_minutes) ||
     online !== settings.payment.online_enabled ||
+    memberOffline !== settings.payment.member_offline_enabled ||
     format !== settings.invoice.format;
 
   const save = async () => {
@@ -294,7 +298,11 @@ function PaymentSection({ settings, editable }: { settings: Settings; editable: 
 
     try {
       await update.mutateAsync({
-        payment: { intent_ttl_minutes: Number(ttl), online_enabled: online },
+        payment: {
+          intent_ttl_minutes: Number(ttl),
+          online_enabled: online,
+          member_offline_enabled: memberOffline,
+        },
         invoice: { format },
       });
     } catch (e) {
@@ -316,11 +324,54 @@ function PaymentSection({ settings, editable }: { settings: Settings; editable: 
         <Stack gap="none" grow>
           <Text style={type.body}>Accept online payments</Text>
           <Text tone="muted" style={type.rowMeta}>
-            Turn off to take payment only at the counter. Members already mid-payment are
+            Members are offered the bank&rsquo;s own payment page. Members already mid-payment are
             unaffected.
           </Text>
         </Stack>
       </Inline>
+
+      <Inline gap="sm">
+        <Checkbox
+          isSelected={memberOffline}
+          onSelectedChange={setMemberOffline}
+          isDisabled={!editable}
+        />
+        <Stack gap="none" grow>
+          <Text style={type.body}>Let members file their own bank transfers</Text>
+          {/*
+            THE WORDING IS THE FEATURE. "Offline payment" reads like "do we
+            take cash", which this is not - staff collection at the counter is
+            untouched by it. What it decides is whether a MEMBER may create the
+            payment record and hand the association a photographed slip to
+            believe, which is the one route where the person who benefits from
+            the record is the one who writes it.
+          */}
+          <Text tone="muted" style={type.rowMeta}>
+            Members transfer at the bank and upload a slip for staff to approve. Off by default.
+            Staff can always record a payment at the counter, whichever way this is set.
+          </Text>
+        </Stack>
+      </Inline>
+
+      {/*
+        BOTH OFF IS A REAL STATE AND A QUIET ONE: the app then offers a member
+        no way to pay at all, and the only symptom is members not paying. An
+        association that collects entirely at the counter means this; one that
+        has just unticked a box may not.
+      */}
+      {!online && !memberOffline ? (
+        <Text tone="muted" style={type.rowMeta}>
+          With both off, members cannot pay through the app. Their dues and fines are still shown,
+          and staff record payments for them.
+        </Text>
+      ) : null}
+
+      {memberOffline && !settings.bank.account_number ? (
+        <Text tone="danger" style={type.rowMeta}>
+          Fill in the bank details below, or members will be told to contact the office instead of
+          being shown where to send the money.
+        </Text>
+      ) : null}
 
       <FormRow>
         <InputField
