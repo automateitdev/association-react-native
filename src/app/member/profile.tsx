@@ -933,6 +933,32 @@ function RequestForm({
                 A nominee needs a name.
               </Text>
             ) : null}
+
+            {/*
+              THEIR DOCUMENTS, IN THE SECTION THAT NAMES THEM - the legacy
+              form uploads the nominee's photograph and NID on the same tab.
+
+              ONLY ONCE THERE IS A NOMINEE ON FILE, and that is not the same
+              as a name typed above: the nominee row is created when the
+              office approves this request, so a member who filled in the name
+              and attached an NID in one sitting would be attaching it to
+              nothing. The server refuses with NO_NOMINEE until then, and it
+              is right to - a file has to belong to somebody. Saying so beats
+              four Send buttons that all answer "name them first".
+            */}
+            {currentNominee ? (
+              <DocumentsSection
+                owner={{ kind: 'my-nominee' }}
+                editable
+                mode="submit"
+                title="Their documents"
+              />
+            ) : (
+              <Text tone="muted" style={type.rowMeta}>
+                Once the office has approved the name above, you can send their photograph and NID
+                here.
+              </Text>
+            )}
           </Stack>
         </Disclosure>
 

@@ -15,7 +15,18 @@ import { fetchDataUri, request } from '@/api/client';
 /** Which record's documents. Three shapes, because the paths differ. */
 export type DocumentOwner =
   /** The signed-in member's own. Read only - see the note on useUploadDocument. */
-  { kind: 'me' } | { kind: 'member'; id: number } | { kind: 'nominee'; id: number };
+  | { kind: 'me' }
+  /**
+   * The signed-in member's own NOMINEE's.
+   *
+   * NO ID, deliberately - the server takes the nominee from the token, the
+   * same way `me` takes the member. An id here would be an id the app could
+   * get wrong, and the whole reason these routes carry no ability is that
+   * there is nothing to get wrong.
+   */
+  | { kind: 'my-nominee' }
+  | { kind: 'member'; id: number }
+  | { kind: 'nominee'; id: number };
 
 export type DocumentSlot = {
   /** `nid_front`, `signature` … the server's own name for it. */
@@ -65,6 +76,8 @@ function basePath(owner: DocumentOwner): string {
   switch (owner.kind) {
     case 'me':
       return '/me/documents';
+    case 'my-nominee':
+      return '/me/nominee-documents';
     case 'member':
       return `/staff/members/${owner.id}/documents`;
     case 'nominee':
@@ -73,7 +86,9 @@ function basePath(owner: DocumentOwner): string {
 }
 
 function ownerKey(owner: DocumentOwner): (string | number)[] {
-  return owner.kind === 'me' ? ['documents', 'me'] : ['documents', owner.kind, owner.id];
+  return owner.kind === 'me' || owner.kind === 'my-nominee'
+    ? ['documents', owner.kind]
+    : ['documents', owner.kind, owner.id];
 }
 
 export function useDocuments(owner: DocumentOwner, enabled = true) {
@@ -112,7 +127,15 @@ export function useDocumentImage(owner: DocumentOwner, slot: string, enabled: bo
  * different outcome: staff filing a document replaces what the association
  * holds, a member submitting one asks them to.
  */
-export function useSubmitDocument() {
+/**
+ * @param owner Whose documents - the member's own, or their nominee's.
+ *
+ * This used to take none and post to `/me/documents` unconditionally, which
+ * was right while a member could only submit their own. It is a parameter now
+ * rather than a second near-identical hook: the two differ in one string, and
+ * two copies is how one of them stops invalidating the right query.
+ */
+export function useSubmitDocument(owner: DocumentOwner = { kind: 'me' }) {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -127,7 +150,7 @@ export function useSubmitDocument() {
       } as unknown as Blob);
 
       return (
-        await request<{ data: DocumentSlot[] }>('/me/documents', {
+        await request<{ data: DocumentSlot[] }>(basePath(owner), {
           method: 'POST',
           formData: form,
         })
@@ -135,20 +158,26 @@ export function useSubmitDocument() {
     },
 
     onSuccess: (_data, variables) => {
-      void queryClient.invalidateQueries({ queryKey: ['documents', 'me'] });
-      void queryClient.removeQueries({ queryKey: ['documents', 'me', variables.slot, 'pending'] });
+      const key = ownerKey(owner);
+
+      void queryClient.invalidateQueries({ queryKey: key });
+      void queryClient.removeQueries({ queryKey: [...key, variables.slot, 'pending'] });
     },
   });
 }
 
-/** The member's own pending upload, so they can see what they sent. */
-export function usePendingImage(slot: string, enabled: boolean) {
+/** The pending upload, so a member can see what they sent. */
+export function usePendingImage(
+  slot: string,
+  enabled: boolean,
+  owner: DocumentOwner = { kind: 'me' },
+) {
   return useQuery({
-    queryKey: ['documents', 'me', slot, 'pending'],
+    queryKey: [...ownerKey(owner), slot, 'pending'],
     enabled,
     staleTime: 60 * 60 * 1000,
     retry: false,
-    queryFn: () => fetchDataUri(`/me/documents/${slot}/pending`),
+    queryFn: () => fetchDataUri(`${basePath(owner)}/${slot}/pending`),
   });
 }
 

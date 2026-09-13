@@ -131,11 +131,11 @@ function DocumentRow({
   const [showingPending, setShowingPending] = useState(false);
 
   const upload = useUploadDocument(owner);
-  const submit = useSubmitDocument();
+  const submit = useSubmitDocument(owner);
   const remove = useDeleteDocument(owner);
 
   const image = useDocumentImage(owner, slot.slot, open && slot.uploaded);
-  const pendingImage = usePendingImage(slot.slot, showingPending && slot.pending);
+  const pendingImage = usePendingImage(slot.slot, showingPending && slot.pending, owner);
 
   const busy = upload.isPending || submit.isPending || remove.isPending;
 
