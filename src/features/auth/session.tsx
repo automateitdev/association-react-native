@@ -48,6 +48,26 @@ export type Profile = {
    * NOMINEE_ALLOWED list, like `editable` above.
    */
   nominee?: Record<string, string | null> | null;
+  /**
+   * The housing preferences on file, keyed by project - ALL THREE, answered
+   * or not.
+   *
+   * An absent key would make "you have not answered this project"
+   * indistinguishable from "the app does not know about this project", so the
+   * server sends every one with nulls where there is no answer.
+   */
+  preferences?: Record<
+    string,
+    {
+      areas: string[];
+      flat_size_sft: number | null;
+      budget: string | null;
+      loan_percentage: number | null;
+      flats_wanted: number | null;
+      introduced_by_member_id: number | null;
+      introduced_by_name: string | null;
+    }
+  >;
 };
 
 export type Session = {

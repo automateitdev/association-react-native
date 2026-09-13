@@ -17,8 +17,16 @@ import { request } from '@/api/client';
 
 export type ProposedField = {
   field: string;
-  current: string | null;
-  proposed: string | null;
+  /**
+   * NOT ALWAYS A STRING, which this used to claim.
+   *
+   * A preference key can hold a LIST (`areas`) or a number (`flat_size_sft`),
+   * and typing them as strings made `field.current || '—'` look correct while
+   * rendering an array as its members concatenated - "UttaraMirpur". Anything
+   * displaying these goes through `fieldValue`.
+   */
+  current: unknown;
+  proposed: unknown;
 };
 
 export type ProfileUpdate = {

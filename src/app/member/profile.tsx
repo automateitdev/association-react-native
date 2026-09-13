@@ -8,8 +8,11 @@ import { DocumentsSection } from '@/features/DocumentsSection';
 import { useDocumentImage, useDocuments } from '@/features/documents';
 import {
   fieldLabel,
+  fieldValue,
+  usePreferenceOptions,
   useProfileUpdates,
   useRequestProfileUpdate,
+  type PreferenceOptions,
   type ProfileUpdate,
 } from '@/features/member/profile';
 import {
@@ -118,6 +121,7 @@ export default function ProfileScreen() {
           // `null` rather than `{}`: no nominee on file and a nominee with
           // empty fields are different things to put in front of somebody.
           currentNominee={profile?.nominee ?? null}
+          currentPreferences={profile?.preferences ?? {}}
           onDone={() => setAsking(false)}
           onCancel={() => setAsking(false)}
         />
@@ -328,7 +332,7 @@ function PendingRequest({ update }: { update: ProfileUpdate }) {
         </Text>
 
         {Object.entries(update.changes).map(([field, value]) => (
-          <Field key={field} label={fieldLabel(field)} value={value ?? '—'} />
+          <Field key={field} label={fieldLabel(field)} value={fieldValue(value)} />
         ))}
       </Panel>
     </Section>
@@ -428,6 +432,146 @@ const GROUPS: FieldGroup[] = [
  * answer at runtime by the `nominee` object on /me, which carries exactly the
  * permitted keys.
  */
+/**
+ * One project's six questions.
+ *
+ * THE SAME CONTROLS THE STAFF SCREEN USES, deliberately. A district is CHOSEN
+ * from the 64 and a Dhaka area is TYPED, because the association's next site
+ * will be somewhere nobody has listed yet - and the server splits the rule the
+ * same way, so a form that asked differently would let a member submit
+ * something the API refuses, or refuse something it would have taken.
+ *
+ * ONE DISTRICT, not several. The legacy allowed several through the same JSON
+ * column it used for Dhaka areas, and in the production data nobody ever
+ * picked more than one - so this asks the question people actually answered.
+ */
+function ProjectPanel({
+  label,
+  project,
+  options,
+  answer,
+  onChange,
+}: {
+  label: string;
+  project: string;
+  options: PreferenceOptions;
+  answer: Record<string, string>;
+  onChange: (field: string, value: string) => void;
+}) {
+  const isDistrict = project === 'other_district';
+
+  /*
+   * Flattened with the division in the label. Two districts share a name with
+   * a division of their own; a single select cannot show groups, so the
+   * division rides along in the text rather than being lost.
+   */
+  const districtOptions = Object.entries(options.districts).flatMap(([division, names]) =>
+    names.map((name) => ({ value: name, label: `${name} · ${division}` })),
+  );
+
+  return (
+    <Stack gap="sm">
+      <Text tone="muted" style={type.section}>
+        {label.toUpperCase()}
+      </Text>
+
+      <Form maxWidth={null} columns={2}>
+        {isDistrict ? (
+          <PickerField
+            label="District"
+            value={answer.areas ?? ''}
+            options={[{ value: '', label: 'No district chosen' }, ...districtOptions]}
+            onChange={(value) => onChange('areas', value)}
+          />
+        ) : (
+          <InputField
+            label="Areas"
+            value={answer.areas ?? ''}
+            onChangeText={(value) => onChange('areas', value)}
+            // Typed, separated by commas. Somebody who would take Uttara or
+            // Mohammadpur is answering one question, not two.
+            placeholder={options.dhaka_areas.slice(0, 3).join(', ')}
+          />
+        )}
+
+        <InputField
+          label="Flat size (sft)"
+          value={answer.flat_size_sft ?? ''}
+          onChangeText={(value) => onChange('flat_size_sft', value)}
+          keyboardType="decimal-pad"
+          placeholder="1800"
+        />
+
+        <PickerField
+          label="Budget"
+          value={answer.budget ?? ''}
+          options={[
+            { value: '', label: 'Not said' },
+            ...Object.entries(options.budgets).map(([value, text]) => ({ value, label: text })),
+          ]}
+          onChange={(value) => onChange('budget', value)}
+        />
+
+        <PickerField
+          label="Bank loan wanted"
+          value={answer.loan_percentage ?? ''}
+          options={[
+            { value: '', label: 'Not said' },
+            // 0 is "no loan" - an answer, and a different thing from silence.
+            ...options.loan_percentages.map((percent) => ({
+              value: String(percent),
+              label: percent === 0 ? 'None' : `${percent}%`,
+            })),
+          ]}
+          onChange={(value) => onChange('loan_percentage', value)}
+        />
+
+        <InputField
+          label="Flats wanted"
+          value={answer.flats_wanted ?? ''}
+          onChangeText={(value) => onChange('flats_wanted', value)}
+          keyboardType="decimal-pad"
+          placeholder="1"
+        />
+
+        <InputField
+          label="Told about it by"
+          value={answer.introduced_by_name ?? ''}
+          onChangeText={(value) => onChange('introduced_by_name', value)}
+          placeholder="Name"
+        />
+      </Form>
+    </Stack>
+  );
+}
+
+/**
+ * Fields the API wants as numbers, not strings.
+ *
+ * Everything in a form is text while somebody is typing it - "12" and "120"
+ * pass through each other on the way to "1200" - so conversion happens once,
+ * at the edge, rather than on every keystroke.
+ */
+const NUMERIC = new Set(['flat_size_sft', 'loan_percentage', 'flats_wanted']);
+
+/** A value from the server, as a form field holds it. */
+function stringify(value: unknown): string {
+  return value === null || value === undefined ? '' : String(value);
+}
+
+/**
+ * "Uttara, Mirpur" -> ["Uttara", "Mirpur"].
+ *
+ * Empties dropped, so a trailing comma while somebody is still typing does not
+ * file an area called "".
+ */
+function splitAreas(value: string): string[] {
+  return value
+    .split(',')
+    .map((part) => part.trim())
+    .filter(Boolean);
+}
+
 /** Where the member's own label reads wrong for somebody else's record. */
 const NOMINEE_LABELS: Record<string, string> = {
   relation: 'Relationship to you',
@@ -472,6 +616,7 @@ function RequestForm({
   fields,
   current,
   currentNominee,
+  currentPreferences,
   onDone,
   onCancel,
 }: {
@@ -479,6 +624,8 @@ function RequestForm({
   current: Record<string, string | null>;
   /** The nominee on file, or null when there is none yet. */
   currentNominee: Record<string, string | null> | null;
+  /** Every project, answered or not, keyed by project. */
+  currentPreferences: Record<string, Record<string, unknown>>;
   onDone: () => void;
   onCancel: () => void;
 }) {
@@ -500,10 +647,74 @@ function RequestForm({
     Object.fromEntries(nomineeFields.map((f) => [f, currentNominee?.[f] ?? ''])),
   );
 
+  /*
+   * THE HOUSING PREFERENCES, one map per project, held as strings.
+   *
+   * Everything in a form is text while somebody is typing it - "12" and "120"
+   * pass through each other on the way to "1200". They are converted at the
+   * edge, in `send`, which is the only place that knows what the API wants.
+   *
+   * `areas` is the exception and stays a list, because that is what it is: a
+   * district is chosen from 64, and Dhaka areas are typed as a comma-separated
+   * line. Both end up as an array.
+   */
+  const options = usePreferenceOptions();
+
+  const [preferences, setPreferences] = useState<Record<string, Record<string, string>>>(() =>
+    Object.fromEntries(
+      Object.entries(currentPreferences).map(([project, held]) => [
+        project,
+        {
+          areas: ((held.areas as string[] | undefined) ?? []).join(', '),
+          flat_size_sft: stringify(held.flat_size_sft),
+          budget: stringify(held.budget),
+          loan_percentage: stringify(held.loan_percentage),
+          flats_wanted: stringify(held.flats_wanted),
+          introduced_by_name: stringify(held.introduced_by_name),
+        },
+      ]),
+    ),
+  );
+
+  /** What differs from what is on file, per project, ready to send. */
+  const preferenceChanges = Object.entries(preferences).reduce<
+    Record<string, Record<string, unknown>>
+  >((out, [project, answer]) => {
+    const held = currentPreferences[project] ?? {};
+    const changedFields: Record<string, unknown> = {};
+
+    for (const [field, value] of Object.entries(answer)) {
+      if (field === 'areas') {
+        const next = splitAreas(value);
+        const before = ((held.areas as string[] | undefined) ?? []).slice();
+
+        // Order is not an answer - the server compares these as sets too.
+        if (next.slice().sort().join('\u0000') !== before.sort().join('\u0000')) {
+          changedFields.areas = next;
+        }
+
+        continue;
+      }
+
+      if (value !== stringify(held[field])) {
+        changedFields[field] = value === '' ? null : NUMERIC.has(field) ? Number(value) : value;
+      }
+    }
+
+    if (Object.keys(changedFields).length > 0) out[project] = changedFields;
+
+    return out;
+  }, {});
+
+  const preferencesChangedCount = Object.values(preferenceChanges).reduce(
+    (n, fields) => n + Object.keys(fields).length,
+    0,
+  );
+
   const changed = fields.filter((f) => values[f] !== (current[f] ?? ''));
   const nomineeChanged = nomineeFields.filter((f) => nominee[f] !== (currentNominee?.[f] ?? ''));
 
-  const total = changed.length + nomineeChanged.length;
+  const total = changed.length + nomineeChanged.length + preferencesChangedCount;
   const error = submit.error instanceof ApiError ? submit.error : null;
 
   /*
@@ -525,6 +736,7 @@ function RequestForm({
         ...(nomineeChanged.length > 0
           ? { nominee: Object.fromEntries(nomineeChanged.map((f) => [f, nominee[f]])) }
           : {}),
+        ...(preferencesChangedCount > 0 ? { preferences: preferenceChanges } : {}),
       },
       { onSuccess: onDone },
     );
@@ -687,6 +899,57 @@ function RequestForm({
               A nominee needs a name.
             </Text>
           ) : null}
+        </Stack>
+
+        {/*
+          MEMBER CHOICE - the legacy form's third tab.
+
+          Three projects, each asked the same six questions. Under its own
+          divider like the nominee, and for the same reason: the questions
+          repeat across the three panels, so without a break between them a
+          member cannot tell which project they are answering.
+
+          Rendered only once the option lists arrive. A budget picker with no
+          budgets in it is a control that looks broken, and these lists are
+          what the answers have to come FROM - a member cannot usefully type a
+          district.
+        */}
+        <Divider />
+
+        <Stack gap="lg">
+          <Stack gap="xs">
+            <Text style={type.rowTitle}>What you are looking for</Text>
+            <Text tone="muted" style={type.body}>
+              The association runs projects in three places. Answer whichever apply - leaving one
+              blank means you are not interested in it.
+            </Text>
+          </Stack>
+
+          {options.isPending ? (
+            <Text tone="muted" style={type.body}>
+              Loading the options…
+            </Text>
+          ) : options.data ? (
+            Object.entries(options.data.projects).map(([project, label]) => (
+              <ProjectPanel
+                key={project}
+                label={label}
+                project={project}
+                options={options.data}
+                answer={preferences[project] ?? {}}
+                onChange={(field, value) =>
+                  setPreferences((current) => ({
+                    ...current,
+                    [project]: { ...(current[project] ?? {}), [field]: value },
+                  }))
+                }
+              />
+            ))
+          ) : (
+            <Text tone="muted" style={type.body}>
+              These options could not be loaded. You can still send the rest of the form.
+            </Text>
+          )}
         </Stack>
       </Stack>
 

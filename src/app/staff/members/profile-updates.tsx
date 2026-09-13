@@ -3,6 +3,18 @@ import { useState } from 'react';
 import { View } from 'react-native';
 import { ApiError } from '@/api/errors';
 import { useSession } from '@/features/auth/session';
+/*
+  ONE VOCABULARY FOR BOTH SIDES.
+
+  This screen had its own `label()` that de-underscored the key, which was
+  fine while every key was a member column and wrong as soon as they were not:
+  it rendered "Nominee name" and "Preference dhaka city:areas" at an officer
+  deciding them. The member's own screen already knew how to say those, so it
+  is the same function now - a request means the same thing whichever side of
+  the counter reads it, and two label maps for one set of keys is how they
+  come to disagree.
+*/
+import { fieldLabel as label, fieldValue } from '@/features/member/profile';
 import {
   useDecideProfileUpdate,
   useProfileUpdates,
@@ -161,9 +173,9 @@ export default function ProfileUpdatesScreen() {
                       right it says what is changing, not merely what is wanted.
                     */}
                       <Text tone="muted" style={{ ...type.rowMeta, flex: 1 }}>
-                        {field.current || '—'}
+                        {fieldValue(field.current)}
                       </Text>
-                      <Text style={{ ...type.rowMeta, flex: 1 }}>{field.proposed || '—'}</Text>
+                      <Text style={{ ...type.rowMeta, flex: 1 }}>{fieldValue(field.proposed)}</Text>
                     </Inline>
                   ))}
                 </Stack>
@@ -262,8 +274,3 @@ function RejectForm({
 }
 
 /** `present_address` reads as a column name; "Present address" reads as English. */
-function label(field: string): string {
-  const words = field.replace(/_/g, ' ');
-
-  return words.charAt(0).toUpperCase() + words.slice(1);
-}

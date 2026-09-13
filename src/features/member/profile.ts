@@ -43,9 +43,57 @@ export type ProfileUpdatePage = {
   };
 };
 
+/**
+ * What one project's answer looks like, as the member holds it.
+ *
+ * Mirrors the server's PREFERENCE_ALLOWED. `areas` is always a list - /me
+ * sends `[]` rather than null for an unanswered project, so a form can bind to
+ * it without every screen guarding the same thing.
+ */
+export type PreferenceAnswer = {
+  areas: string[];
+  flat_size_sft: number | null;
+  budget: string | null;
+  loan_percentage: number | null;
+  flats_wanted: number | null;
+  introduced_by_member_id: number | null;
+  introduced_by_name: string | null;
+};
+
+/**
+ * The lists the housing-preference section renders from.
+ *
+ * FETCHED FROM THE MEMBER'S OWN ROUTE, not the staff one - a member holds no
+ * staff permission and would get a 403 from
+ * `/staff/member-preferences/options`. Both routes serve the same payload from
+ * the same place on the server, so the two screens cannot come to offer
+ * different budgets.
+ */
+export type PreferenceOptions = {
+  projects: Record<string, string>;
+  budgets: Record<string, string>;
+  loan_percentages: number[];
+  /** Grouped by division, which is how somebody scans for their own district. */
+  districts: Record<string, string[]>;
+  /** Suggestions, not a closed list - the API accepts any area of Dhaka. */
+  dhaka_areas: string[];
+};
+
 export const profileUpdateKeys = {
   all: ['me', 'profile-updates'] as const,
+  preferenceOptions: ['me', 'preference-options'] as const,
 };
+
+export function usePreferenceOptions() {
+  return useQuery({
+    queryKey: profileUpdateKeys.preferenceOptions,
+    queryFn: async () =>
+      (await request<{ data: PreferenceOptions }>('/me/preference-options')).data,
+
+    // Districts and budget bands do not change while somebody fills in a form.
+    staleTime: 60 * 60 * 1000,
+  });
+}
 
 export function useProfileUpdates() {
   return useQuery({
@@ -64,7 +112,7 @@ export function useRequestProfileUpdate() {
      * storing, so one pending row carries both halves and the office decides
      * them together.
      */
-    mutationFn: async (changes: Record<string, string | Record<string, string>>) =>
+    mutationFn: async (changes: Record<string, unknown>) =>
       (
         await request<{ data: ProfileUpdate }>('/me/profile-updates', {
           method: 'POST',
@@ -86,7 +134,71 @@ export function useRequestProfileUpdate() {
  * about to make to your record should never be invisible because the app was
  * one release behind.
  */
+/**
+ * The three projects, by their key.
+ *
+ * MIRRORS THE SERVER'S `MemberPreference::PROJECTS`, and is a duplicate on
+ * purpose. `fieldLabel` is synchronous and called from lists that hold no
+ * query - a decided request in the history, a pending one on the profile - so
+ * it cannot wait on `/me/preference-options` to find out what
+ * `preference_dhaka_city:budget` is called. Three fixed strings that have not
+ * changed since the legacy is a better trade than a label that renders as the
+ * key while a fetch is in flight.
+ *
+ * The keys are what matter and they are checked by the server; if a project
+ * were added, the fallback below renders its key rather than hiding the field.
+ */
+const PROJECT_LABELS: Record<string, string> = {
+  dhaka_city: 'Inside Dhaka city',
+  near_dhaka: 'Close to Dhaka city',
+  other_district: 'Another district',
+};
+
+/** `preference_dhaka_city:budget` -> `Inside Dhaka city · Budget`. */
+function preferenceLabel(field: string): string | null {
+  if (!field.startsWith('preference_')) return null;
+
+  const rest = field.slice('preference_'.length);
+  const at = rest.indexOf(':');
+
+  if (at === -1) return null;
+
+  const project = rest.slice(0, at);
+  const name = rest.slice(at + 1);
+
+  const names: Record<string, string> = {
+    areas: 'Areas',
+    flat_size_sft: 'Flat size (sft)',
+    budget: 'Budget',
+    loan_percentage: 'Bank loan wanted',
+    flats_wanted: 'Flats wanted',
+    introduced_by_name: 'Told about it by',
+    introduced_by_member_id: 'Told about it by (member number)',
+  };
+
+  return `${PROJECT_LABELS[project] ?? project} · ${names[name] ?? name.replace(/_/g, ' ')}`;
+}
+
+/**
+ * A change's value, as a line of text.
+ *
+ * `areas` IS A LIST, and React renders an array of strings by concatenating
+ * them - so "Uttara, Mirpur" came out as "UttaraMirpur" on the pending panel.
+ * Anything that shows a proposed value has to go through here.
+ */
+export function fieldValue(value: unknown): string {
+  if (value === null || value === undefined || value === '') return '—';
+
+  if (Array.isArray(value)) return value.length > 0 ? value.join(', ') : '—';
+
+  return String(value);
+}
+
 export function fieldLabel(field: string): string {
+  const preference = preferenceLabel(field);
+
+  if (preference) return preference;
+
   const known: Record<string, string> = {
     name: 'Name',
     father_name: "Father's name",
