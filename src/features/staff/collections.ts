@@ -3,6 +3,7 @@ import type { ImagePickerAsset } from 'expo-image-picker';
 import { newIdempotencyKey, request } from '@/api/client';
 import type { Money } from '@/api/money';
 import { memberKeys } from './members';
+import { filePart } from '@/api/upload';
 
 /**
  * Taking money at the counter (FR-FEE-9).
@@ -127,11 +128,7 @@ export function useCollect() {
       slips.forEach((asset, index) => {
         // The three keys React Native's FormData needs for a file; the cast is
         // unavoidable and is the same one the member's pay screen uses.
-        form.append('documents[]', {
-          uri: asset.uri,
-          name: asset.fileName ?? `slip-${index + 1}.jpg`,
-          type: asset.mimeType ?? 'image/jpeg',
-        } as unknown as Blob);
+        form.append('documents[]', filePart(asset, `slip-${index + 1}.jpg`));
       });
 
       return (

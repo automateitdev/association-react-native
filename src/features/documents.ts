@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { ImagePickerAsset } from 'expo-image-picker';
 import { fetchDataUri, request } from '@/api/client';
+import { filePart } from '@/api/upload';
 
 /**
  * Member and nominee identity documents (parity P-10).
@@ -143,11 +144,7 @@ export function useSubmitDocument(owner: DocumentOwner = { kind: 'me' }) {
       const form = new FormData();
 
       form.append('slot', input.slot);
-      form.append('file', {
-        uri: input.asset.uri,
-        name: input.asset.fileName ?? `${input.slot}.jpg`,
-        type: input.asset.mimeType ?? 'image/jpeg',
-      } as unknown as Blob);
+      form.append('file', filePart(input.asset, `${input.slot}.jpg`));
 
       return (
         await request<{ data: DocumentSlot[] }>(basePath(owner), {
@@ -241,11 +238,7 @@ export function useUploadDocument(owner: DocumentOwner) {
        * unavoidable: RN accepts this shape, the DOM's typings do not describe
        * it, and the same trick is used for payment slips.
        */
-      form.append('file', {
-        uri: input.asset.uri,
-        name: input.asset.fileName ?? `${input.slot}.jpg`,
-        type: input.asset.mimeType ?? 'image/jpeg',
-      } as unknown as Blob);
+      form.append('file', filePart(input.asset, `${input.slot}.jpg`));
 
       return (
         await request<{ data: DocumentSlot[] }>(basePath(owner), {

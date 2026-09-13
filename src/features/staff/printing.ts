@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { ImagePickerAsset } from 'expo-image-picker';
 import { download, fetchDataUri, request } from '@/api/client';
+import { filePart } from '@/api/upload';
 
 /**
  * Share certificates, ID cards, and who signs them (legacy `certificate`,
@@ -94,11 +95,7 @@ export function useUploadSignature() {
        * unavoidable: RN accepts this shape and the DOM typings do not describe
        * it - the same trick the document uploads use.
        */
-      form.append('file', {
-        uri: asset.uri,
-        name: asset.fileName ?? `${role}-signature.png`,
-        type: asset.mimeType ?? 'image/png',
-      } as unknown as Blob);
+      form.append('file', filePart(asset, `${role}-signature.png`));
 
       return (
         await request<{ data: Signatory[] }>(`/staff/signatories/${role}/signature`, {

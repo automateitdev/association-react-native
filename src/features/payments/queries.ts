@@ -3,6 +3,7 @@ import type { ImagePickerAsset } from 'expo-image-picker';
 import { newIdempotencyKey, request } from '@/api/client';
 import type { Money } from '@/api/money';
 import { duesKeys } from '@/features/dues/queries';
+import { filePart } from '@/api/upload';
 
 export type PaymentDocument = {
   index: number;
@@ -135,11 +136,7 @@ export function useCreatePayment() {
       form.append('payment_type', input.type ?? 'manual');
 
       input.documents.forEach((asset, index) => {
-        form.append('documents[]', {
-          uri: asset.uri,
-          name: asset.fileName ?? `slip-${index + 1}.jpg`,
-          type: asset.mimeType ?? 'image/jpeg',
-        } as unknown as Blob);
+        form.append('documents[]', filePart(asset, `slip-${index + 1}.jpg`));
       });
 
       const response = await request<{ data: Payment }>('/payments', {
