@@ -18,6 +18,7 @@ import {
 import {
   Actions,
   Button,
+  Disclosure,
   Divider,
   Field,
   Form,
@@ -714,6 +715,21 @@ function RequestForm({
   const changed = fields.filter((f) => values[f] !== (current[f] ?? ''));
   const nomineeChanged = nomineeFields.filter((f) => nominee[f] !== (currentNominee?.[f] ?? ''));
 
+  /*
+   * How many projects already carry an answer, for the collapsed header.
+   *
+   * "2 of 3 answered" is what makes a shut section still worth reading - the
+   * alternative is opening it to find out whether there is anything in there,
+   * which is the wall of fields again with an extra tap in front of it.
+   */
+  const answeredProjects = Object.values(currentPreferences).filter((held) =>
+    Object.entries(held).some(([field, value]) =>
+      field === 'areas'
+        ? ((value as string[] | undefined) ?? []).length > 0
+        : value !== null && value !== undefined && value !== '',
+    ),
+  ).length;
+
   const total = changed.length + nomineeChanged.length + preferencesChangedCount;
   const error = submit.error instanceof ApiError ? submit.error : null;
 
@@ -822,13 +838,24 @@ function RequestForm({
           </Panel>
         ) : null}
 
-        {groupFields(fields).map((group) => (
-          <Stack key={group.title} gap="sm">
-            <Text tone="muted" style={type.section}>
-              {group.title.toUpperCase()}
-            </Text>
+        <Disclosure
+          title="Your details"
+          defaultOpen
+          highlighted={changed.length > 0}
+          meta={
+            changed.length > 0
+              ? `${changed.length} changed`
+              : `${fields.length} field${fields.length === 1 ? '' : 's'}`
+          }
+        >
+          <Stack gap="lg">
+            {groupFields(fields).map((group) => (
+              <Stack key={group.title} gap="sm">
+                <Text tone="muted" style={type.section}>
+                  {group.title.toUpperCase()}
+                </Text>
 
-            {/*
+                {/*
               TWO COLUMNS WHERE THERE IS ROOM, one where there is not.
 
               FormRow flex-wraps on a basis, so this needs no breakpoint check:
@@ -845,112 +872,127 @@ function RequestForm({
               The addresses stay one per row: they hold long values, and half a
               column means every line wraps.
             */}
-            <Form maxWidth={null} columns={group.stacked ? 1 : 2}>
-              {group.fields.map((field) => renderField(field))}
-            </Form>
+                <Form maxWidth={null} columns={group.stacked ? 1 : 2}>
+                  {group.fields.map((field) => renderField(field))}
+                </Form>
+              </Stack>
+            ))}
           </Stack>
-        ))}
+        </Disclosure>
 
         {/*
           THE NOMINEE, the legacy form's second tab.
 
-          Under a divider and its own heading rather than as one more group,
-          because it is somebody ELSE's details in a form about you - and the
-          fields repeat ("Name", "Father's name", "NID") exactly the ones
-          above. Without the break a member scrolling back up cannot tell whose
-          name they are looking at.
+          Its own section because it is somebody ELSE's details in a form about
+          you - and the fields repeat ("Name", "Father's name", "NID") exactly
+          the ones above. Collapsed, a member scrolling cannot confuse whose
+          name they are looking at; the heading says whose it is.
 
           It goes in the same request: one pending row carries both halves and
           the office decides them together, as the legacy does.
         */}
-        <Divider />
-
-        <Stack gap="lg">
-          <Stack gap="xs">
-            <Text style={type.rowTitle}>{currentNominee ? 'Your nominee' : 'Add a nominee'}</Text>
+        <Disclosure
+          title={currentNominee ? 'Your nominee' : 'Add a nominee'}
+          highlighted={nomineeChanged.length > 0}
+          meta={
+            nomineeChanged.length > 0
+              ? `${nomineeChanged.length} changed`
+              : currentNominee
+                ? (currentNominee.name ?? 'On file')
+                : 'Not named yet'
+          }
+        >
+          <Stack gap="lg">
             <Text tone="muted" style={type.body}>
               {currentNominee
                 ? 'The person your association would contact about your membership. Change only what is wrong.'
                 : 'The person your association would contact about your membership. You have not named one yet.'}
             </Text>
-          </Stack>
 
-          {NOMINEE_FIELDS.map((group) => (
-            <Stack key={group.title} gap="sm">
-              <Text tone="muted" style={type.section}>
-                {group.title.toUpperCase()}
+            {NOMINEE_FIELDS.map((group) => (
+              <Stack key={group.title} gap="sm">
+                <Text tone="muted" style={type.section}>
+                  {group.title.toUpperCase()}
+                </Text>
+
+                <Form maxWidth={null} columns={group.stacked ? 1 : 2}>
+                  {group.fields.map((field) =>
+                    renderField(
+                      field,
+                      nominee,
+                      (f, v) => setNominee((current) => ({ ...current, [f]: v })),
+                      NOMINEE_LABELS,
+                    ),
+                  )}
+                </Form>
+              </Stack>
+            ))}
+
+            {missingNomineeName ? (
+              <Text tone="danger" style={type.rowMeta}>
+                A nominee needs a name.
               </Text>
-
-              <Form maxWidth={null} columns={group.stacked ? 1 : 2}>
-                {group.fields.map((field) =>
-                  renderField(
-                    field,
-                    nominee,
-                    (f, v) => setNominee((current) => ({ ...current, [f]: v })),
-                    NOMINEE_LABELS,
-                  ),
-                )}
-              </Form>
-            </Stack>
-          ))}
-
-          {missingNomineeName ? (
-            <Text tone="danger" style={type.rowMeta}>
-              A nominee needs a name.
-            </Text>
-          ) : null}
-        </Stack>
+            ) : null}
+          </Stack>
+        </Disclosure>
 
         {/*
           MEMBER CHOICE - the legacy form's third tab.
 
-          Three projects, each asked the same six questions. Under its own
-          divider like the nominee, and for the same reason: the questions
-          repeat across the three panels, so without a break between them a
-          member cannot tell which project they are answering.
+          Three projects, each asked the same six questions. Its own section,
+          and for the same reason as the nominee: the questions repeat across
+          the three panels, so a member needs to know which project they are
+          answering.
 
           Rendered only once the option lists arrive. A budget picker with no
           budgets in it is a control that looks broken, and these lists are
           what the answers have to come FROM - a member cannot usefully type a
           district.
         */}
-        <Divider />
-
-        <Stack gap="lg">
-          <Stack gap="xs">
-            <Text style={type.rowTitle}>What you are looking for</Text>
+        <Disclosure
+          title="What you are looking for"
+          highlighted={preferencesChangedCount > 0}
+          meta={
+            preferencesChangedCount > 0
+              ? `${preferencesChangedCount} changed`
+              : answeredProjects > 0
+                ? `${answeredProjects} of 3 answered`
+                : 'Not answered'
+          }
+        >
+          <Stack gap="lg">
             <Text tone="muted" style={type.body}>
               The association runs projects in three places. Answer whichever apply - leaving one
               blank means you are not interested in it.
             </Text>
-          </Stack>
 
-          {options.isPending ? (
-            <Text tone="muted" style={type.body}>
-              Loading the options…
-            </Text>
-          ) : options.data ? (
-            Object.entries(options.data.projects).map(([project, label]) => (
-              <ProjectPanel
-                key={project}
-                label={label}
-                project={project}
-                options={options.data}
-                answer={preferences[project] ?? {}}
-                onChange={(field, value) =>
-                  setPreferences((current) => ({
-                    ...current,
-                    [project]: { ...(current[project] ?? {}), [field]: value },
-                  }))
-                }
-              />
-            ))
-          ) : (
-            <Text tone="muted" style={type.body}>
-              These options could not be loaded. You can still send the rest of the form.
-            </Text>
-          )}
-        </Stack>
+            {options.isPending ? (
+              <Text tone="muted" style={type.body}>
+                Loading the options…
+              </Text>
+            ) : options.data ? (
+              Object.entries(options.data.projects).map(([project, label]) => (
+                <ProjectPanel
+                  key={project}
+                  label={label}
+                  project={project}
+                  options={options.data}
+                  answer={preferences[project] ?? {}}
+                  onChange={(field, value) =>
+                    setPreferences((current) => ({
+                      ...current,
+                      [project]: { ...(current[project] ?? {}), [field]: value },
+                    }))
+                  }
+                />
+              ))
+            ) : (
+              <Text tone="muted" style={type.body}>
+                These options could not be loaded. You can still send the rest of the form.
+              </Text>
+            )}
+          </Stack>
+        </Disclosure>
       </Stack>
 
       <Actions>

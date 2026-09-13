@@ -61,6 +61,7 @@ export { Button } from './Button';
 // Layout
 export { Screen, ScreenHeader } from './Screen';
 export { Section, Divider, Panel, Actions, useActionButtonStyle } from './Section';
+export { Disclosure } from './Disclosure';
 
 /*
  * The two shapes every screen was drawing by hand - see the count in Layout.tsx.
