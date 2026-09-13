@@ -199,8 +199,17 @@ export default function MemberLayout() {
               : { tabBarStyle: { borderTopWidth: 0 } }),
           }}
         >
-          <Tabs.Screen name="index" options={{ tabBarIcon: tabIcon('dues'), title: 'Dues' }} />
-          <Tabs.Screen name="pay" options={{ tabBarIcon: tabIcon('pay'), title: 'Pay' }} />
+          {/*
+            ONE TAB WHERE THERE WERE TWO. Dues showed what you owe and Pay
+            showed the same list again with checkboxes - the second screen's
+            first step was the first screen's whole content. `pay.tsx` is gone
+            and this is both.
+
+            Named "Pay" rather than "Dues": the screen answers what you owe on
+            the way to the thing you came to do, and a tab is better named for
+            the errand than for the reading.
+          */}
+          <Tabs.Screen name="index" options={{ tabBarIcon: tabIcon('pay'), title: 'Pay' }} />
           <Tabs.Screen
             name="history"
             options={{ tabBarIcon: tabIcon('history'), title: 'History' }}
@@ -214,7 +223,7 @@ export default function MemberLayout() {
         Expo Router turns every file in this directory into a tab. The payment
         detail screen is pushed from Pay and History, not chosen from the bar,
         so `href: null` keeps it routable while hiding it - otherwise a
-        "payment/[id]" tab appears next to the four real ones.
+        "payment/[id]" tab appears next to the three real ones.
       */}
           <Tabs.Screen name="payment/[id]" options={{ href: null }} />
         </Tabs>
