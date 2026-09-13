@@ -1,7 +1,7 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSession } from '@/features/auth/session';
 import { DocumentsSection } from '@/features/DocumentsSection';
-import { useMember } from '@/features/staff/members';
+import { useMemberByNumber } from '@/features/staff/members';
 import { useNominees } from '@/features/staff/nominees';
 import { usePreferenceOptions, usePreferences } from '@/features/staff/preferences';
 import {
@@ -41,22 +41,40 @@ import {
  * plainly rather than making the whole page an edit surface on the chance.
  */
 export default function MemberProfileView() {
-  const { id } = useLocalSearchParams<{ id: string }>();
-  const memberId = Number(id);
+  /*
+   * THE MEMBERSHIP NUMBER, not the row id.
+   *
+   * "/staff/members/view/31" says nothing to anybody and is a database
+   * counter in an address somebody may paste into an email.
+   * "/staff/members/view/125" is the number the office says out loud, writes
+   * on a receipt and searches by.
+   *
+   * The id is still what everything underneath uses - nominees and
+   * preferences hang off it, and editing goes by it - so it is READ FROM THE
+   * RECORD once the number has found one, rather than carried in the URL
+   * beside it. Two identifiers in one address is how they come to disagree.
+   */
+  const { no } = useLocalSearchParams<{ no: string }>();
   const { can } = useSession();
 
-  const member = useMember(memberId);
-  const nominees = useNominees(memberId);
-  const preferences = usePreferences(memberId);
-  const options = usePreferenceOptions();
-
+  const member = useMemberByNumber(String(no ?? ''));
   const detail = member.data;
+  const memberId = detail?.id ?? 0;
+
+  /*
+   * Held until the number resolves. `enabled` rather than a guard around the
+   * render, because a query keyed on id 0 would be cached under that key and
+   * answer the next member's screen from it.
+   */
+  const nominees = useNominees(memberId, memberId > 0);
+  const preferences = usePreferences(memberId, memberId > 0);
+  const options = usePreferenceOptions();
 
   return (
     <Screen onRefresh={() => void member.refetch()} refreshing={member.isRefetching}>
       <ScreenHeader
         title={detail?.name ?? 'Member'}
-        subtitle={detail?.membership_no ? `Membership ${detail.membership_no}` : 'No number yet'}
+        subtitle={`Membership ${no}`}
         action={
           <Button size="sm" variant="tertiary" onPress={() => router.back()}>
             <Icon name="back" size={15} tone="muted" />

@@ -304,7 +304,7 @@ export default function StaffLayout() {
         bar is the one place a new route announces itself whether or not anybody
         meant it to.
       */}
-          <Tabs.Screen name="members/view/[id]" options={{ href: null }} />
+          <Tabs.Screen name="members/view/[no]" options={{ href: null }} />
           <Tabs.Screen name="admin/users" options={{ href: null }} />
           <Tabs.Screen name="admin/roles" options={{ href: null }} />
           <Tabs.Screen name="admin/settings" options={{ href: null }} />

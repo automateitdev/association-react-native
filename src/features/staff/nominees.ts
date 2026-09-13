@@ -70,8 +70,15 @@ export const nomineeKeys = {
   forMember: (memberId: number) => ['staff', 'nominees', memberId] as const,
 };
 
-export function useNominees(memberId: number) {
+/**
+ * @param enabled Held off until the caller knows which member it means. A
+ *   query keyed on member 0 would be CACHED under that key and answer the next
+ *   screen from it, which is why this is a parameter and not a guard around
+ *   the render.
+ */
+export function useNominees(memberId: number, enabled = true) {
   return useQuery({
+    enabled,
     queryKey: nomineeKeys.forMember(memberId),
     queryFn: async () =>
       await request<{

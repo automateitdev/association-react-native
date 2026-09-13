@@ -305,7 +305,22 @@ export default function MembersScreen() {
               NID" wants to look, and was handed twelve editable inputs and a
               Save button. Editing is a button on the profile, for whoever may.
             */
-            onRowPress={(row) => router.push(`/staff/members/view/${row.id}`)}
+            /*
+              BY THE MEMBERSHIP NUMBER, not the row id - the address then says
+              which member it is instead of carrying a database counter.
+
+              A member with no number yet cannot be addressed that way, and
+              goes to the screen where the number is assigned. That is the
+              thing such a record needs anyway: it is an application, and
+              nobody can refer to it until it has a number.
+            */
+            onRowPress={(row) =>
+              router.push(
+                row.membership_no
+                  ? `/staff/members/view/${encodeURIComponent(row.membership_no)}`
+                  : `/staff/members/${row.id}`,
+              )
+            }
             server={
               meta
                 ? {

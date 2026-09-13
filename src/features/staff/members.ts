@@ -223,6 +223,32 @@ export function useMemberOptions(filters: MemberFilters) {
   });
 }
 
+/**
+ * A member, found by the number the association uses for them.
+ *
+ * WHY NOT THE ID. A membership number is what an office says out loud, writes
+ * on a receipt and searches by; the primary key is a row counter that means
+ * nothing to anybody and puts "member 31" in an address somebody may paste
+ * into an email. The read-only profile is addressed this way so the URL says
+ * which member it is.
+ *
+ * Writes still go by id - see useUpdateMember. A membership number is
+ * assigned by staff and could be corrected, and a PUT addressed to a mutable
+ * key is a PUT that can land on the wrong record after somebody fixes a typo.
+ */
+export function useMemberByNumber(membershipNo: string) {
+  return useQuery({
+    queryKey: ['staff', 'members', 'by-number', membershipNo],
+    enabled: membershipNo !== '',
+    queryFn: async () =>
+      (
+        await request<{ data: MemberDetail }>(
+          `/staff/members/by-number/${encodeURIComponent(membershipNo)}`,
+        )
+      ).data,
+  });
+}
+
 export function useMember(id: number) {
   return useQuery({
     queryKey: memberKeys.detail(id),

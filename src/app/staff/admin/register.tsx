@@ -162,7 +162,11 @@ export default function RegisterScreen() {
             columns={columns}
             rows={rows}
             keyExtractor={(row) => row.id}
-            onRowPress={(row) => router.push(`/staff/members/view/${row.member_id}`)}
+            // By the number. Every row in the register has one - that is what
+            // being in the register means - so there is no fallback here.
+            onRowPress={(row) =>
+              router.push(`/staff/members/view/${encodeURIComponent(row.membership_no)}`)
+            }
             server={
               meta
                 ? {
