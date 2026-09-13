@@ -86,16 +86,12 @@ export default function PaidReportScreen() {
   const columns = useMemo<Column<PaidRow>[]>(
     () => [
       {
-        key: 'member',
-        header: 'Member',
-        width: 200,
-        // Frozen, so the name stays put while the money columns scroll.
-        frozen: true,
-        render: (row) => <Cell>{row.member_name}</Cell>,
-        sort: (row) => row.member_name,
-      },
-      {
         key: 'membership_no',
+        // Frozen WITH the name beside it. Frozen columns render as their own
+        // pane to the left of everything that scrolls, so a number that is
+        // first in the array but not frozen still appears after the frozen
+        // name - and the reorder would be invisible.
+        frozen: true,
         header: 'No.',
         width: 90,
         /*
@@ -105,6 +101,15 @@ export default function PaidReportScreen() {
         */
         render: (row) => <Cell>{row.membership_no || '—'}</Cell>,
         sort: (row) => row.membership_no,
+      },
+      {
+        key: 'member',
+        header: 'Member',
+        width: 200,
+        // Frozen, so the name stays put while the money columns scroll.
+        frozen: true,
+        render: (row) => <Cell>{row.member_name}</Cell>,
+        sort: (row) => row.member_name,
       },
       {
         key: 'count',

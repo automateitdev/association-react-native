@@ -180,6 +180,32 @@ export default function ProfileUpdatesScreen() {
                   ))}
                 </Stack>
 
+                {/*
+                  WHAT CAME WITH IT.
+
+                  A member naming their first nominee attaches the NID to the
+                  REQUEST - there is nobody to attach it to yet - and deciding
+                  the name without seeing it means approving "add Firoza
+                  Khatun as sister" on the strength of the name.
+
+                  Named and counted rather than previewed. The file itself is
+                  decided on the Document reviews screen, which shows it full
+                  size and records the decision against the document; a
+                  thumbnail here would invite an officer to judge an NID from a
+                  40pt square.
+                */}
+                {update.attachments.length > 0 ? (
+                  <Inline gap="sm" align="stretch">
+                    <Icon name="document" size={14} tone="muted" />
+                    <Text tone="muted" style={{ ...type.rowMeta, flex: 1 }}>
+                      Sent with this request: {update.attachments.map((a) => a.label).join(', ')}.
+                      {update.status === 'pending'
+                        ? ' Decide these under Document reviews - refusing this request deletes them.'
+                        : ''}
+                    </Text>
+                  </Inline>
+                ) : null}
+
                 {update.status === 'pending' ? (
                   can('profile-updates.decide') ? (
                     <Inline gap="sm">

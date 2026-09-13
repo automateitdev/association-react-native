@@ -333,17 +333,22 @@ export default function AssignFeesScreen() {
         ),
       },
       {
+        key: 'membership_no',
+        // Frozen WITH the name beside it. Frozen columns render as their own
+        // pane to the left of everything that scrolls, so a number that is
+        // first in the array but not frozen still appears after the frozen
+        // name - and the reorder would be invisible.
+        frozen: true,
+        header: 'No.',
+        width: 90,
+        render: (row) => <Cell>{row.membership_no || '—'}</Cell>,
+      },
+      {
         key: 'name',
         header: 'Member',
         width: 200,
         frozen: true,
         render: (row) => <Cell bold>{row.name}</Cell>,
-      },
-      {
-        key: 'membership_no',
-        header: 'No.',
-        width: 90,
-        render: (row) => <Cell>{row.membership_no || '—'}</Cell>,
       },
       {
         key: 'mobile',

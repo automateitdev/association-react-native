@@ -116,17 +116,12 @@ export default function MembersScreen() {
   const columns = useMemo<Column<MemberSummary>[]>(
     () => [
       {
-        key: 'name',
-        header: 'Member',
-        width: 200,
-        // Frozen, so scrolling right to reach the shares column does not take
-        // the name with it and leave figures belonging to nobody.
-        frozen: true,
-        render: (row) => <Cell bold>{row.name}</Cell>,
-        sort: (row) => row.name,
-      },
-      {
         key: 'membership_no',
+        // Frozen WITH the name beside it. Frozen columns render as their own
+        // pane to the left of everything that scrolls, so a number that is
+        // first in the array but not frozen still appears after the frozen
+        // name - and the reorder would be invisible.
+        frozen: true,
         header: 'No.',
         width: 90,
         render: (row) => (
@@ -138,6 +133,16 @@ export default function MembersScreen() {
           <Cell>{row.membership_no ?? '—'}</Cell>
         ),
         sort: (row) => row.membership_no ?? '',
+      },
+      {
+        key: 'name',
+        header: 'Member',
+        width: 200,
+        // Frozen, so scrolling right to reach the shares column does not take
+        // the name with it and leave figures belonging to nobody.
+        frozen: true,
+        render: (row) => <Cell bold>{row.name}</Cell>,
+        sort: (row) => row.name,
       },
       {
         key: 'mobile',
@@ -292,7 +297,15 @@ export default function MembersScreen() {
             columns={columns}
             rows={rows}
             keyExtractor={(row) => row.id}
-            onRowPress={(row) => router.push(`/staff/members/${row.id}`)}
+            /*
+              TO THE PROFILE, NOT THE FORM.
+
+              This opened the edit screen, which is the wrong default for the
+              thing people do most: an officer answering "what is this member's
+              NID" wants to look, and was handed twelve editable inputs and a
+              Save button. Editing is a button on the profile, for whoever may.
+            */
+            onRowPress={(row) => router.push(`/staff/members/view/${row.id}`)}
             server={
               meta
                 ? {

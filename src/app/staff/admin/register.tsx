@@ -162,7 +162,7 @@ export default function RegisterScreen() {
             columns={columns}
             rows={rows}
             keyExtractor={(row) => row.id}
-            onRowPress={(row) => router.push(`/staff/members/${row.member_id}`)}
+            onRowPress={(row) => router.push(`/staff/members/view/${row.member_id}`)}
             server={
               meta
                 ? {

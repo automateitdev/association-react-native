@@ -29,9 +29,30 @@ export type ProposedField = {
   proposed: unknown;
 };
 
+/** A file the member sent WITH the request, before there was a nominee to own it. */
+export type RequestAttachment = {
+  id: number;
+  slot: string;
+  label: string;
+  status: 'pending' | 'live' | 'rejected';
+  original_name: string;
+  mime: string;
+  size: number;
+};
+
 export type ProfileUpdate = {
   id: number;
   member_id: number;
+  /**
+   * What came with it.
+   *
+   * A member naming their first nominee attaches the NID to the REQUEST -
+   * there is nobody to attach it to yet - and an officer deciding the name
+   * could not see it. They would approve "add Firoza Khatun as sister" on the
+   * strength of the name alone, with the document proving it on another screen
+   * under a queue they had no reason to connect to this.
+   */
+  attachments: RequestAttachment[];
   member_name: string | null;
   member_mobile: string | null;
   fields: ProposedField[];

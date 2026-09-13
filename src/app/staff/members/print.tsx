@@ -116,16 +116,16 @@ export default function PrintScreen() {
       ),
     },
     {
-      key: 'name',
-      header: 'Name',
-      width: 230,
-      render: (row) => <Cell>{row.name}</Cell>,
-    },
-    {
       key: 'membership_no',
       header: 'Member no.',
       width: 150,
       render: (row) => <Cell>{row.membership_no ?? '—'}</Cell>,
+    },
+    {
+      key: 'name',
+      header: 'Name',
+      width: 230,
+      render: (row) => <Cell>{row.name}</Cell>,
     },
     {
       key: 'shares',
