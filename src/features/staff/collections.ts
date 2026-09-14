@@ -126,8 +126,7 @@ export function useCollect() {
       input.feeAssignIds.forEach((id) => form.append('fee_assign_ids[]', String(id)));
 
       slips.forEach((asset, index) => {
-        // The three keys React Native's FormData needs for a file; the cast is
-        // unavoidable and is the same one the member's pay screen uses.
+        // `filePart` decides the shape per platform; see src/api/upload.ts.
         form.append('documents[]', filePart(asset, `slip-${index + 1}.jpg`));
       });
 

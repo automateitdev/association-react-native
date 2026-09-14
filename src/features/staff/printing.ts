@@ -90,11 +90,7 @@ export function useUploadSignature() {
     mutationFn: async ({ role, asset }: { role: string; asset: ImagePickerAsset }) => {
       const form = new FormData();
 
-      /*
-       * The three keys React Native's FormData needs for a file. The cast is
-       * unavoidable: RN accepts this shape and the DOM typings do not describe
-       * it - the same trick the document uploads use.
-       */
+      // `filePart` decides the shape per platform; see src/api/upload.ts.
       form.append('file', filePart(asset, `${role}-signature.png`));
 
       return (

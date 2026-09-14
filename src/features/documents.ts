@@ -233,11 +233,8 @@ export function useUploadDocument(owner: DocumentOwner) {
 
       form.append('slot', input.slot);
 
-      /*
-       * The three keys React Native's FormData needs for a file. The cast is
-       * unavoidable: RN accepts this shape, the DOM's typings do not describe
-       * it, and the same trick is used for payment slips.
-       */
+      // `filePart` decides the shape - a real File on web, the three-key
+      // object React Native's own FormData reads. See src/api/upload.ts.
       form.append('file', filePart(input.asset, `${input.slot}.jpg`));
 
       return (
