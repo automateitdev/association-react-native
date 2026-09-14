@@ -61,6 +61,42 @@ export type Summary = {
   shares: number;
 };
 
+/**
+ * One row of the member's own statement: an assignment, and how it was settled.
+ *
+ * Per ASSIGNMENT, not per payment. One payment often settles several months,
+ * and a row per payment cannot show the month that is MISSING - which is the
+ * question a statement exists to answer.
+ */
+export type StatementRow = {
+  fee_assign_id: number;
+  /** YYYY-MM */
+  period: string;
+  fee_head: string;
+  instalment_amount: Money;
+  fine_amount: Money;
+  total_amount: Money;
+  status: 'Unpaid' | 'Requested' | 'Paid';
+  /** Only when the association accepted the money. Null while pending. */
+  paid_on: string | null;
+  invoice_no: string | null;
+  payment_id: number | null;
+  due: boolean;
+};
+
+export type StatementResponse = {
+  data: StatementRow[];
+  meta: {
+    periods: number;
+    paid_periods: number;
+    /** Column totals, computed by the server. The table renders them as-is. */
+    instalment_total: Money;
+    fine_total: Money;
+    paid_instalment_total: Money;
+    paid_fine_total: Money;
+  };
+};
+
 export type PaymentInstructions = {
   manual: {
     /**
@@ -106,6 +142,7 @@ export type PaymentInstructions = {
 export const duesKeys = {
   all: ['dues'] as const,
   summary: ['dues', 'summary'] as const,
+  statement: ['dues', 'statement'] as const,
   instructions: ['dues', 'instructions'] as const,
 };
 
@@ -113,6 +150,13 @@ export function useDues() {
   return useQuery({
     queryKey: duesKeys.all,
     queryFn: () => request<DuesResponse>('/fees/dues'),
+  });
+}
+
+export function useStatement() {
+  return useQuery({
+    queryKey: duesKeys.statement,
+    queryFn: () => request<StatementResponse>('/fees/statement'),
   });
 }
 

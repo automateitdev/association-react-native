@@ -1,129 +1,23 @@
-import { router } from 'expo-router';
-import { View } from 'react-native';
-import { usePayments, type Payment } from '@/features/payments/queries';
-import { ReceiptButton } from '@/features/payments/ReceiptButton';
-import {
-  AmountBreakdown,
-  Inline,
-  Row,
-  Screen,
-  ScreenHeader,
-  Section,
-  space,
-  StateView,
-  Text,
-  type,
-} from '@/ui';
+import { Redirect } from 'expo-router';
 
 /**
- * Every payment the member has made or submitted.
+ * `/member/history` folded into the statement.
  *
- * Pending rows matter as much as completed ones: with manual payment, a member
- * who transferred money yesterday is waiting on a person, and seeing the
- * submission sitting there is what stops them paying twice.
- */
-export default function HistoryScreen() {
-  const payments = usePayments();
-
-  return (
-    <Screen onRefresh={payments.refetch} refreshing={payments.isRefetching}>
-      <ScreenHeader title="Payments" />
-
-      <StateView
-        loading={payments.isPending}
-        error={payments.error}
-        empty={payments.data?.length === 0}
-        emptyTitle="No payments yet"
-        emptyMessage="Payments you make will appear here."
-        onRetry={payments.refetch}
-      >
-        <Section first>
-          {payments.data?.map((payment, index) => (
-            <PaymentRow
-              key={payment.id}
-              payment={payment}
-              divider={index < (payments.data?.length ?? 0) - 1}
-            />
-          ))}
-        </Section>
-      </StateView>
-    </Screen>
-  );
-}
-
-function PaymentRow({ payment, divider }: { payment: Payment; divider: boolean }) {
-  const attachments =
-    payment.documents.length > 0
-      ? `${payment.documents.length} document${payment.documents.length === 1 ? '' : 's'}`
-      : null;
-
-  return (
-    <Row
-      title={payment.invoice_no}
-      meta={[payment.payment_date ?? 'Submitted', attachments].filter(Boolean).join(' · ')}
-      trailing={
-        /* Instalment and fine stay apart on a receipt too - a member checking an
-           old payment should still see what was subscription and what was
-           penalty. */
-        <AmountBreakdown
-          instalment={payment.payable_amount}
-          fine={payment.fine_amount}
-          total={payment.total_amount}
-        />
-      }
-      footer={
-        <Inline gap="md" wrap>
-          <StatusLine status={payment.status} />
-
-          {/*
-            The receipt, and only once the payment is COMPLETED.
-            
-            It asserts the association has the money, so it does not exist for
-            anything still awaiting approval - the server refuses those, and a
-            button that appeared and then explained itself with an error is
-            worse than one that was never there.
-          */}
-          {payment.status === 'completed' ? (
-            <ReceiptButton
-              path={`/payments/${payment.id}/invoice`}
-              invoiceNo={payment.invoice_no}
-            />
-          ) : null}
-        </Inline>
-      }
-      onPress={() => router.push(`/member/payment/${payment.id}`)}
-      divider={divider}
-    />
-  );
-}
-
-/**
- * Plain words, not internal statuses. `suspended` is not a member's vocabulary.
+ * It listed the same money the statement does, arranged by PAYMENT instead of
+ * by period - so a member looking up March found the month on one tab and had
+ * to cross to another for the receipt. Two tabs, one question.
  *
- * Only the states needing attention carry colour. "Paid" is the expected
- * outcome, and a coloured pill on every completed payment would make a settled
- * history look like a list of alerts.
+ * The statement absorbed both halves: the receipt now sits on the row of the
+ * period it paid for, and the payments that settle no period at all - refused
+ * and awaiting - have a section of their own beneath the table. Organising by
+ * period would otherwise have lost them, and 154 of this association's
+ * payments are refusals a member should still be able to find.
+ *
+ * `Redirect` rather than a screen explaining the move: there is nowhere else to
+ * go and nothing to decide, so a page that makes somebody read and tap is a
+ * toll booth. Same reasoning as `/member/pay` when dues and pay merged - a URL
+ * somebody bookmarked deserves better than a 404.
  */
-function StatusLine({ status }: { status: Payment['status'] }) {
-  const label =
-    status === 'completed'
-      ? 'Paid'
-      : status === 'pending'
-        ? 'Awaiting approval'
-        : status === 'suspended'
-          ? 'Not accepted'
-          : 'Expired';
-
-  const tone =
-    status === 'suspended' || status === 'expired'
-      ? ('danger' as const)
-      : status === 'pending'
-        ? ('accent' as const)
-        : ('muted' as const);
-
-  return (
-    <Text tone={tone} style={type.rowMeta}>
-      {label}
-    </Text>
-  );
+export default function HistoryRedirect() {
+  return <Redirect href="/member/statement" />;
 }

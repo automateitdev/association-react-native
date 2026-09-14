@@ -215,8 +215,8 @@ export default function MemberLayout() {
           />
           <Tabs.Screen name="pay" options={{ tabBarIcon: tabIcon('pay'), title: 'Pay' }} />
           <Tabs.Screen
-            name="history"
-            options={{ tabBarIcon: tabIcon('history'), title: 'History' }}
+            name="statement"
+            options={{ tabBarIcon: tabIcon('reports'), title: 'Statement' }}
           />
           <Tabs.Screen
             name="profile"
@@ -235,6 +235,7 @@ export default function MemberLayout() {
         bounces to the first one.
       */}
           <Tabs.Screen name="payment/[id]" options={{ href: null }} />
+          <Tabs.Screen name="history" options={{ href: null }} />
         </Tabs>
       </View>
     </View>

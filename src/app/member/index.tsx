@@ -166,7 +166,7 @@ export default function MemberDashboard() {
               value={String(summary.data?.instalments_paid_count ?? 0)}
               icon="check"
             />
-            <Stat label="Shares held" value={String(summary.data?.shares ?? 0)} icon="dues" />
+            <Stat label="Shares held" value={String(summary.data?.shares ?? 0)} icon="shares" />
             <Stat
               label="Instalments"
               value={formatMoney(summary.data?.instalments_paid_amount ?? '0.00')}
@@ -184,7 +184,7 @@ export default function MemberDashboard() {
           <Section
             title="Recent payments"
             action={
-              <Button variant="tertiary" onPress={() => router.push('/member/history')}>
+              <Button variant="tertiary" onPress={() => router.push('/member/statement')}>
                 See all
               </Button>
             }
