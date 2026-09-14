@@ -109,14 +109,14 @@ function ReviewCard({
   const [refusing, setRefusing] = useState(false);
   const [reason, setReason] = useState('');
 
-  const submit = async (decision: 'approved' | 'rejected') => {
+  const submit = async (decision: 'approve' | 'reject') => {
     onError(null);
 
     try {
       await decide.mutateAsync({
         id: review.id,
         decision,
-        reason: decision === 'rejected' ? reason.trim() : undefined,
+        reason: decision === 'reject' ? reason.trim() : undefined,
       });
 
       setRefusing(false);
@@ -183,7 +183,7 @@ function ReviewCard({
             <Button
               variant="danger"
               isDisabled={reason.trim().length === 0 || decide.isPending}
-              onPress={() => void submit('rejected')}
+              onPress={() => void submit('reject')}
             >
               <Button.Label>{decide.isPending ? 'Sending…' : 'Not accepted'}</Button.Label>
             </Button>
@@ -191,7 +191,7 @@ function ReviewCard({
         </Form>
       ) : (
         <Inline gap="sm">
-          <Button isDisabled={decide.isPending} onPress={() => void submit('approved')}>
+          <Button isDisabled={decide.isPending} onPress={() => void submit('approve')}>
             <Button.Label>{decide.isPending ? 'Saving…' : 'Approve'}</Button.Label>
           </Button>
 

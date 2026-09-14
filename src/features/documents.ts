@@ -206,7 +206,7 @@ export function useDecideDocument() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (input: { id: number; decision: 'approved' | 'rejected'; reason?: string }) =>
+    mutationFn: async (input: { id: number; decision: 'approve' | 'reject'; reason?: string }) =>
       (
         await request<{ data: { id: number; status: string } }>(
           `/staff/document-reviews/${input.id}/decide`,
