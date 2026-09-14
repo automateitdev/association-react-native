@@ -22,14 +22,34 @@ export type Due = {
   total_due: Money;
   status: 'Unpaid' | 'Requested';
   overdue_periods: number;
+  /**
+   * Whether this instalment is owed YET.
+   *
+   * Associations assign months ahead - COCSOL's run fifteen months out - so an
+   * unpaid row is not automatically a debt. The server decides this, once, from
+   * the date it holds while building the list; the app must not recompute it
+   * from `period`, or a boundary instalment lands on both sides of midnight.
+   */
+  due: boolean;
 };
 
 export type DuesResponse = {
   data: Due[];
   meta: {
+    /** Everything unpaid, however far ahead. A schedule, not a debt. */
     instalment_total: Money;
     fine_total: Money;
     grand_total: Money;
+
+    /** What is owed today. This is the figure to show a member. */
+    due_instalment_total: Money;
+    due_fine_total: Money;
+    due_grand_total: Money;
+    due_count: number;
+
+    /** Assigned, not yet owed - payable in advance by anyone who wants to. */
+    scheduled_total: Money;
+    scheduled_count: number;
   };
 };
 

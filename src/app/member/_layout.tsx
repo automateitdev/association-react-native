@@ -209,7 +209,11 @@ export default function MemberLayout() {
             the way to the thing you came to do, and a tab is better named for
             the errand than for the reading.
           */}
-          <Tabs.Screen name="index" options={{ tabBarIcon: tabIcon('pay'), title: 'Pay' }} />
+          <Tabs.Screen
+            name="index"
+            options={{ tabBarIcon: tabIcon('overview'), title: 'Overview' }}
+          />
+          <Tabs.Screen name="pay" options={{ tabBarIcon: tabIcon('pay'), title: 'Pay' }} />
           <Tabs.Screen
             name="history"
             options={{ tabBarIcon: tabIcon('history'), title: 'History' }}
@@ -231,7 +235,6 @@ export default function MemberLayout() {
         bounces to the first one.
       */}
           <Tabs.Screen name="payment/[id]" options={{ href: null }} />
-          <Tabs.Screen name="pay" options={{ href: null }} />
         </Tabs>
       </View>
     </View>
