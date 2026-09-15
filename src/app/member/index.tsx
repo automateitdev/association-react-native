@@ -1,7 +1,8 @@
 import { router } from 'expo-router';
-import { View } from 'react-native';
+import { Image, View } from 'react-native';
 import { formatMoney } from '@/api/money';
 import { useSession } from '@/features/auth/session';
+import { useDocumentImage, useDocuments } from '@/features/documents';
 import { useDues, useSummary } from '@/features/dues/queries';
 import { usePayments } from '@/features/payments/queries';
 import { useProfileUpdates } from '@/features/member/profile';
@@ -9,7 +10,6 @@ import {
   Button,
   Row,
   Screen,
-  ScreenHeader,
   Section,
   space,
   Stack,
@@ -65,14 +65,7 @@ export default function MemberDashboard() {
 
   return (
     <Screen>
-      <ScreenHeader
-        title={session?.profile.name ?? 'Your association'}
-        subtitle={
-          session?.profile.membership_no
-            ? `Membership ${session.profile.membership_no}`
-            : undefined
-        }
-      />
+      <IdentityCard />
 
       <StateView
         loading={dues.isPending || summary.isPending}
@@ -204,5 +197,88 @@ export default function MemberDashboard() {
         ) : null}
       </StateView>
     </Screen>
+  );
+}
+
+
+/**
+ * Who the member is, with their photograph.
+ *
+ * REPLACING A HEADER THAT REPEATED THE APP BAR. The bar above already carries
+ * the association and "Md. Khairul Alam · No. 02"; the screen header said the
+ * same two things again, in larger type, directly beneath. The photograph earns
+ * that space in a way a second copy of the name did not.
+ *
+ * IT COSTS NO EXTRA REQUEST. The query key is shared with the Documents section
+ * on the Profile tab, and the image is fetched only once the slot list says the
+ * slot is FILLED - rather than firing a request that 404s for every member who
+ * has never sent one. Same arrangement as the staff profile view.
+ *
+ * INITIALS WHEN THERE IS NO PHOTOGRAPH, never an empty grey box: a blank reads
+ * as a picture that failed to load rather than one nobody sent. 2,835 of this
+ * association's scans are still on the old server, so that is the common case
+ * today, not the rare one.
+ */
+function IdentityCard() {
+  const { session } = useSession();
+  const profile = session?.profile;
+
+  const documents = useDocuments({ kind: 'me' });
+  const hasPhoto = (documents.data ?? []).some((slot) => slot.slot === 'image' && slot.uploaded);
+  const photo = useDocumentImage({ kind: 'me' }, 'image', hasPhoto);
+
+  const name = profile?.name ?? 'Your association';
+
+  const initials = name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? '')
+    .join('');
+
+  return (
+    <View
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: space.md,
+        paddingTop: space.lg,
+        paddingBottom: space.sm,
+      }}
+    >
+      <View
+        className="bg-surface border border-border"
+        style={{
+          width: 56,
+          height: 56,
+          borderRadius: 28,
+          overflow: 'hidden',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        {photo.data ? (
+          <Image
+            source={{ uri: photo.data }}
+            resizeMode="cover"
+            style={{ width: '100%', height: '100%' }}
+            accessibilityLabel={`Your photograph`}
+          />
+        ) : (
+          <Text tone="muted" style={{ ...type.rowTitle, fontSize: 18 }}>
+            {initials || '—'}
+          </Text>
+        )}
+      </View>
+
+      <Stack gap="xs" grow>
+        <Text style={type.title} numberOfLines={1}>
+          {name}
+        </Text>
+        <Text tone="muted" style={type.rowMeta}>
+          {profile?.membership_no ? `Membership ${profile.membership_no}` : 'No number yet'}
+        </Text>
+      </Stack>
+    </View>
   );
 }
